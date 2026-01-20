@@ -181,7 +181,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'mylink_db',
         'USER': 'mylink_user',
-        'PASSWORD': os.getenv('DB_PASSWORD', 'KUCHLI_PAROL_TANLANG'),
+        'PASSWORD': os.getenv('burxon123!', 'burxon123!'),
         'HOST': 'localhost',
         'PORT': '5432',
     }

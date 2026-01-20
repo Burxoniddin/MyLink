@@ -24,7 +24,7 @@ class SendOTPView(APIView):
             # Save to cache for 5 minutes
             cache.set(f"otp_{phone}", code, timeout=300)
             
-            # Send SMS with OTP
+            # Send SMS with OTP - using approved template
             message = f"MyLink platformasiga kirish uchun tasdiqlash kodi: {code}"
             sms_sent = send_sms(phone, message)
             

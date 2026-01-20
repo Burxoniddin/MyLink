@@ -86,7 +86,7 @@ def send_sms(phone, message):
         response = requests.post(url, headers=headers, data=payload, timeout=10)
         result = response.json()
         
-        if response.status_code == 200 and result.get('status') == 'success':
+        if response.status_code == 200 and result.get('status') in ['success', 'waiting']:
             logger.info(f"SMS sent successfully to {phone}")
             return True
         else:

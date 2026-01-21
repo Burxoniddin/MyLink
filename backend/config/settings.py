@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -24,16 +25,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-+-#fg#$&j3rw3h)4)h3g$k9&nsooab1y$il274qpu0jn$umo1q'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-+-#fg#$&j3rw3h)4)h3g$k9&nsooab1y$il274qpu0jn$umo1q')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['mylink.asia', 'www.mylink.asia', 'api.mylink.asia', '161.97.176.239', 'localhost', '127.0.0.1']
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'jazzmin',  # Must be before django.contrib.admin
     'django.contrib.admin',
@@ -67,8 +67,7 @@ JAZZMIN_SETTINGS = {
         {"name": "Dashboard", "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "Sayt", "url": "/", "new_window": True},
     ],
-    
-    # User menu
+   # User menu
     "usermenu_links": [
         {"model": "auth.user"}
     ],
@@ -99,7 +98,6 @@ JAZZMIN_SETTINGS = {
     "custom_js": None,
     "use_google_fonts_cdn": True,
     "show_ui_builder": False,
-    
     # Change view options
     "changeform_format": "horizontal_tabs",
     "changeform_format_overrides": {
@@ -171,13 +169,15 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+# Database - PostgreSQL for Production
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'mylink_db',
+        'USER': 'mylink_user',
+        'PASSWORD': 'burxon123!',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
@@ -209,30 +209,21 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
-
 USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-STATIC_URL = 'static/'
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.CustomUser'
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
-
-import os
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Django REST Framework settings
 REST_FRAMEWORK = {
@@ -243,18 +234,30 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-    # Rate Limiting - DDoS himoyasi
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle'
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',      # Anonim foydalanuvchilar
-        'user': '1000/hour',     # Autentifikatsiya qilingan
-    }
 }
 
-# CORS settings
-CORS_ALLOW_ALL_ORIGINS = True  # For development only
+# CORS settings - Production
+CORS_ALLOWED_ORIGINS = [
+    "https://mylink.asia",
+    "https://www.mylink.asia",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 CORS_ALLOW_CREDENTIALS = True
 
+# Security settings for HTTPS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+CSRF_TRUSTED_ORIGINS = [
+    'https://mylink.asia',
+    'https://api.mylink.asia',
+    'https://www.mylink.asia',
+]
+
+
+# Cache configuration - Database cache for production
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'django_cache',
+    }
+}

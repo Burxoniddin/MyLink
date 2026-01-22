@@ -126,8 +126,8 @@ const LandingPage = () => {
                 {/* Footer */}
                 <div className="landing-branding">
                     <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer" className="landing-branding-link">
+                        <span className="powered-text">Powered by</span>
                         <img src="/logo.png" alt="MyLink" className="landing-brand-logo" />
-                        <span>Powered by</span>
                         <strong>MyLink</strong>
                     </a>
                 </div>

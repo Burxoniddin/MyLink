@@ -230,6 +230,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    # Umumiy API Rate Limiting
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',   # Anonim foydalanuvchilar: 100 so'rov/soat
+        'user': '1000/hour',  # Autentifikatsiya qilingan: 1000 so'rov/soat
+    },
 }
 
 # CORS settings - Production

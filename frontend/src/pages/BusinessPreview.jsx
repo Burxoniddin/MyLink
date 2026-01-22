@@ -58,8 +58,8 @@ const BusinessPreview = () => {
 
                     {/* Footer */}
                     <div className="preview-footer">
-                        <FaLink size={10} />
-                        <span>Powered by</span>
+                        <span className="powered-text">Powered by</span>
+                        <img src="/logo.png" alt="MyLink" className="footer-brand-logo" />
                         <strong>MyLink</strong>
                     </div>
                 </div>

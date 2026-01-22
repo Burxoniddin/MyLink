@@ -11,10 +11,21 @@ class LinkSerializer(serializers.ModelSerializer):
 
 class BusinessSerializer(serializers.ModelSerializer):
     links = LinkSerializer(many=True, required=False)
+    logo = serializers.SerializerMethodField()
+    logo_upload = serializers.ImageField(write_only=True, required=False, source='logo')
     
     class Meta:
         model = Business
-        fields = ['id', 'path', 'name', 'description', 'logo', 'created_at', 'links']
+        fields = ['id', 'path', 'name', 'description', 'logo', 'logo_upload', 'created_at', 'links']
+    
+    def get_logo(self, obj):
+        """Return absolute URL for logo"""
+        if obj.logo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.logo.url)
+            return obj.logo.url
+        return None
         
     def create(self, validated_data):
         links_data = validated_data.pop('links', [])

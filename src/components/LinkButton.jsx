@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaLink, FaYoutube, FaEnvelope } from 'react-icons/fa';
+import { FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaLink } from 'react-icons/fa';
 import { FaXTwitter } from "react-icons/fa6";
 
 const getIconAndColor = (iconType) => {
@@ -45,18 +45,6 @@ const getIconAndColor = (iconType) => {
                 icon: <FaLinkedin />,
                 gradient: 'linear-gradient(135deg, #0A66C2 0%, #004182 100%)',
                 shadow: 'rgba(10, 102, 194, 0.4)'
-            };
-        case 'youtube':
-            return {
-                icon: <FaYoutube />,
-                gradient: 'linear-gradient(135deg, #FF0000 0%, #CC0000 100%)',
-                shadow: 'rgba(255, 0, 0, 0.4)'
-            };
-        case 'gmail':
-            return {
-                icon: <FaEnvelope />,
-                gradient: 'linear-gradient(135deg, #EA4335 0%, #DB4437 100%)',
-                shadow: 'rgba(234, 67, 53, 0.4)'
             };
         case 'website':
         default:

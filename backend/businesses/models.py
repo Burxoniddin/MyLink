@@ -23,13 +23,15 @@ class Link(models.Model):
         ('telegram_number', 'Telegram Number'),
         ('phone', 'Phone Number'),
         ('linkedin', 'LinkedIn'),
+        ('youtube', 'YouTube'),
+        ('gmail', 'Gmail'),
         ('website', 'Website'),
         ('other', 'Other'),
     ]
 
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='links')
     title = models.CharField(max_length=100)
-    url = models.URLField(max_length=500)
+    url = models.CharField(max_length=500)  # Changed from URLField to allow tel: and mailto: links
     icon_type = models.CharField(max_length=20, choices=ICON_CHOICES, default='website')
     order = models.PositiveIntegerField(default=0)
 

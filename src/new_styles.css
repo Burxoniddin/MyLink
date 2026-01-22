@@ -1,0 +1,220 @@
+/* ... Desktop styles (Refined) ... */
+
+.detail-content {
+    flex: 1;
+    padding: 32px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.detail-sidebar {
+    width: 88px;
+    background: white;
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: sticky;
+    top: 72px;
+    height: calc(100vh - 72px);
+    z-index: 90;
+    overflow: hidden;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+}
+
+.detail-sidebar:hover {
+    width: 280px;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
+}
+
+/* Sidebar Header */
+.sidebar-header {
+    margin-bottom: 32px;
+    padding: 0 4px;
+}
+
+/* Back Button */
+.back-btn-sidebar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-decoration: none;
+    color: var(--text-main);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.back-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    background: white;
+    flex-shrink: 0;
+}
+
+.back-btn-sidebar:hover .back-icon-box {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-light);
+}
+
+.back-text {
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+
+.detail-sidebar:hover .back-text {
+    opacity: 1;
+    transition-delay: 0.1s;
+}
+
+/* Sidebar Tabs */
+.sidebar-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+}
+
+.tab-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: transparent;
+    border: none;
+    padding: 0 4px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    white-space: nowrap;
+}
+
+.tab-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    transition: all 0.2s;
+    background: white;
+    flex-shrink: 0;
+}
+
+.tab-item:hover .tab-icon-box,
+.tab-item .tab-icon-box.active {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-light);
+}
+
+.tab-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.tab-item:hover .tab-label,
+.tab-item.active .tab-label {
+    color: var(--text-main);
+}
+
+.detail-sidebar:hover .tab-label {
+    opacity: 1;
+    transition-delay: 0.1s;
+}
+
+/* Soon Badge */
+.soon-badge {
+    position: absolute;
+    right: 0;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    background: var(--bg-main);
+    border-radius: 4px;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.detail-sidebar:hover .soon-badge {
+    opacity: 1;
+    transition-delay: 0.1s;
+}
+
+/* Sidebar Link Footer */
+.sidebar-link {
+    margin-top: auto;
+    padding: 16px;
+    background: var(--bg-main);
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.detail-sidebar:hover .sidebar-link {
+    opacity: 1;
+    transition-delay: 0.1s;
+}
+
+.link-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.link-url {
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+/* Edit Layout */
+.edit-two-column {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 40px;
+    height: 100%;
+}
+
+.edit-column {
+    min-width: 0;
+}
+
+.edit-card {
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: var(--shadow-sm);
+    height: 100%;
+}
+
+.preview-section {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px;
+}
+
+.detail-layout {
+    display: flex;
+    min-height: calc(100vh - 72px);
+    background: var(--bg-main);
+}

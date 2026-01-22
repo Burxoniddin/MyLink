@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api';
-import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope } from 'react-icons/fa';
+import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash } from 'react-icons/fa';
 import { FaXTwitter } from "react-icons/fa6";
 import LinkButton from '../components/LinkButton';
 
@@ -15,8 +15,6 @@ const detectPlatform = (url) => {
     if (lower.includes('twitter.com') || lower.includes('x.com')) return 'x';
     if (lower.includes('wa.me') || lower.includes('whatsapp')) return 'whatsapp';
     if (lower.includes('linkedin.com')) return 'linkedin';
-    if (lower.includes('youtube.com') || lower.includes('youtu.be')) return 'youtube';
-    if (lower.includes('gmail.com') || lower.includes('mail.google.com')) return 'gmail';
     if (lower.includes('tel:') || /^\+?\d{9,}$/.test(url.replace(/\s/g, ''))) return 'phone';
     return 'website';
 };
@@ -44,8 +42,6 @@ const getPlatformIcon = (type) => {
         case 'x': return <FaXTwitter />;
         case 'whatsapp': return <FaWhatsapp />;
         case 'linkedin': return <FaLinkedin />;
-        case 'youtube': return <FaYoutube />;
-        case 'gmail': return <FaEnvelope />;
         case 'phone': return <FaPhone />;
         default: return <FaGlobe />;
     }
@@ -139,15 +135,13 @@ const BusinessDetail = ({ isNew = false }) => {
         setSaving(true);
         setMessage({ type: '', text: '' });
         try {
-            // Normalize URLs and auto-detect platform, filter out empty URLs
-            const processedLinks = links
-                .filter(l => l.url && l.url.trim() !== '')
-                .map((l, i) => ({
-                    ...l,
-                    url: normalizeUrl(l.url),
-                    icon_type: detectPlatform(normalizeUrl(l.url)),
-                    order: i
-                }));
+            // Normalize URLs and auto-detect platform
+            const processedLinks = links.map((l, i) => ({
+                ...l,
+                url: normalizeUrl(l.url),
+                icon_type: detectPlatform(normalizeUrl(l.url)),
+                order: i
+            }));
 
             const payload = { ...formData, links: processedLinks };
             let res;
@@ -301,9 +295,7 @@ const BusinessDetail = ({ isNew = false }) => {
                                     ))}
                                 </div>
                                 <div className="preview-footer">
-                                    <FaLink size={10} />
-                                    <span>Powered by</span>
-                                    <strong>MyLink</strong>
+                                    <FaLink size={10} /> MyLink.asia
                                 </div>
                             </div>
 
@@ -341,9 +333,10 @@ const BusinessDetail = ({ isNew = false }) => {
                                                     value={formData.path}
                                                     onChange={handlePathChange}
                                                     placeholder="mybrand"
+                                                    disabled={!isNew}
                                                 />
                                             </div>
-                                            {pathStatus && (
+                                            {isNew && pathStatus && (
                                                 <div className={`path-status ${pathStatus}`}>
                                                     {pathStatus === 'checking' && 'Tekshirilmoqda...'}
                                                     {pathStatus === 'available' && <><FaCheck /> Bu path bo'sh</>}

@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-+-#fg#$&j3rw3h)4)h3g$k9&nsooab1y$il274qpu0jn$umo1q')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['mylink.asia', 'www.mylink.asia', 'api.mylink.asia', '161.97.176.239', 'localhost', '127.0.0.1']
 
@@ -169,15 +169,11 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
-# Database - PostgreSQL for Production
+# Database - SQLite for Local Development
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'mylink_db',
-        'USER': 'mylink_user',
-        'PASSWORD': 'burxon123!',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

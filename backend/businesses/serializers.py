@@ -2,6 +2,9 @@ from rest_framework import serializers
 from .models import Business, Link
 
 class LinkSerializer(serializers.ModelSerializer):
+    # Use CharField instead of URLField to allow tel: and mailto: links
+    url = serializers.CharField(max_length=500)
+    
     class Meta:
         model = Link
         fields = ['id', 'title', 'url', 'icon_type', 'order']

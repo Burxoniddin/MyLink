@@ -2,21 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api';
 import LinkButton from '../components/LinkButton';
-import { FaLink, FaSun, FaMoon } from 'react-icons/fa';
+import { FaLink } from 'react-icons/fa';
 
-// Backend base URL for media files - auto detect based on environment
-const MEDIA_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://127.0.0.1:8000'
-    : 'https://api.mylink.asia';
+// Backend base URL for media files
+const MEDIA_BASE_URL = 'http://127.0.0.1:8000';
 
 const LandingPage = () => {
     const { path } = useParams();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
-    const [theme, setTheme] = useState(() => {
-        return localStorage.getItem('mylink-theme') || 'dark';
-    });
 
     useEffect(() => {
         const fetchData = async () => {
@@ -32,15 +27,6 @@ const LandingPage = () => {
         fetchData();
     }, [path]);
 
-    // Save theme to localStorage when it changes
-    useEffect(() => {
-        localStorage.setItem('mylink-theme', theme);
-    }, [theme]);
-
-    const toggleTheme = () => {
-        setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-    };
-
     // Helper function to get full logo URL
     const getLogoUrl = (logo) => {
         if (!logo) return null;
@@ -54,7 +40,7 @@ const LandingPage = () => {
 
     if (loading) {
         return (
-            <div className={`landing-page ${theme === 'light' ? 'light-theme' : ''}`}>
+            <div className="landing-page">
                 <div className="landing-loading">
                     <div className="landing-spinner"></div>
                     <p>Yuklanmoqda...</p>
@@ -65,7 +51,7 @@ const LandingPage = () => {
 
     if (error) {
         return (
-            <div className={`landing-page ${theme === 'light' ? 'light-theme' : ''}`}>
+            <div className="landing-page">
                 <div className="landing-error">
                     <div className="error-icon">🔍</div>
                     <h2>Sahifa topilmadi</h2>
@@ -76,14 +62,9 @@ const LandingPage = () => {
     }
 
     return (
-        <div className={`landing-page ${theme === 'light' ? 'light-theme' : ''}`}>
+        <div className="landing-page">
             {/* Animated background */}
             <div className="landing-bg-gradient"></div>
-
-            {/* Theme Toggle Button */}
-            <button className="theme-toggle-btn" onClick={toggleTheme} title={theme === 'dark' ? 'Light mode' : 'Dark mode'}>
-                {theme === 'dark' ? <FaSun /> : <FaMoon />}
-            </button>
 
             {/* Main content card */}
             <div className="landing-card fade-in-up">
@@ -125,11 +106,9 @@ const LandingPage = () => {
 
                 {/* Footer */}
                 <div className="landing-branding">
-                    <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer" className="landing-branding-link">
-                        <img src="/logo.png" alt="MyLink" className="landing-brand-logo" />
-                        <span>Powered by</span>
-                        <strong>MyLink</strong>
-                    </a>
+                    <img src="/logo.png" alt="MyLink" className="landing-brand-logo" />
+                    <span>Powered by</span>
+                    <a href="/" target="_blank" rel="noopener noreferrer">MyLink</a>
                 </div>
             </div>
         </div>

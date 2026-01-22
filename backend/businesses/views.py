@@ -34,5 +34,5 @@ class PublicBusinessView(APIView):
 
     def get(self, request, path):
         business = get_object_or_404(Business, path=path)
-        serializer = BusinessSerializer(business)
+        serializer = BusinessSerializer(business, context={'request': request})
         return Response(serializer.data)

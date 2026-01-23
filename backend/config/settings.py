@@ -35,7 +35,7 @@ ALLOWED_HOSTS = ['mylink.asia', 'www.mylink.asia', 'api.mylink.asia', '161.97.17
 
 # Application definition
 INSTALLED_APPS = [
-    'jazzmin',  # Must be before django.contrib.admin
+    'jazzmin',  # Enabled Jazzmin admin theme
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -12,7 +12,7 @@ class LinkInline(admin.TabularInline):
 
 @admin.register(Business)
 class BusinessAdmin(admin.ModelAdmin):
-    list_display = ['name', 'path', 'owner', 'links_count', 'has_logo', 'created_at']
+    list_display = ['name', 'path', 'owner', 'created_at']
     list_filter = ['created_at']
     search_fields = ['name', 'path', 'owner__phone_number']
     ordering = ['-created_at']

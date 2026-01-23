@@ -20,6 +20,7 @@ class SMSRateThrottle(AnonRateThrottle):
 
 class SendOTPView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = []
     throttle_classes = [SMSRateThrottle]
 
     def post(self, request):
@@ -75,6 +76,7 @@ class LoginRateThrottle(AnonRateThrottle):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = []
     throttle_classes = [LoginRateThrottle]
 
     def post(self, request):

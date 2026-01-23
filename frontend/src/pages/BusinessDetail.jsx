@@ -159,7 +159,7 @@ const BusinessDetail = ({ isNew = false }) => {
 
             if (logoFile) {
                 const logoData = new FormData();
-                logoData.append('logo', logoFile);
+                logoData.append('logo_upload', logoFile);
                 await api.patch(`businesses/${res.data.path}/`, logoData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });

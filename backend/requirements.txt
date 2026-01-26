@@ -5,3 +5,5 @@ python-dotenv
 pillow
 requests
 django-jazzmin
+dj-database-url
+psycopg2-binary

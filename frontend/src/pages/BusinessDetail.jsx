@@ -1,9 +1,52 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api';
-import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope } from 'react-icons/fa';
+import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines } from 'react-icons/fa';
 import { FaXTwitter } from "react-icons/fa6";
 import LinkButton from '../components/LinkButton';
+
+// Drag & Drop
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// Sortable Item Component
+const SortableLinkItem = ({ id, link, index, updateLink, removeLink, getPlatformIcon, detectPlatform }) => {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+    
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} className="link-item">
+            {/* Drag Handle */}
+            <div className="drag-handle" {...attributes} {...listeners}>
+                <FaGripLines />
+            </div>
+
+            <div className="link-icon-auto">
+                {getPlatformIcon(detectPlatform(link.url))}
+            </div>
+            <div className="link-fields">
+                <input
+                    placeholder="Link nomi"
+                    value={link.title}
+                    onChange={e => updateLink(index, 'title', e.target.value)}
+                />
+                <input
+                    placeholder="t.me/... yoki instagram.com/..."
+                    value={link.url}
+                    onChange={e => updateLink(index, 'url', e.target.value)}
+                />
+            </div>
+            <button className="remove-link" onClick={() => removeLink(index)}>
+                <FaTimes />
+            </button>
+        </div>
+    );
+};
 
 // Auto-detect platform from URL
 const detectPlatform = (url) => {
@@ -78,9 +121,17 @@ const BusinessDetail = ({ isNew = false }) => {
     const [pathStatus, setPathStatus] = useState(null); // null, 'available', 'taken', 'checking'
     const pathCheckTimeout = useRef(null);
 
-    // Drag and drop
-    const [isDragging, setIsDragging] = useState(false);
+    // Drag and drop for Logo
+    const [isDraggingLogo, setIsDraggingLogo] = useState(false);
     const dropZoneRef = useRef(null);
+
+    // Dnd Sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     useEffect(() => {
         if (!isNew && path) {
@@ -109,7 +160,8 @@ const BusinessDetail = ({ isNew = false }) => {
     }, []);
 
     const handlePathChange = (e) => {
-        const newPath = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+        // Updated Regex: Allow lowercase letters, numbers, hyphens, and UNDERSCORES
+        const newPath = e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, '');
         setFormData({ ...formData, path: newPath });
 
         // Debounce path check
@@ -126,7 +178,14 @@ const BusinessDetail = ({ isNew = false }) => {
             const res = await api.get(`businesses/${path}/`);
             setBusiness(res.data);
             setFormData({ path: res.data.path, name: res.data.name, description: res.data.description || '' });
-            setLinks(res.data.links || []);
+            
+            // Generate IDs for existing links to make them sortable
+            const linksWithIds = (res.data.links || []).map((link, idx) => ({
+                ...link,
+                id: link.id || `temp-${Date.now()}-${idx}` // Use existing ID or temporary ID
+            }));
+            setLinks(linksWithIds);
+            
             setLogoPreview(res.data.logo);
         } catch (err) {
             navigate('/dashboard');
@@ -147,6 +206,7 @@ const BusinessDetail = ({ isNew = false }) => {
                     url: normalizeUrl(l.url),
                     icon_type: detectPlatform(normalizeUrl(l.url)),
                     order: i
+                    // remove temporary ID before sending
                 }));
 
             const payload = { ...formData, links: processedLinks };
@@ -185,8 +245,19 @@ const BusinessDetail = ({ isNew = false }) => {
         }
     };
 
-    const addLink = () => setLinks([...links, { title: '', url: '', icon_type: 'website', order: links.length }]);
+    const addLink = () => {
+        // Add new link with a unique temporary ID
+        setLinks([...links, { 
+            id: `new-${Date.now()}`,
+            title: '', 
+            url: '', 
+            icon_type: 'website', 
+            order: links.length 
+        }]);
+    };
+    
     const removeLink = (i) => setLinks(links.filter((_, idx) => idx !== i));
+    
     const updateLink = (i, field, value) => {
         const newLinks = [...links];
         newLinks[i][field] = value;
@@ -196,20 +267,33 @@ const BusinessDetail = ({ isNew = false }) => {
         setLinks(newLinks);
     };
 
-    // Drag and drop handlers
+    // Drag End Handler
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+
+        if (active.id !== over.id) {
+            setLinks((items) => {
+                const oldIndex = items.findIndex((item) => item.id === active.id);
+                const newIndex = items.findIndex((item) => item.id === over.id);
+                return arrayMove(items, oldIndex, newIndex);
+            });
+        }
+    };
+
+    // Drag and drop handlers for Logo
     const handleDragOver = (e) => {
         e.preventDefault();
-        setIsDragging(true);
+        setIsDraggingLogo(true);
     };
 
     const handleDragLeave = (e) => {
         e.preventDefault();
-        setIsDragging(false);
+        setIsDraggingLogo(false);
     };
 
     const handleDrop = (e) => {
         e.preventDefault();
-        setIsDragging(false);
+        setIsDraggingLogo(false);
         const file = e.dataTransfer.files[0];
         if (file && file.type.startsWith('image/')) {
             setLogoFile(file);
@@ -374,7 +458,7 @@ const BusinessDetail = ({ isNew = false }) => {
                                         <div className="form-group">
                                             <label>Logo</label>
                                             <div
-                                                className={`logo-dropzone ${isDragging ? 'dragging' : ''} ${logoFile || logoPreview ? 'has-image' : ''}`}
+                                                className={`logo-dropzone ${isDraggingLogo ? 'dragging' : ''} ${logoFile || logoPreview ? 'has-image' : ''}`}
                                                 onDragOver={handleDragOver}
                                                 onDragLeave={handleDragLeave}
                                                 onDrop={handleDrop}
@@ -413,7 +497,7 @@ const BusinessDetail = ({ isNew = false }) => {
                                     </div>
                                 </div>
 
-                                {/* Right Column - Links */}
+                                {/* Right Column - Links with Drag & Drop */}
                                 <div className="edit-column">
                                     <div className="edit-card">
                                         <h3>Linklar</h3>
@@ -428,28 +512,29 @@ const BusinessDetail = ({ isNew = false }) => {
                                         ) : (
                                             <>
                                                 <div className="links-list">
-                                                    {links.map((link, i) => (
-                                                        <div key={i} className="link-item">
-                                                            <div className="link-icon-auto">
-                                                                {getPlatformIcon(detectPlatform(link.url))}
-                                                            </div>
-                                                            <div className="link-fields">
-                                                                <input
-                                                                    placeholder="Link nomi"
-                                                                    value={link.title}
-                                                                    onChange={e => updateLink(i, 'title', e.target.value)}
+                                                    <DndContext 
+                                                        sensors={sensors}
+                                                        collisionDetection={closestCenter}
+                                                        onDragEnd={handleDragEnd}
+                                                    >
+                                                        <SortableContext 
+                                                            items={links}
+                                                            strategy={verticalListSortingStrategy}
+                                                        >
+                                                            {links.map((link, i) => (
+                                                                <SortableLinkItem 
+                                                                    key={link.id}
+                                                                    id={link.id}
+                                                                    link={link}
+                                                                    index={i}
+                                                                    updateLink={updateLink}
+                                                                    removeLink={removeLink}
+                                                                    getPlatformIcon={getPlatformIcon}
+                                                                    detectPlatform={detectPlatform}
                                                                 />
-                                                                <input
-                                                                    placeholder="t.me/... yoki instagram.com/..."
-                                                                    value={link.url}
-                                                                    onChange={e => updateLink(i, 'url', e.target.value)}
-                                                                />
-                                                            </div>
-                                                            <button className="remove-link" onClick={() => removeLink(i)}>
-                                                                <FaTimes />
-                                                            </button>
-                                                        </div>
-                                                    ))}
+                                                            ))}
+                                                        </SortableContext>
+                                                    </DndContext>
                                                 </div>
                                                 <button className="add-link-btn-bottom" onClick={addLink}>
                                                     <FaPlus /> Qo'shish

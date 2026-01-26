@@ -1,5 +1,4 @@
-import React from 'react';
-import { FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaLink, FaYoutube, FaEnvelope } from 'react-icons/fa';
+import { FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaLink, FaYoutube, FaEnvelope, FaTiktok, FaYandex, FaMapMarkedAlt } from 'react-icons/fa';
 import { FaXTwitter } from "react-icons/fa6";
 
 const getIconAndColor = (iconType) => {
@@ -21,6 +20,12 @@ const getIconAndColor = (iconType) => {
                 icon: <FaFacebook />,
                 gradient: 'linear-gradient(135deg, #1877F2 0%, #0D65D9 100%)',
                 shadow: 'rgba(24, 119, 242, 0.4)'
+            };
+        case 'tiktok':
+            return {
+                icon: <FaTiktok />,
+                gradient: 'linear-gradient(135deg, #000000 0%, #25F4EE 100%)',
+                shadow: 'rgba(0, 0, 0, 0.4)'
             };
         case 'x':
             return {
@@ -57,6 +62,18 @@ const getIconAndColor = (iconType) => {
                 icon: <FaEnvelope />,
                 gradient: 'linear-gradient(135deg, #EA4335 0%, #DB4437 100%)',
                 shadow: 'rgba(234, 67, 53, 0.4)'
+            };
+        case 'yandex_map':
+            return {
+                icon: <FaYandex />,
+                gradient: 'linear-gradient(135deg, #FC3F1D 0%, #FFCC00 100%)',
+                shadow: 'rgba(252, 63, 29, 0.4)'
+            };
+        case 'google_map':
+            return {
+                icon: <FaMapMarkedAlt />,
+                gradient: 'linear-gradient(135deg, #4285F4 0%, #34A853 100%)',
+                shadow: 'rgba(66, 133, 244, 0.4)'
             };
         case 'website':
         default:

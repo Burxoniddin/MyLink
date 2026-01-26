@@ -8,9 +8,12 @@ const PLATFORM_OPTIONS = [
     { value: 'telegram', label: 'Telegram' },
     { value: 'instagram', label: 'Instagram' },
     { value: 'facebook', label: 'Facebook' },
+    { value: 'tiktok', label: 'TikTok' },
     { value: 'x', label: 'X (Twitter)' },
     { value: 'whatsapp', label: 'WhatsApp' },
     { value: 'phone', label: 'Telefon' },
+    { value: 'yandex_map', label: 'Yandex Map' },
+    { value: 'google_map', label: 'Google Map' },
     { value: 'linkedin', label: 'LinkedIn' },
     { value: 'website', label: 'Website' },
 ];

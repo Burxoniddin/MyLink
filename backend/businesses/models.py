@@ -18,6 +18,7 @@ class Link(models.Model):
         ('telegram', 'Telegram'),
         ('instagram', 'Instagram'),
         ('facebook', 'Facebook'),
+        ('tiktok', 'TikTok'),
         ('x', 'X (Twitter)'),
         ('whatsapp', 'WhatsApp'),
         ('telegram_number', 'Telegram Number'),
@@ -25,6 +26,8 @@ class Link(models.Model):
         ('linkedin', 'LinkedIn'),
         ('youtube', 'YouTube'),
         ('gmail', 'Gmail'),
+        ('yandex_map', 'Yandex Map'),
+        ('google_map', 'Google Map'),
         ('website', 'Website'),
         ('other', 'Other'),
     ]

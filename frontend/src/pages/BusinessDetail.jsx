@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api';
-import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines } from 'react-icons/fa';
+import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines, FaTiktok, FaYandex, FaMapMarkedAlt } from 'react-icons/fa';
 import { FaXTwitter } from "react-icons/fa6";
 import LinkButton from '../components/LinkButton';
 
@@ -13,7 +13,7 @@ import { CSS } from '@dnd-kit/utilities';
 // Sortable Item Component
 const SortableLinkItem = ({ id, link, index, updateLink, removeLink, getPlatformIcon, detectPlatform }) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
-    
+
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
@@ -61,6 +61,13 @@ const detectPlatform = (url) => {
     if (lower.includes('youtube.com') || lower.includes('youtu.be')) return 'youtube';
     if (lower.includes('gmail.com') || lower.includes('mail.google.com')) return 'gmail';
     if (lower.includes('tel:') || /^\+?\d{9,}$/.test(url.replace(/\s/g, ''))) return 'phone';
+    // TikTok detection
+    if (lower.includes('tiktok.com') || lower.includes('vm.tiktok.com')) return 'tiktok';
+    // Yandex Maps detection
+    if (lower.includes('yandex.') && (lower.includes('/maps') || lower.includes('maps.'))) return 'yandex_map';
+    // Google Maps detection
+    if (lower.includes('google.') && lower.includes('maps')) return 'google_map';
+    if (lower.includes('goo.gl/maps') || lower.includes('maps.app.goo.gl')) return 'google_map';
     return 'website';
 };
 
@@ -90,6 +97,9 @@ const getPlatformIcon = (type) => {
         case 'youtube': return <FaYoutube />;
         case 'gmail': return <FaEnvelope />;
         case 'phone': return <FaPhone />;
+        case 'tiktok': return <FaTiktok />;
+        case 'yandex_map': return <FaYandex />;
+        case 'google_map': return <FaMapMarkedAlt />;
         default: return <FaGlobe />;
     }
 };
@@ -178,14 +188,14 @@ const BusinessDetail = ({ isNew = false }) => {
             const res = await api.get(`businesses/${path}/`);
             setBusiness(res.data);
             setFormData({ path: res.data.path, name: res.data.name, description: res.data.description || '' });
-            
+
             // Generate IDs for existing links to make them sortable
             const linksWithIds = (res.data.links || []).map((link, idx) => ({
                 ...link,
                 id: link.id || `temp-${Date.now()}-${idx}` // Use existing ID or temporary ID
             }));
             setLinks(linksWithIds);
-            
+
             setLogoPreview(res.data.logo);
         } catch (err) {
             navigate('/dashboard');
@@ -247,17 +257,17 @@ const BusinessDetail = ({ isNew = false }) => {
 
     const addLink = () => {
         // Add new link with a unique temporary ID
-        setLinks([...links, { 
+        setLinks([...links, {
             id: `new-${Date.now()}`,
-            title: '', 
-            url: '', 
-            icon_type: 'website', 
-            order: links.length 
+            title: '',
+            url: '',
+            icon_type: 'website',
+            order: links.length
         }]);
     };
-    
+
     const removeLink = (i) => setLinks(links.filter((_, idx) => idx !== i));
-    
+
     const updateLink = (i, field, value) => {
         const newLinks = [...links];
         newLinks[i][field] = value;
@@ -512,17 +522,17 @@ const BusinessDetail = ({ isNew = false }) => {
                                         ) : (
                                             <>
                                                 <div className="links-list">
-                                                    <DndContext 
+                                                    <DndContext
                                                         sensors={sensors}
                                                         collisionDetection={closestCenter}
                                                         onDragEnd={handleDragEnd}
                                                     >
-                                                        <SortableContext 
+                                                        <SortableContext
                                                             items={links}
                                                             strategy={verticalListSortingStrategy}
                                                         >
                                                             {links.map((link, i) => (
-                                                                <SortableLinkItem 
+                                                                <SortableLinkItem
                                                                     key={link.id}
                                                                     id={link.id}
                                                                     link={link}

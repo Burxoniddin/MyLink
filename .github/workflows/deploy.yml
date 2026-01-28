@@ -22,6 +22,10 @@ jobs:
           script: |
             cd /var/www/mylink
             
+            # Lokal o'zgarishlarni tozalash (git pull bloklanmasligi uchun)
+            git checkout -- .
+            git clean -fd
+            
             # Git pull
             git pull origin main
             

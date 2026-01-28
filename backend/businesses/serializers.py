@@ -13,10 +13,11 @@ class BusinessSerializer(serializers.ModelSerializer):
     links = LinkSerializer(many=True, required=False)
     logo = serializers.SerializerMethodField()
     logo_upload = serializers.ImageField(write_only=True, required=False, source='logo')
+    logo_remove = serializers.BooleanField(write_only=True, required=False, default=False)
     
     class Meta:
         model = Business
-        fields = ['id', 'path', 'name', 'description', 'logo', 'logo_upload', 'created_at', 'links']
+        fields = ['id', 'path', 'name', 'description', 'logo', 'logo_upload', 'logo_remove', 'created_at', 'links']
     
     def get_logo(self, obj):
         """Return absolute URL for logo"""
@@ -28,6 +29,7 @@ class BusinessSerializer(serializers.ModelSerializer):
         return None
         
     def create(self, validated_data):
+        validated_data.pop('logo_remove', None)  # logo_remove create-da kerak emas
         links_data = validated_data.pop('links', [])
         user = self.context['request'].user
         business = Business.objects.create(owner=user, **validated_data)
@@ -37,11 +39,21 @@ class BusinessSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         links_data = validated_data.pop('links', None)
+        logo_remove = validated_data.pop('logo_remove', False)
         
         instance.path = validated_data.get('path', instance.path)
         instance.name = validated_data.get('name', instance.name)
         instance.description = validated_data.get('description', instance.description)
-        instance.logo = validated_data.get('logo', instance.logo)
+        
+        # Logo o'chirish yoki yangilash
+        if logo_remove:
+            # Eski logo faylini o'chirish
+            if instance.logo:
+                instance.logo.delete(save=False)
+            instance.logo = None
+        elif 'logo' in validated_data:
+            instance.logo = validated_data.get('logo')
+        
         instance.save()
         
         if links_data is not None:

@@ -123,6 +123,7 @@ const BusinessDetail = ({ isNew = false }) => {
     const [links, setLinks] = useState([]);
     const [logoFile, setLogoFile] = useState(null);
     const [logoPreview, setLogoPreview] = useState(null);
+    const [logoRemoved, setLogoRemoved] = useState(false);
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
@@ -197,6 +198,7 @@ const BusinessDetail = ({ isNew = false }) => {
             setLinks(linksWithIds);
 
             setLogoPreview(res.data.logo);
+            setLogoRemoved(false);
         } catch (err) {
             navigate('/dashboard');
         } finally {
@@ -227,7 +229,11 @@ const BusinessDetail = ({ isNew = false }) => {
                 res = await api.put(`businesses/${path}/`, payload);
             }
 
-            if (logoFile) {
+            // Logo o'chirilgan bo'lsa, backendga xabar berish
+            if (logoRemoved && !logoFile) {
+                await api.patch(`businesses/${res.data.path}/`, { logo_remove: true });
+            } else if (logoFile) {
+                // Yangi logo yuklangan bo'lsa
                 const logoData = new FormData();
                 logoData.append('logo_upload', logoFile);
                 await api.patch(`businesses/${res.data.path}/`, logoData, {
@@ -488,6 +494,7 @@ const BusinessDetail = ({ isNew = false }) => {
                                                                 onClick={() => {
                                                                     setLogoFile(null);
                                                                     setLogoPreview(null);
+                                                                    setLogoRemoved(true);
                                                                 }}
                                                             >
                                                                 <FaTrash /> O'chirish

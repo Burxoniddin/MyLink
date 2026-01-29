@@ -12,12 +12,17 @@ class LinkInline(admin.TabularInline):
 
 @admin.register(Business)
 class BusinessAdmin(admin.ModelAdmin):
-    list_display = ['name', 'path', 'owner', 'created_at']
+    list_display = ['name', 'public_link', 'owner', 'created_at']
     list_filter = ['created_at']
     search_fields = ['name', 'path', 'owner__phone_number']
     ordering = ['-created_at']
     prepopulated_fields = {'path': ('name',)}
     inlines = [LinkInline]
+    
+    def public_link(self, obj):
+        url = f'https://mylink.asia/{obj.path}'
+        return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+    public_link.short_description = 'Link'
     
     fieldsets = (
         (None, {

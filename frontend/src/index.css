@@ -2633,11 +2633,11 @@ select {
     margin-top: 16px;
   }
 
-  /* Save button sticky on mobile */
+  /* Save button on mobile - removed sticky to prevent overlap */
   .save-btn {
-    position: sticky;
-    bottom: 96px;
-    z-index: 50;
+    position: relative;
+    margin-top: 24px;
+    margin-bottom: 100px;
   }
 }
 

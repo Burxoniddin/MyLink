@@ -276,3 +276,7 @@ CACHES = {
         'LOCATION': 'django_cache',
     }
 }
+
+# Jazzmin + Django 5.2 compatibility patch (format_html bug fix)
+from config.jazzmin_patch import apply_jazzmin_patch
+apply_jazzmin_patch()

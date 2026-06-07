@@ -1,4 +1,4 @@
-django>=5.0
+Django==6.0.6
 djangorestframework
 django-cors-headers
 python-dotenv

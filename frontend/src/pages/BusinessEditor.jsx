@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext, useNavigate } from 'react-router-dom';
+import { useOutletContext } from 'react-router-dom';
 import api from '../api';
 import { FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaTimes, FaPlus, FaSave, FaLink, FaLinkedin } from 'react-icons/fa';
 import { FaXTwitter } from "react-icons/fa6";
@@ -20,7 +20,6 @@ const PLATFORM_OPTIONS = [
 
 const BusinessEditor = () => {
     const { business, fetchBusiness } = useOutletContext();
-    const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
         path: '',

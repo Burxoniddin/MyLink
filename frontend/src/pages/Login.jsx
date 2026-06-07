@@ -1,70 +1,55 @@
 import React, { useState } from 'react';
 import api from '../api';
-import { useNavigate } from 'react-router-dom';
-import { FaArrowRight, FaLink } from 'react-icons/fa';
+import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import GoogleButton from '../components/GoogleButton';
+import PasswordInput from '../components/PasswordInput';
 
-// Format phone number with spaces: +998 94 351 19 10
-// User input starts after +998, we only format the remaining 9 digits
-const formatPhoneNumber = (value, hasPrefix = true) => {
-    // Remove all non-numeric
+const formatPhoneNumber = (value) => {
     const cleaned = value.replace(/[^\d]/g, '');
-
-    // If has prefix, we expect input like "94 351 19 10" (9 digits)
-    // Format: XX XXX XX XX
     let formatted = '';
     for (let i = 0; i < cleaned.length && i < 9; i++) {
-        if (i === 2) formatted += ' ';
-        else if (i === 5) formatted += ' ';
-        else if (i === 7) formatted += ' ';
+        if (i === 2 || i === 5 || i === 7) formatted += ' ';
         formatted += cleaned[i];
     }
-
     return formatted;
 };
+const getRawPhone = (v) => '+998' + v.replace(/\s/g, '');
 
-// Get raw phone number for API (+998 + user input without spaces)
-const getRawPhone = (userInput) => {
-    const cleaned = userInput.replace(/\s/g, '');
-    return '+998' + cleaned;
-};
+const tabBtn = (active) => ({
+    flex: 1, padding: '10px', border: 'none', cursor: 'pointer', fontWeight: 600,
+    background: active ? '#4f46e5' : 'transparent', color: active ? '#fff' : '#6b7280',
+    borderRadius: 8, transition: 'all 0.15s',
+});
+
+const Divider = ({ label }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '18px 0', color: '#9ca3af', fontSize: 13 }}>
+        <span style={{ flex: 1, height: 1, background: '#e5e7eb' }} /> {label} <span style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
+    </div>
+);
 
 const Login = () => {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const [tab, setTab] = useState('email'); // 'email' | 'phone'
+    const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
-    const [code, setCode] = useState('');
-    const [step, setStep] = useState(1);
+    const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const navigate = useNavigate();
 
-    const handlePhoneChange = (e) => {
-        const formatted = formatPhoneNumber(e.target.value);
-        setPhone(formatted);
-    };
-
-    const handleSendOTP = async (e) => {
+    const submit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
+        const identifier = tab === 'email' ? email.trim() : getRawPhone(phone);
         try {
-            await api.post('auth/otp/', { phone_number: getRawPhone(phone) });
-            setStep(2);
-        } catch (err) {
-            setError(err.response?.data?.phone_number || 'OTP yuborishda xatolik');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleVerifyOTP = async (e) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-        try {
-            const res = await api.post('auth/login/', { phone_number: getRawPhone(phone), code });
+            const res = await api.post('auth/login-password/', { identifier, password });
             localStorage.setItem('token', res.data.token);
             navigate('/dashboard');
         } catch (err) {
-            setError('Kod noto\'g\'ri');
+            setError(err.response?.data?.error || t('common.error'));
         } finally {
             setLoading(false);
         }
@@ -72,69 +57,61 @@ const Login = () => {
 
     return (
         <div className="login-page">
-            {/* Left Side - Image */}
             <div className="login-left">
                 <img src="/login-bg.png" alt="MyLink" className="login-bg-image" />
             </div>
-
-            {/* Right Side - Form */}
             <div className="login-right">
+                <div style={{ position: 'absolute', top: 20, right: 20 }}>
+                    <LanguageSwitcher />
+                </div>
                 <div className="login-form-container">
                     <div className="login-header">
-                        <h2>{step === 1 ? 'Kirish' : 'Tasdiqlash'}</h2>
-                        <p>{step === 1 ? 'Telefon raqamingizni kiriting' : `${phone} ga kod yuborildi`}</p>
+                        <h2>{t('login.title_phone')}</h2>
+                    </div>
+
+                    {/* Email / Phone tabs */}
+                    <div style={{ display: 'flex', gap: 4, background: '#f3f4f6', borderRadius: 10, padding: 4, marginBottom: 20 }}>
+                        <button type="button" style={tabBtn(tab === 'email')} onClick={() => { setTab('email'); setError(''); }}>{t('auth.tab_email')}</button>
+                        <button type="button" style={tabBtn(tab === 'phone')} onClick={() => { setTab('phone'); setError(''); }}>{t('auth.tab_phone')}</button>
                     </div>
 
                     {error && <div className="login-error">{error}</div>}
 
-                    {step === 1 ? (
-                        <form onSubmit={handleSendOTP} className="login-form">
+                    <form onSubmit={submit} className="login-form">
+                        {tab === 'email' ? (
                             <div className="input-group">
-                                <label>Telefon raqam</label>
+                                <label>{t('auth.email_label')}</label>
+                                <input type="email" className="login-input" placeholder="email@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                            </div>
+                        ) : (
+                            <div className="input-group">
+                                <label>{t('login.phone_label')}</label>
                                 <div className="phone-input-group">
                                     <span className="phone-prefix">+998</span>
-                                    <input
-                                        type="tel"
-                                        className="login-input phone-input"
-                                        placeholder="90 123 45 67"
-                                        value={phone}
-                                        onChange={handlePhoneChange}
-                                        required
-                                    />
+                                    <input type="tel" className="login-input phone-input" placeholder="90 123 45 67" value={phone} onChange={(e) => setPhone(formatPhoneNumber(e.target.value))} required />
                                 </div>
                             </div>
-                            <button type="submit" className="login-btn" disabled={loading}>
-                                {loading ? 'Yuborilmoqda...' : (
-                                    <>Davom etish <FaArrowRight /></>
-                                )}
-                            </button>
-                        </form>
-                    ) : (
-                        <form onSubmit={handleVerifyOTP} className="login-form">
-                            <div className="input-group">
-                                <label>Tasdiqlash kodi</label>
-                                <input
-                                    type="text"
-                                    className="login-input code-input"
-                                    placeholder="• • • • •"
-                                    value={code}
-                                    onChange={(e) => setCode(e.target.value)}
-                                    maxLength={5}
-                                    required
-                                />
+                        )}
+                        <div className="input-group">
+                            <label>{t('auth.password_label')}</label>
+                            <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required />
+                        </div>
+                        <button type="submit" className="login-btn" disabled={loading}>
+                            {loading ? t('login.verifying') : t('auth.login')}
+                        </button>
+                        {tab === 'email' && (
+                            <div style={{ textAlign: 'center', marginTop: 12, fontSize: 14 }}>
+                                <Link to="/forgot-password">{t('auth.forgot')}</Link>
                             </div>
-                            <button type="submit" className="login-btn" disabled={loading}>
-                                {loading ? 'Tekshirilmoqda...' : 'Kirish'}
-                            </button>
-                            <button
-                                type="button"
-                                className="login-back-btn"
-                                onClick={() => { setStep(1); setError(''); }}
-                            >
-                                ← Raqamni o'zgartirish
-                            </button>
-                        </form>
-                    )}
+                        )}
+                    </form>
+
+                    <Divider label={t('auth.or')} />
+                    <GoogleButton onError={(msg) => setError(msg || t('common.error'))} />
+
+                    <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#6b7280' }}>
+                        {t('auth.no_account')} <Link to="/register">{t('auth.register')}</Link>
+                    </div>
                 </div>
             </div>
         </div>

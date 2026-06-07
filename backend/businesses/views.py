@@ -1,9 +1,20 @@
-from rest_framework import generics, permissions
-from .models import Business
-from .serializers import BusinessSerializer
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.throttling import AnonRateThrottle
+from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from .models import Business, Link, SiteSettings, ContactMessage, StaticPage, BlogPost
+from .serializers import (
+    BusinessSerializer,
+    ContactMessageSerializer,
+    StaticPageSerializer,
+    BlogPostListSerializer,
+    BlogPostDetailSerializer,
+)
+from .utils import send_telegram_message
+
+User = get_user_model()
 
 class IsOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -36,3 +47,98 @@ class PublicBusinessView(APIView):
         business = get_object_or_404(Business, path=path)
         serializer = BusinessSerializer(business, context={'request': request})
         return Response(serializer.data)
+
+
+class PublicStatsView(APIView):
+    """Public platform stats for the marketing landing page."""
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        return Response({
+            'businesses': Business.objects.count(),
+            'links': Link.objects.count(),
+            'users': User.objects.count(),
+        })
+
+
+class PublicSettingsView(APIView):
+    """Public, admin-editable contact/support info for the landing + Help button."""
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        s = SiteSettings.get_settings()
+        return Response({
+            'site_name': s.site_name,
+            'contact_email': s.contact_email,
+            'contact_phone': s.contact_phone,
+            'contact_telegram': s.contact_telegram,
+            'support_telegram_url': s.support_telegram_url,
+        })
+
+
+class ContactRateThrottle(AnonRateThrottle):
+    scope = 'contact'
+    rate = '15/hour'
+
+
+class ContactCreateView(APIView):
+    """Landing contact form -> save + forward to Telegram group."""
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+    throttle_classes = [ContactRateThrottle]
+
+    def post(self, request):
+        serializer = ContactMessageSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        msg = serializer.save()
+        text = (
+            "\U0001F4E9 <b>Yangi aloqa xabari</b>\n"
+            f"<b>Ism:</b> {msg.name}\n"
+            f"<b>Aloqa:</b> {msg.contact}\n"
+            f"<b>Xabar:</b> {msg.message}"
+        )
+        send_telegram_message(text)
+        return Response({"message": "ok"}, status=status.HTTP_201_CREATED)
+
+
+class StaticPageView(APIView):
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def get(self, request, slug):
+        lang = request.query_params.get('lang', 'uz')
+        page = StaticPage.objects.filter(slug=slug, language=lang).first()
+        if page is None:
+            page = StaticPage.objects.filter(slug=slug).first()  # fallback to any language
+        if page is None:
+            return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(StaticPageSerializer(page).data)
+
+
+class BlogListView(APIView):
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        lang = request.query_params.get('lang', 'uz')
+        qs = BlogPost.objects.filter(is_published=True, language=lang)
+        if not qs.exists():
+            qs = BlogPost.objects.filter(is_published=True)
+        return Response(BlogPostListSerializer(qs, many=True, context={'request': request}).data)
+
+
+class BlogDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def get(self, request, slug):
+        lang = request.query_params.get('lang', 'uz')
+        post = BlogPost.objects.filter(slug=slug, language=lang, is_published=True).first()
+        if post is None:
+            post = BlogPost.objects.filter(slug=slug, is_published=True).first()
+        if post is None:
+            return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(BlogPostDetailSerializer(post, context={'request': request}).data)

@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
-import { useNavigate, Link } from 'react-router-dom';
-import { FaPlus, FaLink, FaExternalLinkAlt, FaSignOutAlt, FaEdit } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { FaPlus, FaExternalLinkAlt, FaEdit } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 
 const Dashboard = () => {
+    const { t } = useTranslation();
     const [businesses, setBusinesses] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
@@ -30,16 +32,11 @@ const Dashboard = () => {
         }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        navigate('/login');
-    };
-
     if (loading) {
         return (
             <div className="dashboard-loading">
                 <div className="spinner"></div>
-                <p>Yuklanmoqda...</p>
+                <p>{t('common.loading')}</p>
             </div>
         );
     }
@@ -50,21 +47,21 @@ const Dashboard = () => {
             <main className="dashboard-main">
                 <div className="dashboard-container">
                     <div className="dashboard-title-row">
-                        <h1>Mening bizneslarim</h1>
+                        <h1>{t('dashboard.title')}</h1>
                         <button className="add-btn" onClick={() => navigate('/business/new')}>
                             <FaPlus />
-                            <span>Yangi qo'shish</span>
+                            <span>{t('dashboard.add_new')}</span>
                         </button>
                     </div>
 
                     {businesses.length === 0 ? (
                         <div className="empty-state">
                             <div className="empty-icon">📋</div>
-                            <h3>Hali biznes yo'q</h3>
-                            <p>Birinchi biznesingizni qo'shing va linklar sahifangizni yarating</p>
+                            <h3>{t('dashboard.empty_title')}</h3>
+                            <p>{t('dashboard.empty_desc')}</p>
                             <button className="add-btn-large" onClick={() => navigate('/business/new')}>
                                 <FaPlus />
-                                Biznes qo'shish
+                                {t('dashboard.add_business')}
                             </button>
                         </div>
                     ) : (
@@ -88,11 +85,11 @@ const Dashboard = () => {
                                         <p className="card-description">{biz.description}</p>
                                     )}
                                     <div className="card-stats">
-                                        <span>{biz.links?.length || 0} link</span>
+                                        <span>{t('dashboard.link_count', { n: biz.links?.length || 0 })}</span>
                                     </div>
                                     <div className="card-actions">
                                         <button className="card-btn edit">
-                                            <FaEdit /> Tahrirlash
+                                            <FaEdit /> {t('common.edit')}
                                         </button>
                                         <a
                                             href={`/${biz.path}`}
@@ -101,7 +98,7 @@ const Dashboard = () => {
                                             className="card-btn view"
                                             onClick={(e) => e.stopPropagation()}
                                         >
-                                            <FaExternalLinkAlt /> Ko'rish
+                                            <FaExternalLinkAlt /> {t('common.view')}
                                         </a>
                                     </div>
                                 </div>

@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 class Business(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='businesses')
@@ -76,6 +77,10 @@ class SiteSettings(models.Model):
     site_description = models.TextField(blank=True)
     contact_email = models.EmailField(blank=True)
     contact_telegram = models.CharField(max_length=100, blank=True, help_text="@username yoki link")
+    contact_phone = models.CharField(max_length=30, blank=True)
+    support_telegram_url = models.CharField(max_length=200, blank=True, help_text="Yordam tugmasi/aloqa uchun Telegram havola, masalan https://t.me/username")
+    telegram_bot_token = models.CharField(max_length=200, blank=True, help_text="Aloqa xabarlarini guruhga yuborish uchun bot tokeni")
+    telegram_chat_id = models.CharField(max_length=50, blank=True, help_text="Xabarlar yuboriladigan guruh/chat ID")
     analytics_code = models.TextField(blank=True, help_text="Google Analytics yoki boshqa analytics kod")
     maintenance_mode = models.BooleanField(default=False)
     
@@ -95,4 +100,65 @@ class SiteSettings(models.Model):
     def get_settings(cls):
         obj, created = cls.objects.get_or_create(pk=1)
         return obj
+
+
+LANG_CHOICES = [('uz', "O'zbek"), ('ru', 'Русский'), ('en', 'English')]
+
+
+class ContactMessage(models.Model):
+    """Landing aloqa formasi xabarlari."""
+    name = models.CharField(max_length=120)
+    contact = models.CharField(max_length=200, help_text="Email yoki Telegram")
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Aloqa xabari"
+        verbose_name_plural = "Aloqa xabarlari"
+
+    def __str__(self):
+        return f"{self.name} ({self.created_at:%Y-%m-%d})"
+
+
+class StaticPage(models.Model):
+    """Admin'dan boshqariladigan statik sahifalar (Biz haqimizda, Maxfiylik, Shartlar)."""
+    SLUG_CHOICES = [('about', 'Biz haqimizda'), ('privacy', 'Maxfiylik'), ('terms', 'Shartlar')]
+    slug = models.CharField(max_length=20, choices=SLUG_CHOICES)
+    language = models.CharField(max_length=2, choices=LANG_CHOICES, default='uz')
+    title = models.CharField(max_length=200)
+    body = models.TextField(help_text="HTML yoki oddiy matn")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('slug', 'language')
+        ordering = ['slug', 'language']
+        verbose_name = "Statik sahifa"
+        verbose_name_plural = "Statik sahifalar"
+
+    def __str__(self):
+        return f"{self.get_slug_display()} [{self.language}]"
+
+
+class BlogPost(models.Model):
+    """Admin'dan boshqariladigan blog postlar."""
+    language = models.CharField(max_length=2, choices=LANG_CHOICES, default='uz')
+    slug = models.SlugField(max_length=120)
+    title = models.CharField(max_length=200)
+    excerpt = models.TextField(blank=True)
+    cover = models.ImageField(upload_to='blog/', blank=True, null=True)
+    body = models.TextField(help_text="HTML yoki oddiy matn")
+    is_published = models.BooleanField(default=True)
+    published_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('slug', 'language')
+        ordering = ['-published_at']
+        verbose_name = "Blog post"
+        verbose_name_plural = "Blog postlar"
+
+    def __str__(self):
+        return f"{self.title} [{self.language}]"
 

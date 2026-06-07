@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'users',
     'businesses',
+    'billing',
 ]
 
 # Jazzmin Admin Theme Settings
@@ -234,7 +235,7 @@ AUTH_USER_MODEL = 'users.CustomUser'
 # Django REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'users.auth.ExpiringTokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
@@ -276,6 +277,26 @@ CACHES = {
         'LOCATION': 'django_cache',
     }
 }
+
+# Email (SMTP) configuration. Falls back to console backend in dev.
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', '')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'  # port 465 uchun
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'MyLink <no-reply@mylink.asia>')
+
+# Frontend base URL (used for password-reset links, etc.)
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+
+# Auth token sliding-expiry window (days)
+TOKEN_EXPIRE_DAYS = int(os.getenv('TOKEN_EXPIRE_DAYS', '7'))
+
+# Google OAuth client id (used to verify Google sign-in ID tokens)
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
+
 
 # Jazzmin + Django 5.2 compatibility patch (format_html bug fix)
 from config.jazzmin_patch import apply_jazzmin_patch

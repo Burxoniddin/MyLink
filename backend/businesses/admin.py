@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.db.models import Count
 from django.utils.html import format_html
-from .models import Business, Link, MenuItem, SiteSettings
+from .models import Business, Link, MenuItem, SiteSettings, ContactMessage, StaticPage, BlogPost
 
 
 class LinkInline(admin.TabularInline):
@@ -88,7 +88,11 @@ class SiteSettingsAdmin(admin.ModelAdmin):
             'fields': ('site_name', 'site_description')
         }),
         ('Aloqa', {
-            'fields': ('contact_email', 'contact_telegram')
+            'fields': ('contact_email', 'contact_phone', 'contact_telegram', 'support_telegram_url')
+        }),
+        ('Telegram bot (aloqa xabarlari guruhga yuboriladi)', {
+            'fields': ('telegram_bot_token', 'telegram_chat_id'),
+            'classes': ('collapse',)
         }),
         ('Tizim', {
             'fields': ('maintenance_mode', 'analytics_code'),
@@ -102,3 +106,37 @@ class SiteSettingsAdmin(admin.ModelAdmin):
     
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(ContactMessage)
+class ContactMessageAdmin(admin.ModelAdmin):
+    list_display = ['name', 'contact', 'short_message', 'is_read', 'created_at']
+    list_filter = ['is_read', 'created_at']
+    list_editable = ['is_read']
+    search_fields = ['name', 'contact', 'message']
+    readonly_fields = ['name', 'contact', 'message', 'created_at']
+    date_hierarchy = 'created_at'
+
+    def short_message(self, obj):
+        return (obj.message[:60] + '...') if len(obj.message) > 60 else obj.message
+    short_message.short_description = 'Xabar'
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(StaticPage)
+class StaticPageAdmin(admin.ModelAdmin):
+    list_display = ['slug', 'language', 'title', 'updated_at']
+    list_filter = ['slug', 'language']
+    search_fields = ['title', 'body']
+
+
+@admin.register(BlogPost)
+class BlogPostAdmin(admin.ModelAdmin):
+    list_display = ['title', 'language', 'is_published', 'published_at']
+    list_filter = ['language', 'is_published']
+    list_editable = ['is_published']
+    search_fields = ['title', 'excerpt', 'body']
+    prepopulated_fields = {'slug': ('title',)}
+    date_hierarchy = 'published_at'

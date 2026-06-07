@@ -4,6 +4,7 @@ import api from '../api';
 import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines, FaTiktok, FaYandex, FaMapMarkedAlt } from 'react-icons/fa';
 import { FaXTwitter } from "react-icons/fa6";
 import LinkButton from '../components/LinkButton';
+import { useTranslation } from 'react-i18next';
 
 // Drag & Drop
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -12,6 +13,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 // Sortable Item Component
 const SortableLinkItem = ({ id, link, index, updateLink, removeLink, getPlatformIcon, detectPlatform }) => {
+    const { t } = useTranslation();
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
     const style = {
@@ -31,12 +33,12 @@ const SortableLinkItem = ({ id, link, index, updateLink, removeLink, getPlatform
             </div>
             <div className="link-fields">
                 <input
-                    placeholder="Link nomi"
+                    placeholder={t('detail.link_name_ph')}
                     value={link.title}
                     onChange={e => updateLink(index, 'title', e.target.value)}
                 />
                 <input
-                    placeholder="t.me/... yoki instagram.com/..."
+                    placeholder={t('detail.link_url_ph')}
                     value={link.url}
                     onChange={e => updateLink(index, 'url', e.target.value)}
                 />
@@ -117,6 +119,7 @@ const SAMPLE_DATA = {
 const BusinessDetail = ({ isNew = false }) => {
     const { path } = useParams();
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('edit');
     const [business, setBusiness] = useState(null);
     const [formData, setFormData] = useState({ path: '', name: '', description: '' });
@@ -199,7 +202,7 @@ const BusinessDetail = ({ isNew = false }) => {
 
             setLogoPreview(res.data.logo);
             setLogoRemoved(false);
-        } catch (err) {
+        } catch {
             navigate('/dashboard');
         } finally {
             setLoading(false);
@@ -241,7 +244,7 @@ const BusinessDetail = ({ isNew = false }) => {
                 });
             }
 
-            setMessage({ type: 'success', text: 'Saqlandi!' });
+            setMessage({ type: 'success', text: t('detail.saved') });
 
             // Redirect to preview after save
             if (isNew) {
@@ -252,9 +255,9 @@ const BusinessDetail = ({ isNew = false }) => {
             setActiveTab('preview');
         } catch (err) {
             if (err.response?.data?.path) {
-                setMessage({ type: 'error', text: 'Bu path band' });
+                setMessage({ type: 'error', text: t('detail.path_taken') });
             } else {
-                setMessage({ type: 'error', text: 'Xatolik yuz berdi' });
+                setMessage({ type: 'error', text: t('common.error') });
             }
         } finally {
             setSaving(false);
@@ -324,20 +327,20 @@ const BusinessDetail = ({ isNew = false }) => {
     };
 
     const tabs = [
-        { id: 'preview', label: 'Preview', icon: <FaEye /> },
-        { id: 'edit', label: 'Edit', icon: <FaEdit /> },
-        { id: 'customize', label: 'Customize', icon: <FaPalette />, disabled: true },
-        { id: 'advanced', label: 'Advanced', icon: <FaCog />, disabled: true },
-        { id: 'upgrade', label: 'Upgrade', icon: <FaStar />, disabled: true },
+        { id: 'preview', label: t('detail.tab_preview'), icon: <FaEye /> },
+        { id: 'edit', label: t('detail.tab_edit'), icon: <FaEdit /> },
+        { id: 'customize', label: t('detail.tab_customize'), icon: <FaPalette />, disabled: true },
+        { id: 'advanced', label: t('detail.tab_advanced'), icon: <FaCog />, disabled: true },
+        { id: 'upgrade', label: t('detail.tab_upgrade'), icon: <FaStar />, disabled: true },
     ];
 
     // Preview data
-    const previewName = formData.name || (isNew ? SAMPLE_DATA.name : 'Biznes nomi');
+    const previewName = formData.name || (isNew ? SAMPLE_DATA.name : t('detail.business_name'));
     const previewDesc = formData.description || (isNew ? SAMPLE_DATA.description : '');
     const previewLinks = links.length > 0 ? links : (isNew ? SAMPLE_DATA.links : []);
 
     if (loading) {
-        return <div className="detail-loading"><div className="spinner"></div><p>Yuklanmoqda...</p></div>;
+        return <div className="detail-loading"><div className="spinner"></div><p>{t('common.loading')}</p></div>;
     }
 
     return (
@@ -350,7 +353,7 @@ const BusinessDetail = ({ isNew = false }) => {
                             <div className="back-icon-box">
                                 <FaArrowLeft />
                             </div>
-                            <span className="back-text">Orqaga</span>
+                            <span className="back-text">{t('common.back')}</span>
                         </Link>
                     </div>
 
@@ -366,14 +369,14 @@ const BusinessDetail = ({ isNew = false }) => {
                                     {tab.icon}
                                 </span>
                                 <span className="tab-label">{tab.label}</span>
-                                {tab.disabled && <span className="soon-badge">Tez kunda</span>}
+                                {tab.disabled && <span className="soon-badge">{t('detail.soon')}</span>}
                             </button>
                         ))}
                     </nav>
 
                     {!isNew && business && (
                         <div className="sidebar-link">
-                            <span className="link-label">Sizning link:</span>
+                            <span className="link-label">{t('detail.your_link')}</span>
                             <a href={`/${business.path}`} target="_blank" rel="noreferrer" className="link-url">
                                 mylink.asia/{business.path}
                             </a>
@@ -415,7 +418,7 @@ const BusinessDetail = ({ isNew = false }) => {
                                     rel="noreferrer"
                                     className="view-site-btn"
                                 >
-                                    <FaExternalLinkAlt /> Saytni ko'rish
+                                    <FaExternalLinkAlt /> {t('detail.view_site')}
                                 </a>
                             )}
                         </div>
@@ -431,10 +434,10 @@ const BusinessDetail = ({ isNew = false }) => {
                                 {/* Left Column - Basic Info */}
                                 <div className="edit-column">
                                     <div className="edit-card">
-                                        <h3>Asosiy ma'lumotlar</h3>
+                                        <h3>{t('detail.basic_info')}</h3>
 
                                         <div className="form-group">
-                                            <label>Path</label>
+                                            <label>{t('detail.path')}</label>
                                             <div className={`input-prefix-group ${pathStatus === 'available' ? 'valid' : ''} ${pathStatus === 'taken' ? 'invalid' : ''}`}>
                                                 <span>mylink.asia/</span>
                                                 <input
@@ -445,34 +448,34 @@ const BusinessDetail = ({ isNew = false }) => {
                                             </div>
                                             {pathStatus && (
                                                 <div className={`path-status ${pathStatus}`}>
-                                                    {pathStatus === 'checking' && 'Tekshirilmoqda...'}
-                                                    {pathStatus === 'available' && <><FaCheck /> Bu path bo'sh</>}
-                                                    {pathStatus === 'taken' && <><FaTimes /> Bu path band</>}
+                                                    {pathStatus === 'checking' && t('detail.checking')}
+                                                    {pathStatus === 'available' && <><FaCheck /> {t('detail.path_available')}</>}
+                                                    {pathStatus === 'taken' && <><FaTimes /> {t('detail.path_taken')}</>}
                                                 </div>
                                             )}
                                         </div>
 
                                         <div className="form-group">
-                                            <label>Biznes nomi</label>
+                                            <label>{t('detail.business_name')}</label>
                                             <input
                                                 value={formData.name}
                                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                                placeholder="Biznesingiz nomi"
+                                                placeholder={t('detail.business_name_ph')}
                                             />
                                         </div>
 
                                         <div className="form-group">
-                                            <label>Tavsif</label>
+                                            <label>{t('detail.description')}</label>
                                             <textarea
                                                 value={formData.description}
                                                 onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                                placeholder="Qisqacha tavsif..."
+                                                placeholder={t('detail.description_ph')}
                                                 rows={4}
                                             />
                                         </div>
 
                                         <div className="form-group">
-                                            <label>Logo</label>
+                                            <label>{t('detail.logo')}</label>
                                             <div
                                                 className={`logo-dropzone ${isDraggingLogo ? 'dragging' : ''} ${logoFile || logoPreview ? 'has-image' : ''}`}
                                                 onDragOver={handleDragOver}
@@ -485,7 +488,7 @@ const BusinessDetail = ({ isNew = false }) => {
                                                         <img src={logoFile ? URL.createObjectURL(logoFile) : logoPreview} alt="" className="logo-preview-img" />
                                                         <div className="logo-overlay">
                                                             <label className="change-logo-btn">
-                                                                O'zgartirish
+                                                                {t('detail.change')}
                                                                 <input type="file" accept="image/*" onChange={handleFileSelect} hidden />
                                                             </label>
                                                             <button
@@ -497,15 +500,15 @@ const BusinessDetail = ({ isNew = false }) => {
                                                                     setLogoRemoved(true);
                                                                 }}
                                                             >
-                                                                <FaTrash /> O'chirish
+                                                                <FaTrash /> {t('common.delete')}
                                                             </button>
                                                         </div>
                                                     </div>
                                                 ) : (
                                                     <label className="dropzone-content">
                                                         <FaCloudUploadAlt className="upload-icon" />
-                                                        <span className="upload-text">Rasm tashlang yoki tanlang</span>
-                                                        <span className="upload-hint">PNG, JPG, max 2MB</span>
+                                                        <span className="upload-text">{t('detail.drop_image')}</span>
+                                                        <span className="upload-hint">{t('detail.image_hint')}</span>
                                                         <input type="file" accept="image/*" onChange={handleFileSelect} hidden />
                                                     </label>
                                                 )}
@@ -517,13 +520,13 @@ const BusinessDetail = ({ isNew = false }) => {
                                 {/* Right Column - Links with Drag & Drop */}
                                 <div className="edit-column">
                                     <div className="edit-card">
-                                        <h3>Linklar</h3>
+                                        <h3>{t('detail.links')}</h3>
 
                                         {links.length === 0 ? (
                                             <div className="no-links">
-                                                <p>Hali link yo'q</p>
+                                                <p>{t('detail.no_links_yet')}</p>
                                                 <button className="add-link-btn-large" onClick={addLink}>
-                                                    <FaPlus /> Birinchi linkni qo'shing
+                                                    <FaPlus /> {t('detail.add_first_link')}
                                                 </button>
                                             </div>
                                         ) : (
@@ -554,7 +557,7 @@ const BusinessDetail = ({ isNew = false }) => {
                                                     </DndContext>
                                                 </div>
                                                 <button className="add-link-btn-bottom" onClick={addLink}>
-                                                    <FaPlus /> Qo'shish
+                                                    <FaPlus /> {t('common.add')}
                                                 </button>
                                             </>
                                         )}
@@ -563,7 +566,7 @@ const BusinessDetail = ({ isNew = false }) => {
                             </div>
 
                             <button className="save-btn" onClick={handleSave} disabled={saving || (isNew && pathStatus === 'taken')}>
-                                <FaSave /> {saving ? 'Saqlanmoqda...' : 'Saqlash'}
+                                <FaSave /> {saving ? t('detail.saving') : t('common.save')}
                             </button>
                         </div>
                     )}
@@ -571,8 +574,8 @@ const BusinessDetail = ({ isNew = false }) => {
                     {(activeTab === 'customize' || activeTab === 'advanced' || activeTab === 'upgrade') && (
                         <div className="coming-soon-section">
                             <div className="coming-icon">🚀</div>
-                            <h2>Tez kunda</h2>
-                            <p>{tabs.find(t => t.id === activeTab)?.label} bo'limi tez orada qo'shiladi.</p>
+                            <h2>{t('detail.soon')}</h2>
+                            <p>{t('detail.soon_section', { section: tabs.find(t2 => t2.id === activeTab)?.label })}</p>
                         </div>
                     )}
                 </main>

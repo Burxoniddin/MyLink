@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Business, Link
+from .models import Business, Link, ContactMessage, StaticPage, BlogPost
 
 class LinkSerializer(serializers.ModelSerializer):
     # Use CharField instead of URLField to allow tel: and mailto: links
@@ -65,5 +65,36 @@ class BusinessSerializer(serializers.ModelSerializer):
             instance.links.all().delete()
             for link_data in links_data:
                 Link.objects.create(business=instance, **link_data)
-                
+
         return instance
+
+
+class ContactMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactMessage
+        fields = ['name', 'contact', 'message']
+
+
+class StaticPageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StaticPage
+        fields = ['slug', 'language', 'title', 'body', 'updated_at']
+
+
+class BlogPostListSerializer(serializers.ModelSerializer):
+    cover = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BlogPost
+        fields = ['slug', 'language', 'title', 'excerpt', 'cover', 'published_at']
+
+    def get_cover(self, obj):
+        if obj.cover:
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.cover.url) if request else obj.cover.url
+        return None
+
+
+class BlogPostDetailSerializer(BlogPostListSerializer):
+    class Meta(BlogPostListSerializer.Meta):
+        fields = BlogPostListSerializer.Meta.fields + ['body']

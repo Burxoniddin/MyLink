@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api';
 import LinkButton from '../components/LinkButton';
-import { FaLink, FaSun, FaMoon } from 'react-icons/fa';
+import { FaSun, FaMoon } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 
 // Backend base URL for media files - auto detect based on environment
 const MEDIA_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -11,6 +12,7 @@ const MEDIA_BASE_URL = window.location.hostname === 'localhost' || window.locati
 
 const LandingPage = () => {
     const { path } = useParams();
+    const { t } = useTranslation();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -23,7 +25,7 @@ const LandingPage = () => {
             try {
                 const res = await api.get(`public/${path}/`);
                 setData(res.data);
-            } catch (err) {
+            } catch {
                 setError(true);
             } finally {
                 setLoading(false);
@@ -57,7 +59,7 @@ const LandingPage = () => {
             <div className={`landing-page ${theme === 'light' ? 'light-theme' : ''}`}>
                 <div className="landing-loading">
                     <div className="landing-spinner"></div>
-                    <p>Yuklanmoqda...</p>
+                    <p>{t('common.loading')}</p>
                 </div>
             </div>
         );
@@ -68,8 +70,8 @@ const LandingPage = () => {
             <div className={`landing-page ${theme === 'light' ? 'light-theme' : ''}`}>
                 <div className="landing-error">
                     <div className="error-icon">🔍</div>
-                    <h2>Sahifa topilmadi</h2>
-                    <p>Siz qidirgan sahifa mavjud emas.</p>
+                    <h2>{t('landing.not_found_title')}</h2>
+                    <p>{t('landing.not_found_desc')}</p>
                 </div>
             </div>
         );
@@ -119,14 +121,14 @@ const LandingPage = () => {
                 {(!data.links || data.links.length === 0) && (
                     <div className="landing-empty">
                         <div className="empty-icon">🔗</div>
-                        <p>Hali havolalar qo'shilmagan</p>
+                        <p>{t('landing.no_links')}</p>
                     </div>
                 )}
 
                 {/* Footer */}
                 <div className="landing-branding">
                     <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer" className="landing-branding-link">
-                        <span className="powered-text">Powered by</span>
+                        <span className="powered-text">{t('landing.powered_by')}</span>
                         <img src="/logo.png" alt="MyLink" className="landing-brand-logo" />
                         <strong>MyLink</strong>
                     </a>

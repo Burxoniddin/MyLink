@@ -3,9 +3,12 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.throttling import AnonRateThrottle
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from billing.services import can_create_business, get_entitlements, sync_locks
+from . import qr
 from .models import Business, Link, SiteSettings, ContactMessage, StaticPage, BlogPost
 from .serializers import (
     BusinessSerializer,
@@ -93,6 +96,37 @@ class BusinessTogglePinView(APIView):
         business.is_pinned = bool(request.data.get('is_pinned'))
         business.save(update_fields=['is_pinned'])
         return Response({'path': business.path, 'is_pinned': business.is_pinned})
+
+
+class BusinessAssetView(APIView):
+    """Download a QR / PDF asset for the owner's business.
+
+    Tier-gated (``qr`` feature): PNG needs Oddiy+ ('png'|'full'); the PDF and the
+    business-card PDF need Pro ('full'). ``fmt`` is supplied by the URL conf."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, path, fmt):
+        business = get_object_or_404(Business, path=path, owner=request.user)
+        qr_level = get_entitlements(request.user)['features']['qr']  # none|png|full
+        url = f"{settings.FRONTEND_URL.rstrip('/')}/{business.path}"
+
+        if fmt == 'qr_png':
+            if qr_level not in ('png', 'full'):
+                raise PermissionDenied({'reason': 'qr'})
+            return self._file(qr.qr_png_bytes(url), 'image/png', f'{business.path}-qr.png')
+
+        # PDF + business card are Pro-only.
+        if qr_level != 'full':
+            raise PermissionDenied({'reason': 'qr'})
+        if fmt == 'qr_pdf':
+            return self._file(qr.qr_pdf_bytes(business, url), 'application/pdf', f'{business.path}-qr.pdf')
+        return self._file(qr.card_pdf_bytes(business, url), 'application/pdf', f'{business.path}-card.pdf')
+
+    @staticmethod
+    def _file(data, content_type, filename):
+        resp = HttpResponse(data, content_type=content_type)
+        resp['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return resp
 
 
 class PublicStatsView(APIView):

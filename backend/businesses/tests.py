@@ -183,3 +183,42 @@ class TogglePinTests(TestCase):
         make_business(other, 'x', 'X')
         res = self.client.post('/api/businesses/x/pin/', {'is_pinned': True}, format='json')
         self.assertEqual(res.status_code, 404)
+
+
+@override_settings(CACHES=LOCMEM)
+class AssetTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(phone_number='+998901113300')
+        self.client = APIClient()
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+        self.biz = make_business(self.user, 'brand', 'Brand')
+
+    def test_free_qr_png_forbidden(self):
+        res = self.client.get('/api/businesses/brand/qr.png')
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.data['reason'], 'qr')
+
+    def test_oddiy_png_ok_pdf_forbidden(self):
+        Subscription.objects.create(user=self.user, tier=ent.ODDIY, expires_at=None)
+        png = self.client.get('/api/businesses/brand/qr.png')
+        self.assertEqual(png.status_code, 200)
+        self.assertEqual(png['Content-Type'], 'image/png')
+        self.assertGreater(len(png.content), 0)
+        pdf = self.client.get('/api/businesses/brand/qr.pdf')
+        self.assertEqual(pdf.status_code, 403)
+
+    def test_pro_all_formats(self):
+        Subscription.objects.create(user=self.user, tier=ent.PRO, expires_at=None)
+        for ext, ctype in [('qr.png', 'image/png'), ('qr.pdf', 'application/pdf'), ('card.pdf', 'application/pdf')]:
+            res = self.client.get(f'/api/businesses/brand/{ext}')
+            self.assertEqual(res.status_code, 200, ext)
+            self.assertEqual(res['Content-Type'], ctype, ext)
+            self.assertGreater(len(res.content), 0, ext)
+
+    def test_cannot_download_others(self):
+        other = User.objects.create_user(phone_number='+998909995544')
+        Subscription.objects.create(user=other, tier=ent.PRO, expires_at=None)
+        make_business(other, 'theirs', 'Theirs')
+        res = self.client.get('/api/businesses/theirs/qr.png')
+        self.assertEqual(res.status_code, 404)

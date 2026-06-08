@@ -3,6 +3,8 @@ djangorestframework
 django-cors-headers
 python-dotenv
 pillow
+qrcode
+reportlab
 requests
 django-jazzmin
 dj-database-url

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api';
-import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaRegStar, FaCopy, FaShareAlt, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines, FaTiktok, FaYandex, FaMapMarkedAlt } from 'react-icons/fa';
+import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaRegStar, FaCopy, FaShareAlt, FaQrcode, FaLock, FaFilePdf, FaIdCard, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines, FaTiktok, FaYandex, FaMapMarkedAlt } from 'react-icons/fa';
 import { FaXTwitter } from "react-icons/fa6";
 import LinkButton from '../components/LinkButton';
 import { useTranslation } from 'react-i18next';
+import { useEntitlements } from '../context/EntitlementContext';
 
 // Drag & Drop
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -120,6 +121,7 @@ const BusinessDetail = ({ isNew = false }) => {
     const { path } = useParams();
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const { entitlements } = useEntitlements();
     const [activeTab, setActiveTab] = useState('edit');
     const [business, setBusiness] = useState(null);
     const [formData, setFormData] = useState({ path: '', name: '', description: '' });
@@ -132,6 +134,8 @@ const BusinessDetail = ({ isNew = false }) => {
     const [message, setMessage] = useState({ type: '', text: '' });
     const [pinned, setPinned] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [showQr, setShowQr] = useState(false);
+    const [qrPreview, setQrPreview] = useState(null);
 
     // Path availability check
     const [pathStatus, setPathStatus] = useState(null); // null, 'available', 'taken', 'checking'
@@ -243,6 +247,38 @@ const BusinessDetail = ({ isNew = false }) => {
             await api.post(`businesses/${business.path}/pin/`, { is_pinned: next });
         } catch {
             setPinned(!next); // revert on failure
+        }
+    };
+
+    const qrLevel = entitlements?.features?.qr || 'none';
+    const canQrPng = qrLevel === 'png' || qrLevel === 'full';
+    const canQrFull = qrLevel === 'full';
+
+    const openQr = async () => {
+        setShowQr(true);
+        if (!canQrPng) return;
+        setQrPreview(null); // show loading, then fetch a fresh preview
+        try {
+            const res = await api.get(`businesses/${business.path}/qr.png`, { responseType: 'blob' });
+            setQrPreview(URL.createObjectURL(res.data));
+        } catch {
+            /* preview unavailable — downloads still work */
+        }
+    };
+
+    const downloadAsset = async (seg) => {
+        try {
+            const res = await api.get(`businesses/${business.path}/${seg}`, { responseType: 'blob' });
+            const url = URL.createObjectURL(res.data);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${business.path}-${seg}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch {
+            /* ignore download failure */
         }
     };
 
@@ -438,6 +474,9 @@ const BusinessDetail = ({ isNew = false }) => {
                             <button type="button" className={`toolbar-btn ${pinned ? 'pinned' : ''}`} onClick={handlePin}>
                                 {pinned ? <FaStar /> : <FaRegStar />}
                                 <span>{pinned ? t('detail.pinned') : t('detail.pin')}</span>
+                            </button>
+                            <button type="button" className="toolbar-btn" onClick={openQr}>
+                                <FaQrcode /> <span>{t('detail.qr_button')}</span>
                             </button>
                         </div>
                     )}
@@ -635,6 +674,57 @@ const BusinessDetail = ({ isNew = false }) => {
                     )}
                 </main>
             </div>
+
+            {showQr && (
+                <div className="qr-modal-overlay" onClick={() => setShowQr(false)}>
+                    <div className="qr-modal" onClick={(e) => e.stopPropagation()}>
+                        <button type="button" className="qr-modal-close" onClick={() => setShowQr(false)} aria-label="close">
+                            <FaTimes />
+                        </button>
+                        <h2>{t('detail.qr_title')}</h2>
+
+                        {canQrPng ? (
+                            <>
+                                <div className="qr-preview">
+                                    {qrPreview
+                                        ? <img src={qrPreview} alt="QR" />
+                                        : <div className="spinner" />}
+                                </div>
+                                <div className="qr-actions">
+                                    <button type="button" className="qr-dl" onClick={() => downloadAsset('qr.png')}>
+                                        <FaQrcode /> {t('detail.qr_png')}
+                                    </button>
+                                    {canQrFull ? (
+                                        <>
+                                            <button type="button" className="qr-dl" onClick={() => downloadAsset('qr.pdf')}>
+                                                <FaFilePdf /> {t('detail.qr_pdf')}
+                                            </button>
+                                            <button type="button" className="qr-dl" onClick={() => downloadAsset('card.pdf')}>
+                                                <FaIdCard /> {t('detail.qr_card')}
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Link to="/pricing" className="qr-dl locked">
+                                                <FaLock /> {t('detail.qr_pdf')} · {t('detail.qr_pro')}
+                                            </Link>
+                                            <Link to="/pricing" className="qr-dl locked">
+                                                <FaLock /> {t('detail.qr_card')} · {t('detail.qr_pro')}
+                                            </Link>
+                                        </>
+                                    )}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="qr-upsell">
+                                <FaLock className="qr-upsell-icon" />
+                                <p>{t('detail.qr_free')}</p>
+                                <Link to="/pricing" className="qr-dl">{t('limit.see_plans')}</Link>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -87,6 +87,10 @@ const Register = () => {
                     <LanguageSwitcher />
                 </div>
                 <div className="login-form-container">
+                    <Link to="/" className="login-logo">
+                        <img src="/logo.png" alt="MyLink" />
+                        MyLink
+                    </Link>
                     <div className="login-header">
                         <h2>{step === 1 ? t('auth.register_title') : t('auth.verify_title')}</h2>
                     </div>

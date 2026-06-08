@@ -150,6 +150,21 @@ select {
   max-width: 400px;
 }
 
+.login-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #4f46e5;
+  font-weight: 700;
+  font-size: 20px;
+  margin-bottom: 28px;
+}
+
+.login-logo img {
+  height: 30px;
+}
+
 .login-header {
   text-align: center;
   margin-bottom: 32px;

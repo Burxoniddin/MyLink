@@ -148,10 +148,7 @@ const HomePage = () => {
                         {isLoggedIn ? (
                             <Link to="/dashboard" className="btn btn-primary">{t('home.dashboard')}</Link>
                         ) : (
-                            <>
-                                <Link to="/login" className="nav-login">{t('home.login')}</Link>
-                                <Link to="/register" className="btn btn-primary">{t('home.start')}</Link>
-                            </>
+                            <Link to="/login" className="btn btn-primary">{t('home.login')}</Link>
                         )}
                     </div>
                 </div>

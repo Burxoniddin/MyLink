@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
+import Pricing from './pages/Pricing';
 import Dashboard from './pages/Dashboard';
 import BusinessDetail from './pages/BusinessDetail';
 import LandingPage from './pages/LandingPage';
@@ -31,7 +32,7 @@ function App() {
         <Route path="/profile" element={<><Navbar /><Profile /></>} />
         <Route path="/analytics" element={<><Navbar /><ComingSoon titleKey="nav.analytics" /></>} />
         <Route path="/referral" element={<><Navbar /><ComingSoon titleKey="nav.referral" /></>} />
-        <Route path="/pricing" element={<><Navbar /><ComingSoon titleKey="nav.pricing" /></>} />
+        <Route path="/pricing" element={<><Navbar /><Pricing /></>} />
 
         {/* Business Detail */}
         <Route path="/business/new" element={<><Navbar /><BusinessDetail isNew /></>} />

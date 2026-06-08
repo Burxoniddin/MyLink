@@ -11,6 +11,7 @@ const Dashboard = () => {
     const [businesses, setBusinesses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState('');
+    const [showUpgrade, setShowUpgrade] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -42,7 +43,7 @@ const Dashboard = () => {
 
     const handleAdd = () => {
         if (atLimit) {
-            setMsg(t('limit.reached', { limit }));
+            setShowUpgrade(true);
             return;
         }
         navigate('/business/new');
@@ -56,7 +57,7 @@ const Dashboard = () => {
             await Promise.all([fetchBusinesses(), refreshEntitlements()]);
         } catch (err) {
             if (err.response?.data?.reason === 'profile_limit') {
-                setMsg(t('limit.reached', { limit }));
+                setShowUpgrade(true);
             } else {
                 setMsg(t('common.error'));
             }
@@ -173,6 +174,58 @@ const Dashboard = () => {
                     )}
                 </div>
             </main>
+
+            {showUpgrade && (
+                <div
+                    onClick={() => setShowUpgrade(false)}
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(17,24,39,0.55)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 1000, padding: 16,
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: '#fff', borderRadius: 16, padding: 28, maxWidth: 420, width: '100%',
+                            boxShadow: '0 20px 60px -20px rgba(0,0,0,0.4)', textAlign: 'center',
+                        }}
+                    >
+                        <div style={{ fontSize: 40, marginBottom: 12 }}>🚀</div>
+                        <h2 style={{ margin: '0 0 10px', fontSize: 20 }}>{t('limit.modal_title')}</h2>
+                        <p style={{ margin: '0 0 22px', color: '#6b7280', fontSize: 15, lineHeight: 1.5 }}>
+                            {t('limit.modal_text', { limit })}
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <button
+                                className="add-btn"
+                                style={{ justifyContent: 'center' }}
+                                onClick={() => navigate('/pricing')}
+                            >
+                                {t('limit.see_plans')}
+                            </button>
+                            <button
+                                onClick={() => navigate('/profile')}
+                                style={{
+                                    padding: '10px 16px', borderRadius: 10, border: '1px solid #e5e7eb',
+                                    background: '#fff', color: '#374151', fontWeight: 600, cursor: 'pointer',
+                                }}
+                            >
+                                {t('limit.enter_promo')}
+                            </button>
+                            <button
+                                onClick={() => setShowUpgrade(false)}
+                                style={{
+                                    padding: '8px', border: 'none', background: 'none',
+                                    color: '#9ca3af', fontSize: 14, cursor: 'pointer',
+                                }}
+                            >
+                                {t('common.cancel')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

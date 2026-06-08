@@ -10,11 +10,17 @@
     "error": "Xatolik yuz berdi",
     "cancel": "Bekor qilish"
   },
+  "pricing": {
+    "your_plan": "Joriy tarifingiz",
+    "activate_promo": "Promokod bilan faollashtirish",
+    "payment_soon": "Onlayn to'lov (Click / Payme) tez orada. Hozircha tarifni promokod orqali faollashtirishingiz mumkin."
+  },
   "nav": {
     "businesses": "Bizneslarim",
     "analytics": "Analitika",
     "referral": "Referal",
     "pricing": "Tariflar",
+    "profile": "Profil",
     "logout": "Chiqish",
     "dashboard": "Boshqaruv paneli"
   },
@@ -232,7 +238,11 @@
     "reached": "Tarif limiti ({{limit}} ta) to'ldi. Yangi sahifa uchun bittasini o'chiring yoki tarifni yangilang.",
     "locked_badge": "Bloklangan",
     "activate": "Faollashtirish",
-    "deactivate": "O'chirish"
+    "deactivate": "O'chirish",
+    "modal_title": "Tarif limiti to'ldi",
+    "modal_text": "Joriy tarifingizda {{limit}} ta sahifa mavjud. Ko'proq sahifa ochish uchun tarifni yangilang yoki promokod kiriting.",
+    "see_plans": "Tariflarni ko'rish",
+    "enter_promo": "Promokod kiritish"
   },
   "help": {
     "label": "Yordam",

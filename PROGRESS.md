@@ -3,7 +3,7 @@
 > **Maqsad:** Ikki kompyuter o'rtasida ishni uzluksiz davom ettirish. Bu fayl `dev` branch'da turadi va git orqali sinxronlanadi.
 > **Qoida:** Har ish seansidan so'ng pastdagi **§4 Holat** bo'limini yangilab, commit qilib qo'ying.
 
-**Oxirgi yangilanish:** 2026-06-08 (1b + 1c bajarildi) · **Faol branch:** `dev` · **Repo:** https://github.com/Burxoniddin/MyLink (public)
+**Oxirgi yangilanish:** 2026-06-08 (1b + 1c + UX: Pricing sahifa, Profil kirish, limit modal, auth logo) · **Faol branch:** `dev` · **Repo:** https://github.com/Burxoniddin/MyLink (public)
 
 ---
 
@@ -102,6 +102,13 @@ VITE_GOOGLE_CLIENT_ID=<google oauth client id — backend bilan bir xil>
 - [x] **Aloqa (Contact)** — forma → backend → **Telegram guruhga forward** + adminka; userga "qabul qilindi" xabari
 - [x] **CMS sahifalar** — About/Blog/Privacy/Terms (`StaticPage`/`BlogPost`, adminkadan)
 - [x] **Help CTA** — past-o'ng burchakda Telegram tugmasi (jivo uslubida)
+
+### ✅ UX yaxshilanishlar (1b/1c'ni test qilib bo'ladigan qilish — oxirgi seans)
+- [x] **Navbar → Profil** kirish nuqtasi + joriy **tarif badge** (desktop + mobil). Avval `/profile` route bor edi, lekin unga havola yo'q edi → promokod forma "yashirin" edi. Endi ochiq.
+- [x] **`/pricing` jonlandi** — `Pricing.jsx` (ComingSoon o'rniga): landing'dagi 3 tarif kartochkasi, joriy tarif yashil "Joriy tarifingiz" bilan; "Sotib olish" o'rniga **"Promokod bilan faollashtirish" → Profil**; "💳 Onlayn to'lov (Click/Payme) tez orada" banneri (checkout 1a bilan keladi).
+- [x] **Limit upgrade modal** — Dashboard'da limitga yetib "Yangi qo'shish"/"Faollashtirish" bosilganda inline xabar o'rniga **modal**: Tariflarni ko'rish / Promokod kiritish / Bekor qilish.
+- [x] **Auth sahifa logosi** — Login/Register/Forgot'da MyLink logosi (forma ustida, chapda) → bosilsa landing'ga (`/`) qaytaradi. (Avval absolute edi → ko'k rasm ustiga tushib ko'rinmayotgandi; oddiy oqimga ko'chirildi.)
+- [x] **Landing header** — faqat "Tizimga kirish" tugmasi (ortiqcha "Boshlash" olib tashlandi).
 
 ### ⏳ Navbatdagi ishlar (yo'l xaritasi tartibida)
 - [ ] **1a · To'lov: Click + Payme** — ⏸️ *hozircha kechiktirildi (foydalanuvchi qarori)*. Merchant akkaunt kerak.

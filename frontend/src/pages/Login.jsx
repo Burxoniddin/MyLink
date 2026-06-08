@@ -65,6 +65,10 @@ const Login = () => {
                     <LanguageSwitcher />
                 </div>
                 <div className="login-form-container">
+                    <Link to="/" className="login-logo">
+                        <img src="/logo.png" alt="MyLink" />
+                        MyLink
+                    </Link>
                     <div className="login-header">
                         <h2>{t('login.title_phone')}</h2>
                     </div>

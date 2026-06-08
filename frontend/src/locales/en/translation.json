@@ -10,11 +10,17 @@
     "error": "An error occurred",
     "cancel": "Cancel"
   },
+  "pricing": {
+    "your_plan": "Your plan",
+    "activate_promo": "Activate with promo code",
+    "payment_soon": "Online payment (Click / Payme) is coming soon. For now you can activate a plan with a promo code."
+  },
   "nav": {
     "businesses": "My businesses",
     "analytics": "Analytics",
     "referral": "Referral",
     "pricing": "Pricing",
+    "profile": "Profile",
     "logout": "Log out",
     "dashboard": "Dashboard"
   },
@@ -232,7 +238,11 @@
     "reached": "Plan limit ({{limit}}) reached. Deactivate a page or upgrade your plan.",
     "locked_badge": "Locked",
     "activate": "Activate",
-    "deactivate": "Deactivate"
+    "deactivate": "Deactivate",
+    "modal_title": "Plan limit reached",
+    "modal_text": "Your current plan allows {{limit}} page(s). To create more, upgrade your plan or enter a promo code.",
+    "see_plans": "View plans",
+    "enter_promo": "Enter promo code"
   },
   "help": {
     "label": "Help",

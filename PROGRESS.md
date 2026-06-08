@@ -3,7 +3,7 @@
 > **Maqsad:** Ikki kompyuter o'rtasida ishni uzluksiz davom ettirish. Bu fayl `dev` branch'da turadi va git orqali sinxronlanadi.
 > **Qoida:** Har ish seansidan so'ng pastdagi **§4 Holat** bo'limini yangilab, commit qilib qo'ying.
 
-**Oxirgi yangilanish:** 2026-06-09 (2a toolbar/pin + 2b QR/PDF) · **Faol branch:** `dev` · **Repo:** https://github.com/Burxoniddin/MyLink (public)
+**Oxirgi yangilanish:** 2026-06-09 (2a toolbar/pin + 2b QR/PDF + 2c content bloklari) · **Faol branch:** `dev` · **Repo:** https://github.com/Burxoniddin/MyLink (public)
 
 ---
 
@@ -116,7 +116,7 @@ VITE_GOOGLE_CLIENT_ID=<google oauth client id — backend bilan bir xil>
 - [x] **1c · Limitlarni qo'llash** — `Business.is_locked`; yaratishda `profile_limit` gate (403 + `reason`); `services.sync_locks` (downgrade'da eng yangilarni bloklaydi, eng eskini faol qoldiradi); toggle endpoint `POST /api/businesses/<path>/lock/` (faollashtirish limitdan oshsa rad); public sahifa bloklanganda 404; serializer `branding_removed`+`verified` flaglari; Dashboard'da N/limit + locked badge + faollashtir/o'chir; LandingPage'da branding yashirish + verified galochka. `/api/me/` `usage.active` qaytaradi.
 - [x] **2a · Tepa toolbar** — `Business.is_pinned` (migration `businesses/0009`); `POST /api/businesses/<path>/pin/` toggle (tier gate yo'q); Dashboard ro'yxati `-is_pinned, -created_at` bo'yicha (qadalganlar tepada); serializer `is_pinned` (read-only); admin list+filter+editable. Frontend: BusinessDetail editor tepasida **toolbar** (Havoladan nusxa / Ulashish=Web Share API / Ko'rinish=public sahifa / Qadash=yulduzcha); Dashboard pinned kartochkada ⭐ badge. uz/ru/en. Testlar: +3 (jami 44 o'tadi).
 - [x] **2b · QR + PDF** — `qrcode`+`reportlab` (requirements'ga qo'shildi). `businesses/qr.py`: QR PNG, A4 QR PDF, 85×55mm vizitka `card.pdf` (logo bo'lsa qo'shadi). Endpoint `GET /api/businesses/<path>/{qr.png,qr.pdf,card.pdf}` — owner-only, tarif gate (`qr`: none→403, png→PNG, full→hammasi). Frontend: editor toolbar'da **QR / PDF** tugma → modal (QR preview + yuklab olish; Oddiy'da PDF/vizitka 🔒Pro → /pricing; Free'da upsell). uz/ru/en. Testlar: +4 (jami 48 o'tadi).
-- [ ] **2c · Banner/content bloklari** — `ContentBlock` (rasm/video/matn); video = embed + fayl yuklash (≤50MB); dnd tartiblash
+- [x] **2c · Banner/content bloklari** — `ContentBlock` (rasm/video/matn, migration `0010`); CRUD endpointlar `GET/POST /api/businesses/<path>/blocks/`, `PATCH/DELETE /api/blocks/<id>/`, `POST .../blocks/reorder/`; tarif gate (`banners` soni + video uchun `banner_video`); video=embed YOKI fayl (≤50MB, serializer validatsiya). Public payload'da `content_blocks`. Frontend: `components/ContentBlocks.jsx` — yangi **Bloklar** tab (dnd, har blok uchun Saqlash/O'chirish, rasm/video upload, embed), Free→upsell; LandingPage'da render (matn/rasm/`<video>`/YouTube iframe). uz/ru/en. Testlar: +8 (jami 56 o'tadi). **Prod eslatma:** nginx `client_max_body_size 50M` kerak (50MB video upload uchun).
 - [ ] **2d · Analitika** — `Event` (view/click/share/banner); `POST /api/track/`; `recharts` grafiklar; landing stats shunga ulanadi
 - [ ] **3a · Shablonlar + ranglar + avatar** — `template` slug (5 yangi), `theme` JSON, `react-easy-crop` avatar
 - [ ] **4a · Referral** — `ReferralCode`, `?ref=`; do'st Pro olganda +1 oy Pro (yiliga ≤12)

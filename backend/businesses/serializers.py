@@ -1,13 +1,28 @@
 from rest_framework import serializers
-from .models import Business, Link, ContactMessage, StaticPage, BlogPost
+from .models import Business, Link, ContentBlock, ContactMessage, StaticPage, BlogPost
 
 class LinkSerializer(serializers.ModelSerializer):
     # Use CharField instead of URLField to allow tel: and mailto: links
     url = serializers.CharField(max_length=500)
-    
+
     class Meta:
         model = Link
         fields = ['id', 'title', 'url', 'icon_type', 'order']
+
+
+class ContentBlockSerializer(serializers.ModelSerializer):
+    MAX_VIDEO_BYTES = 50 * 1024 * 1024  # 50 MB
+
+    class Meta:
+        model = ContentBlock
+        fields = ['id', 'block_type', 'order', 'title', 'text', 'image', 'video', 'embed_url']
+        read_only_fields = ['order']
+
+    def validate(self, attrs):
+        video = attrs.get('video')
+        if video and video.size > self.MAX_VIDEO_BYTES:
+            raise serializers.ValidationError({'reason': 'video_too_large'})
+        return attrs
 
 class BusinessSerializer(serializers.ModelSerializer):
     links = LinkSerializer(many=True, required=False)
@@ -16,12 +31,16 @@ class BusinessSerializer(serializers.ModelSerializer):
     logo_remove = serializers.BooleanField(write_only=True, required=False, default=False)
     branding_removed = serializers.SerializerMethodField()
     verified = serializers.SerializerMethodField()
+    content_blocks = serializers.SerializerMethodField()
 
     class Meta:
         model = Business
         fields = ['id', 'path', 'name', 'description', 'logo', 'logo_upload', 'logo_remove',
-                  'is_locked', 'is_pinned', 'branding_removed', 'verified', 'created_at', 'links']
+                  'is_locked', 'is_pinned', 'branding_removed', 'verified', 'created_at', 'links', 'content_blocks']
         read_only_fields = ['is_locked', 'is_pinned']
+
+    def get_content_blocks(self, obj):
+        return ContentBlockSerializer(obj.content_blocks.all(), many=True, context=self.context).data
 
     def _owner_features(self, obj):
         """Owner tier features, cached per-request so a dashboard list doesn't

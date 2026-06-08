@@ -72,6 +72,7 @@
     "qr_card": "Business card (PDF)",
     "qr_free": "QR code is available on the Oddiy and Pro plans.",
     "qr_pro": "Pro",
+    "tab_blocks": "Blocks",
     "tab_preview": "Preview",
     "tab_edit": "Edit",
     "tab_customize": "Customize",
@@ -246,6 +247,24 @@
     "blog_title": "Blog",
     "blog_read": "Read",
     "blog_empty": "No posts yet"
+  },
+  "blocks": {
+    "title": "Content blocks",
+    "image": "Image",
+    "video": "Video",
+    "text": "Text",
+    "title_ph": "Title (optional)",
+    "text_ph": "Text...",
+    "embed_ph": "YouTube/embed link",
+    "or": "or",
+    "upload_image": "Upload image",
+    "upload_video": "Upload video (≤50MB)",
+    "saved": "Saved",
+    "empty": "No blocks yet. Add one above.",
+    "upsell": "Content blocks are available on the Oddiy and Pro plans.",
+    "err_banner_limit": "Block limit reached.",
+    "err_banner_video": "Video blocks are Pro-only.",
+    "err_video_too_large": "Video must be 50MB or less."
   },
   "limit": {
     "reached": "Plan limit ({{limit}}) reached. Deactivate a page or upgrade your plan.",

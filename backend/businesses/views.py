@@ -5,13 +5,15 @@ from rest_framework.views import APIView
 from rest_framework.throttling import AnonRateThrottle
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db.models import Max
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from billing.services import can_create_business, get_entitlements, sync_locks
 from . import qr
-from .models import Business, Link, SiteSettings, ContactMessage, StaticPage, BlogPost
+from .models import Business, Link, ContentBlock, SiteSettings, ContactMessage, StaticPage, BlogPost
 from .serializers import (
     BusinessSerializer,
+    ContentBlockSerializer,
     ContactMessageSerializer,
     StaticPageSerializer,
     BlogPostListSerializer,
@@ -127,6 +129,56 @@ class BusinessAssetView(APIView):
         resp = HttpResponse(data, content_type=content_type)
         resp['Content-Disposition'] = f'attachment; filename="{filename}"'
         return resp
+
+
+class ContentBlockListCreateView(generics.ListCreateAPIView):
+    """List/create content blocks for the owner's business. Creation is gated by
+    the ``banners`` count limit and, for video blocks, ``banner_video``."""
+    serializer_class = ContentBlockSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _business(self):
+        return get_object_or_404(Business, path=self.kwargs['path'], owner=self.request.user)
+
+    def get_queryset(self):
+        return ContentBlock.objects.filter(business=self._business())
+
+    def perform_create(self, serializer):
+        business = self._business()
+        feats = get_entitlements(self.request.user)['features']
+        if ContentBlock.objects.filter(business=business).count() >= feats['banners']:
+            raise PermissionDenied({'reason': 'banner_limit', 'limit': feats['banners']})
+        if serializer.validated_data.get('block_type') == 'video' and not feats['banner_video']:
+            raise PermissionDenied({'reason': 'banner_video'})
+        last = ContentBlock.objects.filter(business=business).aggregate(m=Max('order'))['m'] or 0
+        serializer.save(business=business, order=last + 1)
+
+
+class ContentBlockDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Update/delete a single block (owner only)."""
+    serializer_class = ContentBlockSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return ContentBlock.objects.filter(business__owner=self.request.user)
+
+    def perform_update(self, serializer):
+        feats = get_entitlements(self.request.user)['features']
+        block_type = serializer.validated_data.get('block_type', serializer.instance.block_type)
+        if block_type == 'video' and not feats['banner_video']:
+            raise PermissionDenied({'reason': 'banner_video'})
+        serializer.save()
+
+
+class ContentBlockReorderView(APIView):
+    """Persist a new block order: body ``{"order": [id, id, ...]}``."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, path):
+        business = get_object_or_404(Business, path=path, owner=request.user)
+        for index, block_id in enumerate(request.data.get('order', [])):
+            ContentBlock.objects.filter(id=block_id, business=business).update(order=index)
+        return Response({'ok': True})
 
 
 class PublicStatsView(APIView):

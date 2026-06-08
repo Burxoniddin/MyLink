@@ -1,13 +1,19 @@
 from django.contrib import admin
 from django.db.models import Count
 from django.utils.html import format_html
-from .models import Business, Link, MenuItem, SiteSettings, ContactMessage, StaticPage, BlogPost
+from .models import Business, Link, ContentBlock, MenuItem, SiteSettings, ContactMessage, StaticPage, BlogPost
 
 
 class LinkInline(admin.TabularInline):
     model = Link
     extra = 1
     fields = ['icon_type', 'title', 'url', 'order']
+
+
+class ContentBlockInline(admin.TabularInline):
+    model = ContentBlock
+    extra = 0
+    fields = ['block_type', 'title', 'text', 'image', 'video', 'embed_url', 'order']
 
 
 @admin.register(Business)
@@ -18,7 +24,7 @@ class BusinessAdmin(admin.ModelAdmin):
     search_fields = ['name', 'path', 'owner__phone_number']
     ordering = ['-created_at']
     prepopulated_fields = {'path': ('name',)}
-    inlines = [LinkInline]
+    inlines = [LinkInline, ContentBlockInline]
     
     def public_link(self, obj):
         url = f'https://mylink.asia/{obj.path}'

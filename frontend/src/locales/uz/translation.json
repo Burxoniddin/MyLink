@@ -72,6 +72,7 @@
     "qr_card": "Vizitka (PDF)",
     "qr_free": "QR kod Oddiy va Pro tariflarda mavjud.",
     "qr_pro": "Pro",
+    "tab_blocks": "Bloklar",
     "tab_preview": "Ko'rinish",
     "tab_edit": "Tahrirlash",
     "tab_customize": "Sozlash",
@@ -246,6 +247,24 @@
     "blog_title": "Blog",
     "blog_read": "O'qish",
     "blog_empty": "Hozircha post yo'q"
+  },
+  "blocks": {
+    "title": "Kontent bloklar",
+    "image": "Rasm",
+    "video": "Video",
+    "text": "Matn",
+    "title_ph": "Sarlavha (ixtiyoriy)",
+    "text_ph": "Matn...",
+    "embed_ph": "YouTube/embed havola",
+    "or": "yoki",
+    "upload_image": "Rasm yuklash",
+    "upload_video": "Video yuklash (≤50MB)",
+    "saved": "Saqlandi",
+    "empty": "Hali blok yo'q. Yuqoridan qo'shing.",
+    "upsell": "Kontent bloklar Oddiy va Pro tariflarda mavjud.",
+    "err_banner_limit": "Bloklar limiti to'ldi.",
+    "err_banner_video": "Video bloklar faqat Pro tarifda.",
+    "err_video_too_large": "Video hajmi 50MB dan oshmasligi kerak."
   },
   "limit": {
     "reached": "Tarif limiti ({{limit}} ta) to'ldi. Yangi sahifa uchun bittasini o'chiring yoki tarifni yangilang.",

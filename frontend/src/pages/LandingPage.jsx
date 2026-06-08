@@ -54,6 +54,13 @@ const LandingPage = () => {
         return `${MEDIA_BASE_URL}${logo}`;
     };
 
+    // Convert a YouTube watch/short URL to an embeddable URL; pass others through.
+    const toEmbed = (url) => {
+        if (!url) return '';
+        const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/);
+        return yt ? `https://www.youtube.com/embed/${yt[1]}` : url;
+    };
+
     if (loading) {
         return (
             <div className={`landing-page ${theme === 'light' ? 'light-theme' : ''}`}>
@@ -126,10 +133,36 @@ const LandingPage = () => {
                 </div>
 
                 {/* Empty state */}
-                {(!data.links || data.links.length === 0) && (
+                {(!data.links || data.links.length === 0) && (!data.content_blocks || data.content_blocks.length === 0) && (
                     <div className="landing-empty">
                         <div className="empty-icon">🔗</div>
                         <p>{t('landing.no_links')}</p>
+                    </div>
+                )}
+
+                {/* Content blocks (banners / video / text) */}
+                {data.content_blocks && data.content_blocks.length > 0 && (
+                    <div className="landing-blocks">
+                        {data.content_blocks.map((b) => (
+                            <div key={b.id} className="landing-block">
+                                {b.title && <h3 className="landing-block-title">{b.title}</h3>}
+                                {b.block_type === 'text' && b.text && (
+                                    <p className="landing-block-text">{b.text}</p>
+                                )}
+                                {b.block_type === 'image' && b.image && (
+                                    <img src={getLogoUrl(b.image)} alt={b.title || ''} className="landing-block-img" />
+                                )}
+                                {b.block_type === 'video' && (
+                                    b.video ? (
+                                        <video src={getLogoUrl(b.video)} controls className="landing-block-video" />
+                                    ) : b.embed_url ? (
+                                        <div className="landing-block-embed">
+                                            <iframe src={toEmbed(b.embed_url)} title={b.title || 'video'} allowFullScreen />
+                                        </div>
+                                    ) : null
+                                )}
+                            </div>
+                        ))}
                     </div>
                 )}
 

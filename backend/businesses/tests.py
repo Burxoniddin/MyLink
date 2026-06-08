@@ -9,7 +9,7 @@ from rest_framework.test import APIClient
 from billing import entitlements as ent
 from billing.models import Subscription
 from billing.services import sync_locks
-from businesses.models import Business
+from businesses.models import Business, ContentBlock
 
 User = get_user_model()
 
@@ -221,4 +221,74 @@ class AssetTests(TestCase):
         Subscription.objects.create(user=other, tier=ent.PRO, expires_at=None)
         make_business(other, 'theirs', 'Theirs')
         res = self.client.get('/api/businesses/theirs/qr.png')
+        self.assertEqual(res.status_code, 404)
+
+
+@override_settings(CACHES=LOCMEM)
+class ContentBlockTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(phone_number='+998901114400')
+        self.client = APIClient()
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+        self.biz = make_business(self.user, 'brand', 'Brand')
+
+    def grant(self, tier):
+        Subscription.objects.create(user=self.user, tier=tier, expires_at=None)
+
+    def _add(self, **data):
+        return self.client.post('/api/businesses/brand/blocks/', data, format='json')
+
+    def test_free_cannot_create(self):
+        res = self._add(block_type='text', text='hi')
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.data['reason'], 'banner_limit')
+
+    def test_oddiy_limit_three(self):
+        self.grant(ent.ODDIY)
+        for i in range(3):
+            self.assertEqual(self._add(block_type='text', text=f't{i}').status_code, 201)
+        over = self._add(block_type='text', text='x')
+        self.assertEqual(over.status_code, 403)
+        self.assertEqual(over.data['reason'], 'banner_limit')
+
+    def test_oddiy_video_forbidden(self):
+        self.grant(ent.ODDIY)
+        res = self._add(block_type='video', embed_url='https://youtu.be/x')
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.data['reason'], 'banner_video')
+
+    def test_pro_video_ok_and_order(self):
+        self.grant(ent.PRO)
+        a = self._add(block_type='video', embed_url='https://youtu.be/x')
+        b = self._add(block_type='text', text='hello')
+        self.assertEqual(a.status_code, 201)
+        self.assertEqual(b.status_code, 201)
+        self.assertLess(a.data['order'], b.data['order'])
+
+    def test_reorder(self):
+        self.grant(ent.PRO)
+        ids = [self._add(block_type='text', text=f't{i}').data['id'] for i in range(3)]
+        self.client.post('/api/businesses/brand/blocks/reorder/', {'order': list(reversed(ids))}, format='json')
+        res = self.client.get('/api/businesses/brand/blocks/')
+        self.assertEqual([b['id'] for b in res.data], list(reversed(ids)))
+
+    def test_delete(self):
+        self.grant(ent.PRO)
+        bid = self._add(block_type='text', text='x').data['id']
+        self.assertEqual(self.client.delete(f'/api/blocks/{bid}/').status_code, 204)
+        self.assertEqual(ContentBlock.objects.filter(business=self.biz).count(), 0)
+
+    def test_blocks_in_public_payload(self):
+        self.grant(ent.PRO)
+        self._add(block_type='text', title='Promo', text='Sale')
+        res = self.client.get('/api/public/brand/')
+        self.assertEqual(len(res.data['content_blocks']), 1)
+        self.assertEqual(res.data['content_blocks'][0]['title'], 'Promo')
+
+    def test_cannot_create_on_others(self):
+        other = User.objects.create_user(phone_number='+998909994433')
+        Subscription.objects.create(user=other, tier=ent.PRO, expires_at=None)
+        make_business(other, 'theirs', 'Theirs')
+        res = self.client.post('/api/businesses/theirs/blocks/', {'block_type': 'text', 'text': 'x'}, format='json')
         self.assertEqual(res.status_code, 404)

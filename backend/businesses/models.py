@@ -53,6 +53,33 @@ class Link(models.Model):
         return f"{self.title} - {self.business.name}"
 
 
+class ContentBlock(models.Model):
+    """A banner / content block shown on the public page below the links.
+
+    One of three types: image (uploaded), video (uploaded file *or* embed URL),
+    or text. Count + video access are tier-gated (see billing entitlements
+    ``banners`` / ``banner_video``). Ordered like ``Link``."""
+    BLOCK_TYPES = [('image', 'Rasm'), ('video', 'Video'), ('text', 'Matn')]
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='content_blocks')
+    block_type = models.CharField(max_length=10, choices=BLOCK_TYPES)
+    order = models.PositiveIntegerField(default=0)
+    title = models.CharField(max_length=200, blank=True)
+    text = models.TextField(blank=True)
+    image = models.ImageField(upload_to='blocks/', blank=True, null=True)
+    video = models.FileField(upload_to='blocks/videos/', blank=True, null=True)
+    embed_url = models.CharField(max_length=500, blank=True, help_text="YouTube/Instagram embed havolasi")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = "Kontent blok"
+        verbose_name_plural = "Kontent bloklar"
+
+    def __str__(self):
+        return f"{self.get_block_type_display()} — {self.business.name}"
+
+
 class MenuItem(models.Model):
     """Dynamic menu items for navbar, sidebar, footer"""
     LOCATION_CHOICES = [

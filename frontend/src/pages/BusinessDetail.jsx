@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api';
-import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaRegStar, FaCopy, FaShareAlt, FaQrcode, FaLock, FaFilePdf, FaIdCard, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines, FaTiktok, FaYandex, FaMapMarkedAlt } from 'react-icons/fa';
+import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaRegStar, FaCopy, FaShareAlt, FaQrcode, FaLock, FaFilePdf, FaIdCard, FaLayerGroup, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines, FaTiktok, FaYandex, FaMapMarkedAlt } from 'react-icons/fa';
 import { FaXTwitter } from "react-icons/fa6";
 import LinkButton from '../components/LinkButton';
+import ContentBlocks from '../components/ContentBlocks';
 import { useTranslation } from 'react-i18next';
 import { useEntitlements } from '../context/EntitlementContext';
 
@@ -402,6 +403,7 @@ const BusinessDetail = ({ isNew = false }) => {
     const tabs = [
         { id: 'preview', label: t('detail.tab_preview'), icon: <FaEye /> },
         { id: 'edit', label: t('detail.tab_edit'), icon: <FaEdit /> },
+        ...(!isNew ? [{ id: 'blocks', label: t('detail.tab_blocks'), icon: <FaLayerGroup /> }] : []),
         { id: 'customize', label: t('detail.tab_customize'), icon: <FaPalette />, disabled: true },
         { id: 'advanced', label: t('detail.tab_advanced'), icon: <FaCog />, disabled: true },
         { id: 'upgrade', label: t('detail.tab_upgrade'), icon: <FaStar />, disabled: true },
@@ -662,6 +664,12 @@ const BusinessDetail = ({ isNew = false }) => {
                             <button className="save-btn" onClick={handleSave} disabled={saving || (isNew && pathStatus === 'taken')}>
                                 <FaSave /> {saving ? t('detail.saving') : t('common.save')}
                             </button>
+                        </div>
+                    )}
+
+                    {activeTab === 'blocks' && !isNew && business && (
+                        <div className="edit-section">
+                            <ContentBlocks path={business.path} />
                         </div>
                     )}
 

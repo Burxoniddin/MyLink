@@ -58,3 +58,7 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Local-only secret backups — NEVER commit (plaintext .env values)
+*env-backup*
+*ENV-backup*

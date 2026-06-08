@@ -59,6 +59,12 @@
     "powered_by": "Powered by"
   },
   "detail": {
+    "copy_link": "Havoladan nusxa olish",
+    "copied": "Nusxalandi!",
+    "share": "Ulashish",
+    "pin": "Qadash",
+    "unpin": "Qadashni olib tashlash",
+    "pinned": "Qadalgan",
     "tab_preview": "Ko'rinish",
     "tab_edit": "Tahrirlash",
     "tab_customize": "Sozlash",

@@ -12,6 +12,9 @@ class Business(models.Model):
     # downgrade). Locked pages are hidden publicly; the owner picks which to keep
     # active. See billing.services.sync_locks / businesses toggle endpoint.
     is_locked = models.BooleanField(default=False)
+    # Owner-pinned ("starred") pages float to the top of the dashboard list.
+    # Toggled via the businesses pin endpoint; affects dashboard ordering only.
+    is_pinned = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

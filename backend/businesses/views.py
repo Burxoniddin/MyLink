@@ -30,7 +30,8 @@ class BusinessListCreateView(generics.ListCreateAPIView):
         # Re-enforce locks on dashboard load so a downgrade takes effect even if
         # the user never hit the toggle endpoint.
         sync_locks(self.request.user)
-        return Business.objects.filter(owner=self.request.user)
+        # Pinned ("starred") pages first, then newest.
+        return Business.objects.filter(owner=self.request.user).order_by('-is_pinned', '-created_at')
 
     def perform_create(self, serializer):
         if not can_create_business(self.request.user):
@@ -80,6 +81,18 @@ class BusinessToggleLockView(APIView):
         business.is_locked = is_locked
         business.save(update_fields=['is_locked'])
         return Response({'path': business.path, 'is_locked': business.is_locked})
+
+
+class BusinessTogglePinView(APIView):
+    """Owner pins/unpins one of their businesses to float it to the top of the
+    dashboard. No tier gate — pinning is purely a display preference."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, path):
+        business = get_object_or_404(Business, path=path, owner=request.user)
+        business.is_pinned = bool(request.data.get('is_pinned'))
+        business.save(update_fields=['is_pinned'])
+        return Response({'path': business.path, 'is_pinned': business.is_pinned})
 
 
 class PublicStatsView(APIView):

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api';
-import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines, FaTiktok, FaYandex, FaMapMarkedAlt } from 'react-icons/fa';
+import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaRegStar, FaCopy, FaShareAlt, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines, FaTiktok, FaYandex, FaMapMarkedAlt } from 'react-icons/fa';
 import { FaXTwitter } from "react-icons/fa6";
 import LinkButton from '../components/LinkButton';
 import { useTranslation } from 'react-i18next';
@@ -130,6 +130,8 @@ const BusinessDetail = ({ isNew = false }) => {
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
+    const [pinned, setPinned] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     // Path availability check
     const [pathStatus, setPathStatus] = useState(null); // null, 'available', 'taken', 'checking'
@@ -191,6 +193,7 @@ const BusinessDetail = ({ isNew = false }) => {
         try {
             const res = await api.get(`businesses/${path}/`);
             setBusiness(res.data);
+            setPinned(!!res.data.is_pinned);
             setFormData({ path: res.data.path, name: res.data.name, description: res.data.description || '' });
 
             // Generate IDs for existing links to make them sortable
@@ -206,6 +209,40 @@ const BusinessDetail = ({ isNew = false }) => {
             navigate('/dashboard');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const publicUrl = business ? `${window.location.origin}/${business.path}` : '';
+
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(publicUrl);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1800);
+        } catch {
+            /* clipboard unavailable (e.g. insecure context) — ignore */
+        }
+    };
+
+    const handleShare = async () => {
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: business.name, url: publicUrl });
+            } catch {
+                /* user dismissed the share sheet */
+            }
+        } else {
+            handleCopy();
+        }
+    };
+
+    const handlePin = async () => {
+        const next = !pinned;
+        setPinned(next); // optimistic
+        try {
+            await api.post(`businesses/${business.path}/pin/`, { is_pinned: next });
+        } catch {
+            setPinned(!next); // revert on failure
         }
     };
 
@@ -386,6 +423,24 @@ const BusinessDetail = ({ isNew = false }) => {
 
                 {/* Main Content */}
                 <main className="detail-content">
+                    {!isNew && business && (
+                        <div className="detail-toolbar">
+                            <button type="button" className="toolbar-btn" onClick={handleCopy}>
+                                {copied ? <FaCheck /> : <FaCopy />}
+                                <span>{copied ? t('detail.copied') : t('detail.copy_link')}</span>
+                            </button>
+                            <button type="button" className="toolbar-btn" onClick={handleShare}>
+                                <FaShareAlt /> <span>{t('detail.share')}</span>
+                            </button>
+                            <a className="toolbar-btn" href={`/${business.path}`} target="_blank" rel="noreferrer">
+                                <FaExternalLinkAlt /> <span>{t('detail.tab_preview')}</span>
+                            </a>
+                            <button type="button" className={`toolbar-btn ${pinned ? 'pinned' : ''}`} onClick={handlePin}>
+                                {pinned ? <FaStar /> : <FaRegStar />}
+                                <span>{pinned ? t('detail.pinned') : t('detail.pin')}</span>
+                            </button>
+                        </div>
+                    )}
                     {activeTab === 'preview' && (
                         <div className="preview-section">
                             <div className="preview-phone">

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaExternalLinkAlt, FaEdit, FaLock, FaLockOpen } from 'react-icons/fa';
+import { FaPlus, FaExternalLinkAlt, FaEdit, FaLock, FaLockOpen, FaStar } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useEntitlements } from '../context/EntitlementContext';
 
@@ -123,6 +123,15 @@ const Dashboard = () => {
                                             padding: '3px 10px', borderRadius: 999, marginBottom: 10,
                                         }}>
                                             <FaLock size={11} /> {t('limit.locked_badge')}
+                                        </div>
+                                    )}
+                                    {biz.is_pinned && !biz.is_locked && (
+                                        <div style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                                            background: '#fef3c7', color: '#92400e', fontSize: 12, fontWeight: 600,
+                                            padding: '3px 10px', borderRadius: 999, marginBottom: 10,
+                                        }}>
+                                            <FaStar size={11} /> {t('detail.pinned')}
                                         </div>
                                     )}
                                     <div className="card-header">

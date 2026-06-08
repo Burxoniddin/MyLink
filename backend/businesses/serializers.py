@@ -20,8 +20,8 @@ class BusinessSerializer(serializers.ModelSerializer):
     class Meta:
         model = Business
         fields = ['id', 'path', 'name', 'description', 'logo', 'logo_upload', 'logo_remove',
-                  'is_locked', 'branding_removed', 'verified', 'created_at', 'links']
-        read_only_fields = ['is_locked']
+                  'is_locked', 'is_pinned', 'branding_removed', 'verified', 'created_at', 'links']
+        read_only_fields = ['is_locked', 'is_pinned']
 
     def _owner_features(self, obj):
         """Owner tier features, cached per-request so a dashboard list doesn't

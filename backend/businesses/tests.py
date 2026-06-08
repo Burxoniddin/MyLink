@@ -147,3 +147,39 @@ class ToggleLockTests(TestCase):
         make_business(other, 'x', 'X')
         res = self.client.post('/api/businesses/x/lock/', {'is_locked': True}, format='json')
         self.assertEqual(res.status_code, 404)
+
+
+@override_settings(CACHES=LOCMEM)
+class TogglePinTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(phone_number='+998901112277')
+        self.client = APIClient()
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+        # Pro so both pages stay active (no lock noise) while testing ordering.
+        Subscription.objects.create(user=self.user, tier=ent.PRO, expires_at=None)
+        self.a = make_business(self.user, 'a', 'A', age_minutes=20)  # older
+        self.b = make_business(self.user, 'b', 'B', age_minutes=10)  # newer
+
+    def test_pin_and_unpin(self):
+        r = self.client.post('/api/businesses/a/pin/', {'is_pinned': True}, format='json')
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.data['is_pinned'])
+        self.assertTrue(Business.objects.get(path='a').is_pinned)
+        r2 = self.client.post('/api/businesses/a/pin/', {'is_pinned': False}, format='json')
+        self.assertEqual(r2.status_code, 200)
+        self.assertFalse(Business.objects.get(path='a').is_pinned)
+
+    def test_pinned_floats_to_top(self):
+        # Default: newest (b) first. Pin the older (a) => a floats to the top.
+        res = self.client.get('/api/businesses/')
+        self.assertEqual([x['path'] for x in res.data], ['b', 'a'])
+        self.client.post('/api/businesses/a/pin/', {'is_pinned': True}, format='json')
+        res = self.client.get('/api/businesses/')
+        self.assertEqual([x['path'] for x in res.data], ['a', 'b'])
+
+    def test_cannot_pin_others_business(self):
+        other = User.objects.create_user(phone_number='+998909990011')
+        make_business(other, 'x', 'X')
+        res = self.client.post('/api/businesses/x/pin/', {'is_pinned': True}, format='json')
+        self.assertEqual(res.status_code, 404)

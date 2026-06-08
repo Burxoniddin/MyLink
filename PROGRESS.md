@@ -3,7 +3,7 @@
 > **Maqsad:** Ikki kompyuter o'rtasida ishni uzluksiz davom ettirish. Bu fayl `dev` branch'da turadi va git orqali sinxronlanadi.
 > **Qoida:** Har ish seansidan so'ng pastdagi **§4 Holat** bo'limini yangilab, commit qilib qo'ying.
 
-**Oxirgi yangilanish:** 2026-06-08 (1b + 1c + UX: Pricing sahifa, Profil kirish, limit modal, auth logo) · **Faol branch:** `dev` · **Repo:** https://github.com/Burxoniddin/MyLink (public)
+**Oxirgi yangilanish:** 2026-06-09 (2a tepa toolbar + pin) · **Faol branch:** `dev` · **Repo:** https://github.com/Burxoniddin/MyLink (public)
 
 ---
 
@@ -114,7 +114,7 @@ VITE_GOOGLE_CLIENT_ID=<google oauth client id — backend bilan bir xil>
 - [ ] **1a · To'lov: Click + Payme** — ⏸️ *hozircha kechiktirildi (foydalanuvchi qarori)*. Merchant akkaunt kerak.
 - [x] **1b · Promokod / lifetime** — `PromoCode`, `PromoRedemption`; `services.redeem_promo`/`grant_subscription`; `POST /api/promo/redeem/`; admin; Profile'da promokod formasi + joriy tarif (badge + muddat); `/api/me/` endi `entitlements.expires_at` qaytaradi. (Checkout chegirmasi 1a bilan keladi.)
 - [x] **1c · Limitlarni qo'llash** — `Business.is_locked`; yaratishda `profile_limit` gate (403 + `reason`); `services.sync_locks` (downgrade'da eng yangilarni bloklaydi, eng eskini faol qoldiradi); toggle endpoint `POST /api/businesses/<path>/lock/` (faollashtirish limitdan oshsa rad); public sahifa bloklanganda 404; serializer `branding_removed`+`verified` flaglari; Dashboard'da N/limit + locked badge + faollashtir/o'chir; LandingPage'da branding yashirish + verified galochka. `/api/me/` `usage.active` qaytaradi.
-- [ ] **2a · Tepa toolbar** — copy / share / preview / star (`is_pinned`)
+- [x] **2a · Tepa toolbar** — `Business.is_pinned` (migration `businesses/0009`); `POST /api/businesses/<path>/pin/` toggle (tier gate yo'q); Dashboard ro'yxati `-is_pinned, -created_at` bo'yicha (qadalganlar tepada); serializer `is_pinned` (read-only); admin list+filter+editable. Frontend: BusinessDetail editor tepasida **toolbar** (Havoladan nusxa / Ulashish=Web Share API / Ko'rinish=public sahifa / Qadash=yulduzcha); Dashboard pinned kartochkada ⭐ badge. uz/ru/en. Testlar: +3 (jami 44 o'tadi).
 - [ ] **2b · QR + PDF** — `qrcode`/`reportlab`: `qr.png` (Oddiy), `qr.pdf` + vizitka `card.pdf` (Pro)
 - [ ] **2c · Banner/content bloklari** — `ContentBlock` (rasm/video/matn); video = embed + fayl yuklash (≤50MB); dnd tartiblash
 - [ ] **2d · Analitika** — `Event` (view/click/share/banner); `POST /api/track/`; `recharts` grafiklar; landing stats shunga ulanadi

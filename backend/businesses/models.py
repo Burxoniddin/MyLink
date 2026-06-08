@@ -8,6 +8,10 @@ class Business(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     logo = models.ImageField(upload_to='logos/', blank=True, null=True)
+    # Locked when the owner is over their tier's profile_limit (e.g. after a
+    # downgrade). Locked pages are hidden publicly; the owner picks which to keep
+    # active. See billing.services.sync_locks / businesses toggle endpoint.
+    is_locked = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

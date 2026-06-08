@@ -12,8 +12,9 @@ class LinkInline(admin.TabularInline):
 
 @admin.register(Business)
 class BusinessAdmin(admin.ModelAdmin):
-    list_display = ['name', 'public_link', 'owner', 'created_at']
-    list_filter = ['created_at']
+    list_display = ['name', 'public_link', 'owner', 'is_locked', 'created_at']
+    list_filter = ['is_locked', 'created_at']
+    list_editable = ['is_locked']
     search_fields = ['name', 'path', 'owner__phone_number']
     ordering = ['-created_at']
     prepopulated_fields = {'path': ('name',)}
@@ -26,7 +27,7 @@ class BusinessAdmin(admin.ModelAdmin):
     
     fieldsets = (
         (None, {
-            'fields': ('owner', 'path', 'name', 'description', 'logo')
+            'fields': ('owner', 'path', 'name', 'description', 'logo', 'is_locked')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),

@@ -3,6 +3,7 @@ import api from '../api';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import PasswordInput from '../components/PasswordInput';
+import { useEntitlements } from '../context/EntitlementContext';
 
 const cardStyle = {
     background: '#fff',
@@ -15,12 +16,15 @@ const cardStyle = {
 const Profile = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { refresh: refreshEntitlements } = useEntitlements();
 
     const [me, setMe] = useState(null);
     const [loading, setLoading] = useState(true);
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [email, setEmail] = useState('');
+    const [promoCode, setPromoCode] = useState('');
+    const [promoBusy, setPromoBusy] = useState(false);
     const [msg, setMsg] = useState({ type: '', text: '' });
 
     useEffect(() => {
@@ -61,6 +65,26 @@ const Profile = () => {
         }
     };
 
+    const redeemPromo = async (e) => {
+        e.preventDefault();
+        setMsg({ type: '', text: '' });
+        setPromoBusy(true);
+        try {
+            await api.post('promo/redeem/', { code: promoCode });
+            setMsg({ type: 'success', text: t('promo.success') });
+            setPromoCode('');
+            await refreshEntitlements();
+            load();
+        } catch (err) {
+            const reason = err.response?.data?.reason;
+            const key = reason ? `promo.err_${reason}` : 'common.error';
+            const text = t(key);
+            setMsg({ type: 'error', text: text === key ? t('common.error') : text });
+        } finally {
+            setPromoBusy(false);
+        }
+    };
+
     const saveEmail = async (e) => {
         e.preventDefault();
         setMsg({ type: '', text: '' });
@@ -76,6 +100,21 @@ const Profile = () => {
 
     if (loading) {
         return <div className="dashboard-loading"><div className="spinner"></div><p>{t('common.loading')}</p></div>;
+    }
+
+    const tier = me.entitlements?.tier || 'free';
+    const TIER_BADGES = {
+        free: { bg: '#f3f4f6', fg: '#374151' },
+        oddiy: { bg: '#dbeafe', fg: '#1e40af' },
+        pro: { bg: '#fef3c7', fg: '#92400e' },
+    };
+    const tierBadge = TIER_BADGES[tier] || TIER_BADGES.free;
+    const expiresAt = me.entitlements?.expires_at;
+    let planExpiryLabel = '';
+    if (tier !== 'free') {
+        planExpiryLabel = expiresAt
+            ? t('promo.until', { date: new Date(expiresAt).toLocaleDateString() })
+            : t('promo.lifetime');
     }
 
     return (
@@ -102,6 +141,32 @@ const Profile = () => {
                             <span style={{ color: '#6b7280' }}>{t('auth.email_label')}</span>
                             <strong>{me.email || '—'}</strong>
                         </div>
+                    </div>
+
+                    {/* Current plan + promo */}
+                    <div style={cardStyle}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                            <span style={{ color: '#6b7280' }}>{t('promo.current_plan')}</span>
+                            <span style={{
+                                fontWeight: 700, padding: '4px 12px', borderRadius: 999,
+                                background: tierBadge.bg, color: tierBadge.fg, fontSize: 14,
+                            }}>{t(`promo.tier_${tier}`)}{planExpiryLabel ? ` · ${planExpiryLabel}` : ''}</span>
+                        </div>
+                        <h3 style={{ margin: '0 0 4px' }}>{t('promo.title')}</h3>
+                        <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: 14 }}>{t('promo.desc')}</p>
+                        <form onSubmit={redeemPromo} style={{ display: 'flex', gap: 8 }}>
+                            <input
+                                className="login-input"
+                                style={{ flex: 1, textTransform: 'uppercase' }}
+                                value={promoCode}
+                                onChange={(e) => setPromoCode(e.target.value)}
+                                placeholder={t('promo.placeholder')}
+                                required
+                            />
+                            <button type="submit" className="login-btn" style={{ width: 'auto', whiteSpace: 'nowrap' }} disabled={promoBusy}>
+                                {promoBusy ? t('promo.redeeming') : t('promo.redeem')}
+                            </button>
+                        </form>
                     </div>
 
                     {/* Password */}

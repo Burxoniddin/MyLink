@@ -120,6 +120,25 @@
     "password_saved": "Пароль сохранён",
     "email_added": "Email добавлен"
   },
+  "promo": {
+    "current_plan": "Текущий тариф",
+    "tier_free": "Free",
+    "tier_oddiy": "Oddiy",
+    "tier_pro": "Pro",
+    "lifetime": "навсегда",
+    "until": "до {{date}}",
+    "title": "Промокод",
+    "desc": "Если у вас есть промокод, активируйте его здесь.",
+    "placeholder": "Введите код",
+    "redeem": "Активировать",
+    "redeeming": "Активация...",
+    "success": "Поздравляем! Ваш тариф обновлён.",
+    "err_not_found": "Такой код не найден",
+    "err_inactive": "Код неактивен",
+    "err_expired": "Срок действия кода истёк",
+    "err_exhausted": "Лимит кода исчерпан",
+    "err_already_used": "Вы уже использовали этот код"
+  },
   "home": {
     "nav_about": "О нас",
     "nav_how": "Как это работает",
@@ -208,6 +227,12 @@
     "blog_title": "Блог",
     "blog_read": "Читать",
     "blog_empty": "Постов пока нет"
+  },
+  "limit": {
+    "reached": "Лимит тарифа ({{limit}}) исчерпан. Отключите одну страницу или обновите тариф.",
+    "locked_badge": "Заблокировано",
+    "activate": "Активировать",
+    "deactivate": "Отключить"
   },
   "help": {
     "label": "Помощь",

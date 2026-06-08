@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import PlanPrice, Subscription
+from .models import PlanPrice, PromoCode, PromoRedemption, Subscription
 
 
 @admin.register(PlanPrice)
@@ -17,3 +17,34 @@ class SubscriptionAdmin(admin.ModelAdmin):
     search_fields = ('user__phone_number', 'user__email')
     autocomplete_fields = ('user',)
     date_hierarchy = 'created_at'
+
+
+class PromoRedemptionInline(admin.TabularInline):
+    model = PromoRedemption
+    extra = 0
+    can_delete = False
+    readonly_fields = ('user', 'subscription', 'created_at')
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PromoCode)
+class PromoCodeAdmin(admin.ModelAdmin):
+    list_display = ('code', 'grant_tier', 'duration_days', 'redeemed_count', 'max_redemptions',
+                    'is_active', 'valid_until')
+    list_filter = ('grant_tier', 'is_active', 'once_per_user')
+    search_fields = ('code', 'note')
+    readonly_fields = ('redeemed_count', 'created_at')
+    inlines = [PromoRedemptionInline]
+
+
+@admin.register(PromoRedemption)
+class PromoRedemptionAdmin(admin.ModelAdmin):
+    list_display = ('code', 'user', 'subscription', 'created_at')
+    search_fields = ('code__code', 'user__phone_number', 'user__email')
+    autocomplete_fields = ('user',)
+    date_hierarchy = 'created_at'
+
+    def has_add_permission(self, request):
+        return False

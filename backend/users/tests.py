@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
@@ -55,7 +56,8 @@ class AuthTests(TestCase):
         r = self.client.post('/api/auth/register/', {'method': 'email', 'identifier': 'x@b.com', 'code': '999999', 'password': 'secret1'}, format='json')
         self.assertEqual(r.status_code, 400)
 
-    def test_otp_flow(self):
+    @patch('users.views.send_sms', return_value=True)
+    def test_otp_flow(self, mock_sms):
         phone = '+998901112233'
         r = self.client.post('/api/auth/otp/', {'phone_number': phone}, format='json')
         self.assertEqual(r.status_code, 200)

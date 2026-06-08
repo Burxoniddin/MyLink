@@ -120,6 +120,25 @@
     "password_saved": "Password saved",
     "email_added": "Email added"
   },
+  "promo": {
+    "current_plan": "Current plan",
+    "tier_free": "Free",
+    "tier_oddiy": "Oddiy",
+    "tier_pro": "Pro",
+    "lifetime": "lifetime",
+    "until": "until {{date}}",
+    "title": "Promo code",
+    "desc": "Have a promo code? Activate it here.",
+    "placeholder": "Enter code",
+    "redeem": "Activate",
+    "redeeming": "Activating...",
+    "success": "Congratulations! Your plan has been updated.",
+    "err_not_found": "Code not found",
+    "err_inactive": "This code is inactive",
+    "err_expired": "This code has expired",
+    "err_exhausted": "This code has reached its limit",
+    "err_already_used": "You have already used this code"
+  },
   "home": {
     "nav_about": "About",
     "nav_how": "How it works",
@@ -208,6 +227,12 @@
     "blog_title": "Blog",
     "blog_read": "Read",
     "blog_empty": "No posts yet"
+  },
+  "limit": {
+    "reached": "Plan limit ({{limit}}) reached. Deactivate a page or upgrade your plan.",
+    "locked_badge": "Locked",
+    "activate": "Activate",
+    "deactivate": "Deactivate"
   },
   "help": {
     "label": "Help",

@@ -60,3 +60,65 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.get_tier_display()} ({self.status})"
+
+
+class PromoCode(models.Model):
+    """A redeemable code that grants a paid tier directly (no payment).
+
+    Used for lifetime gifts, beta-tester perks, marketing campaigns, etc. The
+    paid-checkout discount path lands with 1a (payment); this model only covers
+    the grant path."""
+    code = models.CharField(max_length=40, unique=True, help_text="Foydalanuvchi kiritadigan kod (avto katta harf)")
+    grant_tier = models.CharField(max_length=10, choices=ent.TIER_CHOICES, default=ent.PRO,
+                                  verbose_name="Beriladigan tarif")
+    duration_days = models.PositiveIntegerField(null=True, blank=True,
+                                                help_text="Necha kunga beriladi. Bo'sh = umrbod (lifetime).")
+    max_redemptions = models.PositiveIntegerField(null=True, blank=True,
+                                                  help_text="Jami necha marta ishlatilishi mumkin. Bo'sh = cheksiz.")
+    redeemed_count = models.PositiveIntegerField(default=0, editable=False)
+    once_per_user = models.BooleanField(default=True, help_text="Bitta foydalanuvchi faqat bir marta ishlata oladi")
+    valid_until = models.DateTimeField(null=True, blank=True,
+                                       help_text="Shu sanadan keyin kod ishlamaydi. Bo'sh = muddatsiz.")
+    is_active = models.BooleanField(default=True)
+    note = models.CharField(max_length=200, blank=True, help_text="Ichki izoh (kampaniya nomi va h.k.)")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Promokod'
+        verbose_name_plural = 'Promokodlar'
+
+    def save(self, *args, **kwargs):
+        self.code = (self.code or '').strip().upper()
+        super().save(*args, **kwargs)
+
+    def is_redeemable(self):
+        """Returns (ok, reason_key). reason_key is a short machine code used to
+        pick a translated message on the client."""
+        if not self.is_active:
+            return False, 'inactive'
+        if self.valid_until is not None and self.valid_until <= timezone.now():
+            return False, 'expired'
+        if self.max_redemptions is not None and self.redeemed_count >= self.max_redemptions:
+            return False, 'exhausted'
+        return True, ''
+
+    def __str__(self):
+        return f"{self.code} → {self.get_grant_tier_display()}"
+
+
+class PromoRedemption(models.Model):
+    """Audit row: one user redeeming one code, linked to the granted sub."""
+    code = models.ForeignKey(PromoCode, on_delete=models.CASCADE, related_name='redemptions')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='promo_redemptions')
+    subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.SET_NULL,
+                                     related_name='promo_redemptions')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Promokod ishlatilishi'
+        verbose_name_plural = 'Promokod ishlatilishlari'
+
+    def __str__(self):
+        return f"{self.user} ← {self.code.code}"

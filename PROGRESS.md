@@ -3,7 +3,7 @@
 > **Maqsad:** Ikki kompyuter o'rtasida ishni uzluksiz davom ettirish. Bu fayl `dev` branch'da turadi va git orqali sinxronlanadi.
 > **Qoida:** Har ish seansidan so'ng pastdagi **§4 Holat** bo'limini yangilab, commit qilib qo'ying.
 
-**Oxirgi yangilanish:** 2026-06-08 · **Faol branch:** `dev` · **Repo:** https://github.com/Burxoniddin/MyLink (public)
+**Oxirgi yangilanish:** 2026-06-08 (1b + 1c bajarildi) · **Faol branch:** `dev` · **Repo:** https://github.com/Burxoniddin/MyLink (public)
 
 ---
 
@@ -105,8 +105,8 @@ VITE_GOOGLE_CLIENT_ID=<google oauth client id — backend bilan bir xil>
 
 ### ⏳ Navbatdagi ishlar (yo'l xaritasi tartibida)
 - [ ] **1a · To'lov: Click + Payme** — ⏸️ *hozircha kechiktirildi (foydalanuvchi qarori)*. Merchant akkaunt kerak.
-- [ ] **1b · Promokod / lifetime** — `PromoCode`, `PromoRedemption`; checkout'da chegirma; lifetime-free grant
-- [ ] **1c · Limitlarni qo'llash** — `profile_limit` tekshiruvi; `Business.is_locked` (downgrade'da egasi N tani tanlaydi); branding olib tashlash; verified galochka
+- [x] **1b · Promokod / lifetime** — `PromoCode`, `PromoRedemption`; `services.redeem_promo`/`grant_subscription`; `POST /api/promo/redeem/`; admin; Profile'da promokod formasi + joriy tarif (badge + muddat); `/api/me/` endi `entitlements.expires_at` qaytaradi. (Checkout chegirmasi 1a bilan keladi.)
+- [x] **1c · Limitlarni qo'llash** — `Business.is_locked`; yaratishda `profile_limit` gate (403 + `reason`); `services.sync_locks` (downgrade'da eng yangilarni bloklaydi, eng eskini faol qoldiradi); toggle endpoint `POST /api/businesses/<path>/lock/` (faollashtirish limitdan oshsa rad); public sahifa bloklanganda 404; serializer `branding_removed`+`verified` flaglari; Dashboard'da N/limit + locked badge + faollashtir/o'chir; LandingPage'da branding yashirish + verified galochka. `/api/me/` `usage.active` qaytaradi.
 - [ ] **2a · Tepa toolbar** — copy / share / preview / star (`is_pinned`)
 - [ ] **2b · QR + PDF** — `qrcode`/`reportlab`: `qr.png` (Oddiy), `qr.pdf` + vizitka `card.pdf` (Pro)
 - [ ] **2c · Banner/content bloklari** — `ContentBlock` (rasm/video/matn); video = embed + fayl yuklash (≤50MB); dnd tartiblash
@@ -116,6 +116,37 @@ VITE_GOOGLE_CLIENT_ID=<google oauth client id — backend bilan bir xil>
 - [ ] **4b · NFC** — info sahifa + ariza (`NfcOrder`) + tarix; onlayn to'lovsiz (lead)
 - [ ] **4c · Dashboard qidiruv + soni** — nom bo'yicha filter + "N/limit" indikator
 - [ ] **4e · Biznes jamoa/rollar** — `BusinessMembership` (admin/editor/viewer); taklif; permissionlar
+
+---
+
+## 4.1 ✅ Tekshirilishi kerak — 1b + 1c (oxirgi seans)
+
+> Boshqa kompda: `git pull origin dev` → backend `pip install -r requirements.txt` + `python manage.py migrate` + `python manage.py createcachetable` → frontend `npm install`. **Test ma'lumotlari:** `python manage.py seed_demo` (faqat DEBUG; idempotent).
+
+**Test akkauntlar** (sayt: parol tabida email+parol; admin: telefon+parol):
+| Rol | Email | Telefon | Parol |
+|---|---|---|---|
+| Admin | admin@mylink.asia | +998900000000 | `admin1234` |
+| Free | free@mylink.asia | +998901111111 | `test1234` |
+| Pro | pro@mylink.asia | +998902222222 | `test1234` |
+
+**Promokodlar:** `TEST1` (Pro umrbod), `PRO30` (Pro 30 kun), `ODDIY1` (Oddiy umrbod), `ONCE1` (1 martalik), `OFF1` (faolsiz).
+
+**1b — Promokod / lifetime:**
+- [ ] Profil → joriy tarif badge ko'rinadi (Free)
+- [ ] `test1` (kichik harf/probel) → "Tabriklaymiz", badge **Pro · umrbod** ga o'zgaradi
+- [ ] Xuddi shu kod 2-marta → "allaqachon ishlatgansiz"; `XXX` → "topilmadi"; `OFF1` → "faol emas"; `PRO30` → "Pro · <sana> gacha"
+- [ ] Admin → Promokod ochilganda pastda **kim ishlatgani** (redemption) ko'rinadi
+
+**1c — Limitlar:**
+- [ ] Free user Dashboard → `1/1`, "Yangi qo'shish" o'chgan; bosilsa "limit to'ldi" xabari
+- [ ] Pro user (`probiz1/2/3`) → admin'da uning **Obunasini Expired** qiling → Dashboard yangilang → `probiz1` faol, `probiz2/3` **Bloklangan**, indikator `1/1`
+- [ ] Bloklanganda "Faollashtirish" → limit to'lgani uchun rad; avval faol bittasini "O'chirish" → keyin boshqasini "Faollashtirish" ishlaydi
+- [ ] Public: `localhost:5173/freebiz` → "Powered by MyLink" **bor**; `localhost:5173/probiz1` → branding **yo'q** + nom yonida ✓ galochka; bloklangan biznes path → "Sahifa topilmadi" (404)
+
+**Avtotestlar:** `python manage.py test billing users businesses` → **41 ta o'tishi kerak**. Frontend: `npm run lint` (0 error), `npm run build`.
+
+**Yangi endpointlar/migrationlar:** `POST /api/promo/redeem/`, `POST /api/businesses/<path>/lock/`; `billing/0003`, `businesses/0008`. `/api/me/` → `entitlements.expires_at` + `usage.active`.
 
 ---
 

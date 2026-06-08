@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api';
 import LinkButton from '../components/LinkButton';
-import { FaSun, FaMoon } from 'react-icons/fa';
+import { FaSun, FaMoon, FaCheckCircle } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 // Backend base URL for media files - auto detect based on environment
@@ -103,7 +103,15 @@ const LandingPage = () => {
                         </div>
                     )}
 
-                    <h1 className="landing-title">{data.name}</h1>
+                    <h1 className="landing-title">
+                        {data.name}
+                        {data.verified && (
+                            <FaCheckCircle
+                                title="Verified"
+                                style={{ color: '#3b82f6', marginLeft: 8, verticalAlign: 'middle', fontSize: '0.7em' }}
+                            />
+                        )}
+                    </h1>
 
                     {data.description && (
                         <p className="landing-bio">{data.description}</p>
@@ -125,14 +133,16 @@ const LandingPage = () => {
                     </div>
                 )}
 
-                {/* Footer */}
-                <div className="landing-branding">
-                    <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer" className="landing-branding-link">
-                        <span className="powered-text">{t('landing.powered_by')}</span>
-                        <img src="/logo.png" alt="MyLink" className="landing-brand-logo" />
-                        <strong>MyLink</strong>
-                    </a>
-                </div>
+                {/* Footer — hidden for paid tiers (branding_removed) */}
+                {!data.branding_removed && (
+                    <div className="landing-branding">
+                        <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer" className="landing-branding-link">
+                            <span className="powered-text">{t('landing.powered_by')}</span>
+                            <img src="/logo.png" alt="MyLink" className="landing-brand-logo" />
+                            <strong>MyLink</strong>
+                        </a>
+                    </div>
+                )}
             </div>
         </div>
     );

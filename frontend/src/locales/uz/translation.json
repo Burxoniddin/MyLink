@@ -120,6 +120,25 @@
     "password_saved": "Parol saqlandi",
     "email_added": "Email qo'shildi"
   },
+  "promo": {
+    "current_plan": "Joriy tarif",
+    "tier_free": "Free",
+    "tier_oddiy": "Oddiy",
+    "tier_pro": "Pro",
+    "lifetime": "umrbod",
+    "until": "{{date}} gacha",
+    "title": "Promokod",
+    "desc": "Sizda promokod bo'lsa, shu yerda faollashtiring.",
+    "placeholder": "Kodni kiriting",
+    "redeem": "Faollashtirish",
+    "redeeming": "Faollashtirilmoqda...",
+    "success": "Tabriklaymiz! Tarifingiz yangilandi.",
+    "err_not_found": "Bunday kod topilmadi",
+    "err_inactive": "Bu kod faol emas",
+    "err_expired": "Kod muddati tugagan",
+    "err_exhausted": "Kod limiti tugagan",
+    "err_already_used": "Siz bu kodni allaqachon ishlatgansiz"
+  },
   "home": {
     "nav_about": "Haqida",
     "nav_how": "Qanday ishlaydi",
@@ -208,6 +227,12 @@
     "blog_title": "Blog",
     "blog_read": "O'qish",
     "blog_empty": "Hozircha post yo'q"
+  },
+  "limit": {
+    "reached": "Tarif limiti ({{limit}} ta) to'ldi. Yangi sahifa uchun bittasini o'chiring yoki tarifni yangilang.",
+    "locked_badge": "Bloklangan",
+    "activate": "Faollashtirish",
+    "deactivate": "O'chirish"
   },
   "help": {
     "label": "Yordam",

@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     BusinessListCreateView,
     BusinessDetailView,
+    BusinessToggleLockView,
     PublicBusinessView,
     PublicStatsView,
     PublicSettingsView,
@@ -13,6 +14,7 @@ from .views import (
 
 urlpatterns = [
     path('businesses/', BusinessListCreateView.as_view()),
+    path('businesses/<slug:path>/lock/', BusinessToggleLockView.as_view()),
     path('businesses/<slug:path>/', BusinessDetailView.as_view()),
     path('contact/', ContactCreateView.as_view()),
     path('blog/', BlogListView.as_view()),

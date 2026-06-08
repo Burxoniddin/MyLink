@@ -14,11 +14,34 @@ class BusinessSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
     logo_upload = serializers.ImageField(write_only=True, required=False, source='logo')
     logo_remove = serializers.BooleanField(write_only=True, required=False, default=False)
-    
+    branding_removed = serializers.SerializerMethodField()
+    verified = serializers.SerializerMethodField()
+
     class Meta:
         model = Business
-        fields = ['id', 'path', 'name', 'description', 'logo', 'logo_upload', 'logo_remove', 'created_at', 'links']
-    
+        fields = ['id', 'path', 'name', 'description', 'logo', 'logo_upload', 'logo_remove',
+                  'is_locked', 'branding_removed', 'verified', 'created_at', 'links']
+        read_only_fields = ['is_locked']
+
+    def _owner_features(self, obj):
+        """Owner tier features, cached per-request so a dashboard list doesn't
+        recompute the tier for every business of the same owner."""
+        cache = self.context.setdefault('_owner_features', {}) if isinstance(self.context, dict) else None
+        if cache is not None and obj.owner_id in cache:
+            return cache[obj.owner_id]
+        from billing.services import effective_tier
+        from billing import entitlements as ent
+        feats = ent.features_for(effective_tier(obj.owner))
+        if cache is not None:
+            cache[obj.owner_id] = feats
+        return feats
+
+    def get_branding_removed(self, obj):
+        return bool(self._owner_features(obj)['branding_removed'])
+
+    def get_verified(self, obj):
+        return bool(self._owner_features(obj)['verified_badge'])
+
     def get_logo(self, obj):
         """Return absolute URL for logo"""
         if obj.logo:

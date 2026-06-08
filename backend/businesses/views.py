@@ -1,9 +1,11 @@
 from rest_framework import generics, permissions, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.throttling import AnonRateThrottle
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from billing.services import can_create_business, get_entitlements, sync_locks
 from .models import Business, Link, SiteSettings, ContactMessage, StaticPage, BlogPost
 from .serializers import (
     BusinessSerializer,
@@ -25,7 +27,16 @@ class BusinessListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # Re-enforce locks on dashboard load so a downgrade takes effect even if
+        # the user never hit the toggle endpoint.
+        sync_locks(self.request.user)
         return Business.objects.filter(owner=self.request.user)
+
+    def perform_create(self, serializer):
+        if not can_create_business(self.request.user):
+            limit = get_entitlements(self.request.user)['features']['profile_limit']
+            raise PermissionDenied({'reason': 'profile_limit', 'limit': limit})
+        serializer.save()
 
 class BusinessDetailView(generics.RetrieveUpdateDestroyAPIView):
     # Lookup by path or id? Usually ID for editing, PATH for public.
@@ -42,11 +53,33 @@ class BusinessDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class PublicBusinessView(APIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def get(self, request, path):
-        business = get_object_or_404(Business, path=path)
+        # Locked pages (owner over their tier limit) are hidden from the public.
+        business = get_object_or_404(Business, path=path, is_locked=False)
         serializer = BusinessSerializer(business, context={'request': request})
         return Response(serializer.data)
+
+
+class BusinessToggleLockView(APIView):
+    """Owner activates/deactivates one of their businesses. Activating
+    (``is_locked=false``) is rejected when it would exceed the tier limit — the
+    owner must lock another first."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, path):
+        business = get_object_or_404(Business, path=path, owner=request.user)
+        is_locked = bool(request.data.get('is_locked'))
+        if not is_locked and business.is_locked:
+            # Trying to activate — check we're within limit.
+            feats = get_entitlements(request.user)['features']
+            active = Business.objects.filter(owner=request.user, is_locked=False).count()
+            if active >= feats['profile_limit']:
+                raise PermissionDenied({'reason': 'profile_limit', 'limit': feats['profile_limit']})
+        business.is_locked = is_locked
+        business.save(update_fields=['is_locked'])
+        return Response({'path': business.path, 'is_locked': business.is_locked})
 
 
 class PublicStatsView(APIView):

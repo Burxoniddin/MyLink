@@ -186,6 +186,39 @@ class TogglePinTests(TestCase):
 
 
 @override_settings(CACHES=LOCMEM)
+class TemplateTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(phone_number='+998901113311')
+        self.client = APIClient()
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+
+    def test_default_template_is_classic(self):
+        b = make_business(self.user, 'a', 'A')
+        self.assertEqual(b.template, 'classic')
+
+    def test_update_template(self):
+        make_business(self.user, 'a', 'A')
+        res = self.client.put('/api/businesses/a/', {'path': 'a', 'name': 'A', 'template': 'restoran'}, format='json')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['template'], 'restoran')
+        self.assertEqual(Business.objects.get(path='a').template, 'restoran')
+
+    def test_invalid_template_rejected(self):
+        make_business(self.user, 'a', 'A')
+        res = self.client.put('/api/businesses/a/', {'path': 'a', 'name': 'A', 'template': 'bogus'}, format='json')
+        self.assertEqual(res.status_code, 400)
+
+    def test_public_payload_includes_template(self):
+        b = make_business(self.user, 'a', 'A')
+        b.template = 'moda'
+        b.save(update_fields=['template'])
+        res = APIClient().get('/api/public/a/')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['template'], 'moda')
+
+
+@override_settings(CACHES=LOCMEM)
 class AssetTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(phone_number='+998901113300')

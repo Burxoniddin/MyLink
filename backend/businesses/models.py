@@ -3,11 +3,24 @@ from django.conf import settings
 from django.utils import timezone
 
 class Business(models.Model):
+    # Public landing-page design. 'classic' is the original card; the rest are
+    # sector-themed link-in-bio templates (see frontend templates/). Open to all
+    # tiers (template is not a paid feature).
+    TEMPLATE_CHOICES = [
+        ('classic', 'Classic'),
+        ('restoran', 'Restoran (FLAME)'),
+        ('moda', 'Moda (editorial)'),
+        ('klinika', 'Klinika (teal)'),
+        ('avto', 'Avto (carbon)'),
+        ('fitnes', 'Fitnes (lime)'),
+    ]
+
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='businesses')
     path = models.SlugField(unique=True, max_length=50, help_text="Unique path for the business page, e.g. 'mybrand'")
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     logo = models.ImageField(upload_to='logos/', blank=True, null=True)
+    template = models.CharField(max_length=20, choices=TEMPLATE_CHOICES, default='classic')
     # Locked when the owner is over their tier's profile_limit (e.g. after a
     # downgrade). Locked pages are hidden publicly; the owner picks which to keep
     # active. See billing.services.sync_locks / businesses toggle endpoint.

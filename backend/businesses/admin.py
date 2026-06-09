@@ -18,8 +18,8 @@ class ContentBlockInline(admin.TabularInline):
 
 @admin.register(Business)
 class BusinessAdmin(admin.ModelAdmin):
-    list_display = ['name', 'public_link', 'owner', 'is_locked', 'is_pinned', 'created_at']
-    list_filter = ['is_locked', 'is_pinned', 'created_at']
+    list_display = ['name', 'public_link', 'owner', 'template', 'is_locked', 'is_pinned', 'created_at']
+    list_filter = ['template', 'is_locked', 'is_pinned', 'created_at']
     list_editable = ['is_locked', 'is_pinned']
     search_fields = ['name', 'path', 'owner__phone_number']
     ordering = ['-created_at']
@@ -33,7 +33,7 @@ class BusinessAdmin(admin.ModelAdmin):
     
     fieldsets = (
         (None, {
-            'fields': ('owner', 'path', 'name', 'description', 'logo', 'is_locked', 'is_pinned')
+            'fields': ('owner', 'path', 'name', 'description', 'logo', 'template', 'is_locked', 'is_pinned')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),

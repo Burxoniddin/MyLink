@@ -276,6 +276,18 @@
     "err_banner_video": "Video blocks are Pro-only.",
     "err_video_too_large": "Video must be 50MB or less."
   },
+  "tpl": {
+    "open_today": "Open today",
+    "section": "Template",
+    "desc": "Choose a design for your public page",
+    "current": "Current",
+    "classic": "Classic",
+    "restoran": "Restaurant",
+    "moda": "Fashion",
+    "klinika": "Clinic",
+    "avto": "Auto",
+    "fitnes": "Fitness"
+  },
   "limit": {
     "reached": "Plan limit ({{limit}}) reached. Deactivate a page or upgrade your plan.",
     "locked_badge": "Locked",

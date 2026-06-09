@@ -36,7 +36,8 @@ class BusinessSerializer(serializers.ModelSerializer):
     class Meta:
         model = Business
         fields = ['id', 'path', 'name', 'description', 'logo', 'logo_upload', 'logo_remove',
-                  'is_locked', 'is_pinned', 'branding_removed', 'verified', 'created_at', 'links', 'content_blocks']
+                  'template', 'is_locked', 'is_pinned', 'branding_removed', 'verified',
+                  'created_at', 'links', 'content_blocks']
         read_only_fields = ['is_locked', 'is_pinned']
 
     def get_content_blocks(self, obj):
@@ -86,7 +87,8 @@ class BusinessSerializer(serializers.ModelSerializer):
         instance.path = validated_data.get('path', instance.path)
         instance.name = validated_data.get('name', instance.name)
         instance.description = validated_data.get('description', instance.description)
-        
+        instance.template = validated_data.get('template', instance.template)
+
         # Logo o'chirish yoki yangilash
         if logo_remove:
             # Eski logo faylini o'chirish

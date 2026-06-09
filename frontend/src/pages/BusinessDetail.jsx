@@ -5,6 +5,7 @@ import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaRegStar
 import { FaXTwitter } from "react-icons/fa6";
 import LinkButton from '../components/LinkButton';
 import ContentBlocks from '../components/ContentBlocks';
+import TemplatePicker from '../components/templates/TemplatePicker';
 import { useTranslation } from 'react-i18next';
 import { useEntitlements } from '../context/EntitlementContext';
 
@@ -125,7 +126,7 @@ const BusinessDetail = ({ isNew = false }) => {
     const { entitlements } = useEntitlements();
     const [activeTab, setActiveTab] = useState('edit');
     const [business, setBusiness] = useState(null);
-    const [formData, setFormData] = useState({ path: '', name: '', description: '' });
+    const [formData, setFormData] = useState({ path: '', name: '', description: '', template: 'classic' });
     const [links, setLinks] = useState([]);
     const [logoFile, setLogoFile] = useState(null);
     const [logoPreview, setLogoPreview] = useState(null);
@@ -199,7 +200,7 @@ const BusinessDetail = ({ isNew = false }) => {
             const res = await api.get(`businesses/${path}/`);
             setBusiness(res.data);
             setPinned(!!res.data.is_pinned);
-            setFormData({ path: res.data.path, name: res.data.name, description: res.data.description || '' });
+            setFormData({ path: res.data.path, name: res.data.name, description: res.data.description || '', template: res.data.template || 'classic' });
 
             // Generate IDs for existing links to make them sortable
             const linksWithIds = (res.data.links || []).map((link, idx) => ({
@@ -404,7 +405,7 @@ const BusinessDetail = ({ isNew = false }) => {
         { id: 'preview', label: t('detail.tab_preview'), icon: <FaEye /> },
         { id: 'edit', label: t('detail.tab_edit'), icon: <FaEdit /> },
         ...(!isNew ? [{ id: 'blocks', label: t('detail.tab_blocks'), icon: <FaLayerGroup /> }] : []),
-        { id: 'customize', label: t('detail.tab_customize'), icon: <FaPalette />, disabled: true },
+        { id: 'customize', label: t('detail.tab_customize'), icon: <FaPalette /> },
         { id: 'advanced', label: t('detail.tab_advanced'), icon: <FaCog />, disabled: true },
         { id: 'upgrade', label: t('detail.tab_upgrade'), icon: <FaStar />, disabled: true },
     ];
@@ -673,7 +674,20 @@ const BusinessDetail = ({ isNew = false }) => {
                         </div>
                     )}
 
-                    {(activeTab === 'customize' || activeTab === 'advanced' || activeTab === 'upgrade') && (
+                    {activeTab === 'customize' && (
+                        <div className="edit-section">
+                            <TemplatePicker
+                                value={formData.template}
+                                onChange={(tpl) => setFormData({ ...formData, template: tpl })}
+                            />
+                            <button className="save-btn" style={{ marginTop: 24 }} onClick={handleSave}
+                                disabled={saving || (isNew && pathStatus === 'taken')}>
+                                {saving ? t('detail.saving') : t('common.save')}
+                            </button>
+                        </div>
+                    )}
+
+                    {(activeTab === 'advanced' || activeTab === 'upgrade') && (
                         <div className="coming-soon-section">
                             <div className="coming-icon">🚀</div>
                             <h2>{t('detail.soon')}</h2>

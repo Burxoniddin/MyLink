@@ -3,7 +3,7 @@
 > **Maqsad:** Ikki kompyuter o'rtasida ishni uzluksiz davom ettirish. Bu fayl `dev` branch'da turadi va git orqali sinxronlanadi.
 > **Qoida:** Har ish seansidan so'ng pastdagi **§4 Holat** bo'limini yangilab, commit qilib qo'ying.
 
-**Oxirgi yangilanish:** 2026-06-09 (2-faza tugadi: 2a toolbar/pin · 2b QR/PDF · 2c content bloklari · 2d analitika) · **Faol branch:** `dev` · **Repo:** https://github.com/Burxoniddin/MyLink (public)
+**Oxirgi yangilanish:** 2026-06-09 (3a shablonlar: 5 soha dizayni + tanlash; 2-faza 2a–2d tugagan) · **Faol branch:** `dev` · **Repo:** https://github.com/Burxoniddin/MyLink (public)
 
 ---
 
@@ -118,7 +118,7 @@ VITE_GOOGLE_CLIENT_ID=<google oauth client id — backend bilan bir xil>
 - [x] **2b · QR + PDF** — `qrcode`+`reportlab` (requirements'ga qo'shildi). `businesses/qr.py`: QR PNG, A4 QR PDF, 85×55mm vizitka `card.pdf` (logo bo'lsa qo'shadi). Endpoint `GET /api/businesses/<path>/{qr.png,qr.pdf,card.pdf}` — owner-only, tarif gate (`qr`: none→403, png→PNG, full→hammasi). Frontend: editor toolbar'da **QR / PDF** tugma → modal (QR preview + yuklab olish; Oddiy'da PDF/vizitka 🔒Pro → /pricing; Free'da upsell). uz/ru/en. Testlar: +4 (jami 48 o'tadi).
 - [x] **2c · Banner/content bloklari** — `ContentBlock` (rasm/video/matn, migration `0010`); CRUD endpointlar `GET/POST /api/businesses/<path>/blocks/`, `PATCH/DELETE /api/blocks/<id>/`, `POST .../blocks/reorder/`; tarif gate (`banners` soni + video uchun `banner_video`); video=embed YOKI fayl (≤50MB, serializer validatsiya). Public payload'da `content_blocks`. Frontend: `components/ContentBlocks.jsx` — yangi **Bloklar** tab (dnd, har blok uchun Saqlash/O'chirish, rasm/video upload, embed), Free→upsell; LandingPage'da render (matn/rasm/`<video>`/YouTube iframe). uz/ru/en. Testlar: +8 (jami 56 o'tadi). **Prod eslatma:** nginx `client_max_body_size 50M` kerak (50MB video upload uchun).
 - [x] **2d · Analitika** — `Event` modeli (view/click/share/banner, migration `0011`, indexli) + read-only admin. Public `POST /api/track/` (auth yo'q, throttle 1000/soat, noma'lum/bloklangan path → 204 noop). Owner `GET /api/businesses/<path>/analytics/` — tarif gate (`analytics`: none→403, partial→7 kun, full→30 kun + top_links). Frontend: `recharts` o'rnatildi; `pages/Analytics.jsx` (`/analytics` endi ComingSoon emas) — biznes tanlash, totals kartalar, kunlik LineChart (view+click), top havolalar (Pro), Free→upsell. LandingPage: ko'rish (mount), link bosish, **Ulashish tugmasi** (Web Share API) track qiladi; `LinkButton` `onClick`. uz/ru/en. Testlar: +8 (jami 64 o'tadi).
-- [ ] **3a · Shablonlar + ranglar + avatar** — `template` slug (5 yangi), `theme` JSON, `react-easy-crop` avatar
+- [~] **3a · Shablonlar + ranglar + avatar** — ✅ **Shablonlar qismi tayyor**: `Business.template` (classic + 5 soha shabloni: restoran/moda/klinika/avto/fitnes, migration `0012`), serializer (read+write) + public payload, admin. Frontend: `components/templates/` (`ProfileTemplate` + `templates.css` + `TemplatePicker` + `templateMeta` + `lib/linkIcons`), `LandingPage` shablon bo'yicha shoxlanadi (light/dark per-page, ulashish, analitika tracking saqlangan), editor **Sozlash** tabida shablon tanlash, shrift'lar `index.html`da. Shablonlar **hamma tarifga ochiq** (gate yo'q). uz/ru/en. Testlar: +4 (jami 68). ⏳ **Qoldi:** rang sozlash (`theme` JSON) + avatar kesish (`react-easy-crop`).
 - [ ] **4a · Referral** — `ReferralCode`, `?ref=`; do'st Pro olganda +1 oy Pro (yiliga ≤12)
 - [ ] **4b · NFC** — info sahifa + ariza (`NfcOrder`) + tarix; onlayn to'lovsiz (lead)
 - [ ] **4c · Dashboard qidiruv + soni** — nom bo'yicha filter + "N/limit" indikator
@@ -126,7 +126,7 @@ VITE_GOOGLE_CLIENT_ID=<google oauth client id — backend bilan bir xil>
 
 ---
 
-## 4.1 ✅ Tekshirilishi kerak — 1b/1c + 2-faza (2a–2d)
+## 4.1 ✅ Tekshirilishi kerak — 1b/1c + 2-faza (2a–2d) + 3a shablonlar
 
 > Boshqa kompda: `git pull origin dev` → backend `pip install -r requirements.txt` + `python manage.py migrate` + `python manage.py createcachetable` → frontend `npm install`. **Test ma'lumotlari:** `python manage.py seed_demo` (faqat DEBUG; idempotent).
 
@@ -161,9 +161,13 @@ VITE_GOOGLE_CLIENT_ID=<google oauth client id — backend bilan bir xil>
 
 **2d — Analitika:** Public sahifani oching (ko'rish track bo'ladi) → link bosing → **Ulashish** tugmasi. Pro → Navbar **Analitika** → biznes tanlang → kartalar + LineChart + top havolalar. Free → upsell. *(seed: `probiz1`da demo event'lar bor.)*
 
-**Avtotestlar:** `python manage.py test billing users businesses` → **64 ta o'tishi kerak**. Frontend: `npm run lint` (0 error), `npm run build`. **Yangi deps:** backend `qrcode`+`reportlab`, frontend `recharts` → boshqa kompda `pip install -r requirements.txt` + `npm install` shart.
+**3a — Shablonlar:** `seed_demo` 5 shablon demosini yaratadi (hammaga ochiq):
+- Public: `…/probiz1` (restoran) · `…/probiz2` (moda) · `…/probiz3` (klinika) · `…/motorhub` (avto) · `…/pulsegym` (fitnes) · `…/freebiz` (classic). Har birida o'ng-yuqorida light/dark toggle + ulashish.
+- Editor: istalgan biznes → **Sozlash** tab → shablonni tanlang → **Saqlash** → public sahifa o'zgaradi. Bio/logo/linklar har shablonda to'g'ri ko'rinishi kerak. ⏳ rang sozlash + avatar-crop hali yo'q.
 
-**Yangi endpointlar/migrationlar (2-faza):** `POST /businesses/<path>/pin/`, `{qr.png,qr.pdf,card.pdf}`, `blocks/` CRUD + `blocks/reorder/`, `POST /track/`, `GET /businesses/<path>/analytics/`; migrationlar `businesses/0009`(pin)`/0010`(blocks)`/0011`(event). Public payload → `content_blocks`; biznes → `is_pinned`.
+**Avtotestlar:** `python manage.py test billing users businesses` → **68 ta o'tishi kerak**. Frontend: `npm run lint` (0 error), `npm run build` (recharts tufayli chunk-size ogohlantirishi — zararsiz). **Yangi deps:** backend `qrcode`+`reportlab`, frontend `recharts` → boshqa kompda `pip install -r requirements.txt` + `npm install` shart.
+
+**Yangi endpointlar/migrationlar:** (2-faza) `POST /businesses/<path>/pin/`, `{qr.png,qr.pdf,card.pdf}`, `blocks/` CRUD + `blocks/reorder/`, `POST /track/`, `GET /businesses/<path>/analytics/`; migrationlar `0009`(pin)`/0010`(blocks)`/0011`(event). (3a) `Business.template` + migration `businesses/0012`; public payload → `content_blocks` + `template`; biznes → `is_pinned`, `template`.
 
 **⚠️ Prod (deploy oldidan):** nginx `client_max_body_size 50M` (2c video upload uchun) + `requirements.txt` o'rnatish (qrcode/reportlab).
 

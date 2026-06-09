@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api';
 import LinkButton from '../components/LinkButton';
+import ProfileTemplate from '../components/templates/ProfileTemplate';
+import { TEMPLATE_META } from '../components/templates/templateMeta';
 import { FaSun, FaMoon, FaCheckCircle, FaShareAlt } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
@@ -16,9 +18,7 @@ const LandingPage = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
-    const [theme, setTheme] = useState(() => {
-        return localStorage.getItem('mylink-theme') || 'dark';
-    });
+    const [theme, setTheme] = useState('dark');
     const viewTracked = useRef('');
 
     // Fire-and-forget analytics beacon; never breaks the visitor's page.
@@ -31,6 +31,11 @@ const LandingPage = () => {
             try {
                 const res = await api.get(`public/${path}/`);
                 setData(res.data);
+                // Initial theme: visitor's saved choice for this page, else the
+                // template's intended default (classic defaults to dark).
+                const tpl = res.data.template || 'classic';
+                const def = tpl === 'classic' ? 'dark' : (TEMPLATE_META[tpl]?.defaultTheme || 'dark');
+                setTheme(localStorage.getItem(`mylink-theme-${path}`) || def);
                 if (viewTracked.current !== path) {
                     viewTracked.current = path; // once per path (guards StrictMode double-mount)
                     track('view');
@@ -55,13 +60,12 @@ const LandingPage = () => {
         }
     };
 
-    // Save theme to localStorage when it changes
-    useEffect(() => {
-        localStorage.setItem('mylink-theme', theme);
-    }, [theme]);
-
     const toggleTheme = () => {
-        setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+        setTheme(prev => {
+            const next = prev === 'dark' ? 'light' : 'dark';
+            localStorage.setItem(`mylink-theme-${path}`, next);
+            return next;
+        });
     };
 
     // Helper function to get full logo URL
@@ -102,6 +106,24 @@ const LandingPage = () => {
                     <p>{t('landing.not_found_desc')}</p>
                 </div>
             </div>
+        );
+    }
+
+    // Sector-themed templates render their own full-page layout.
+    const tpl = data.template || 'classic';
+    if (tpl !== 'classic') {
+        return (
+            <ProfileTemplate
+                data={data}
+                tpl={tpl}
+                theme={theme}
+                onToggleTheme={toggleTheme}
+                onShare={handleShare}
+                onLinkClick={(title) => track('click', title)}
+                getLogoUrl={getLogoUrl}
+                toEmbed={toEmbed}
+                t={t}
+            />
         );
     }
 

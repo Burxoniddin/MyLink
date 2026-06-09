@@ -29,11 +29,25 @@ def make_user(email, phone, password, **extra):
     return u
 
 
-def make_biz(owner, path, name):
+DEMO_LINKS = [
+    ('Telegram', 'https://t.me/mylink', 'telegram'),
+    ('Murojaat uchun', 'tel:+998901234567', 'phone'),
+    ('Instagram', 'https://instagram.com/mylink', 'instagram'),
+    ('Tik Tok', 'https://tiktok.com/@mylink', 'tiktok'),
+    ('You Tube', 'https://youtube.com/@mylink', 'youtube'),
+    ('Manzil', 'https://maps.google.com', 'google_map'),
+]
+
+
+def make_biz(owner, path, name, template='classic'):
     b, _ = Business.objects.get_or_create(path=path, defaults={'owner': owner, 'name': name})
+    b.owner = owner
+    b.name = name
+    b.template = template
+    b.save()
     if not b.links.exists():
-        Link.objects.create(business=b, title='Telegram', url='https://t.me/mylink', icon_type='telegram', order=0)
-        Link.objects.create(business=b, title='Instagram', url='https://instagram.com/mylink', icon_type='instagram', order=1)
+        for i, (title, url, icon) in enumerate(DEMO_LINKS):
+            Link.objects.create(business=b, title=title, url=url, icon_type=icon, order=i)
     return b
 
 
@@ -53,9 +67,12 @@ class Command(BaseCommand):
         pro = make_user('pro@mylink.asia', '+998902222222', 'test1234', is_verified=True, email_verified=True)
         Subscription.objects.get_or_create(user=pro, tier=ent.PRO, expires_at=None,
                                            defaults={'source': 'manual', 'note': 'seed'})
-        make_biz(pro, 'probiz1', 'Pro Biznes 1')
-        make_biz(pro, 'probiz2', 'Pro Biznes 2')
-        make_biz(pro, 'probiz3', 'Pro Biznes 3')
+        # Template demos (one per design; templates are open to all tiers).
+        make_biz(pro, 'probiz1', 'FLAME BURGER', template='restoran')
+        make_biz(pro, 'probiz2', 'MAISON NUR', template='moda')
+        make_biz(pro, 'probiz3', 'DENTA SMILE', template='klinika')
+        make_biz(pro, 'motorhub', 'MOTOR HUB', template='avto')
+        make_biz(pro, 'pulsegym', 'PULSE GYM', template='fitnes')
 
         codes = [
             dict(code='TEST1', grant_tier=ent.PRO, duration_days=None, note='Pro lifetime'),
@@ -78,3 +95,4 @@ class Command(BaseCommand):
         self.stdout.write('Free:  free@mylink.asia / test1234')
         self.stdout.write('Pro:   pro@mylink.asia / test1234')
         self.stdout.write('Promokodlar: TEST1, PRO30, ODDIY1, ONCE1, OFF1(faolsiz)')
+        self.stdout.write('Shablon demolari: /probiz1(restoran) /probiz2(moda) /probiz3(klinika) /motorhub(avto) /pulsegym(fitnes) /freebiz(classic)')

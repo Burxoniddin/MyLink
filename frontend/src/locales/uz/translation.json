@@ -276,6 +276,18 @@
     "err_banner_video": "Video bloklar faqat Pro tarifda.",
     "err_video_too_large": "Video hajmi 50MB dan oshmasligi kerak."
   },
+  "tpl": {
+    "open_today": "Bugun ochiq",
+    "section": "Shablon",
+    "desc": "Public sahifangiz uchun dizayn tanlang",
+    "current": "Joriy",
+    "classic": "Classic",
+    "restoran": "Restoran",
+    "moda": "Moda",
+    "klinika": "Klinika",
+    "avto": "Avto",
+    "fitnes": "Fitnes"
+  },
   "limit": {
     "reached": "Tarif limiti ({{limit}} ta) to'ldi. Yangi sahifa uchun bittasini o'chiring yoki tarifni yangilang.",
     "locked_badge": "Bloklangan",

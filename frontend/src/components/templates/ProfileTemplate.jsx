@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FaCheckCircle } from 'react-icons/fa';
 import { getLinkIcon, getBrandColor } from '../../lib/linkIcons';
 import { TEMPLATE_META } from './templateMeta';
+import Highlights from '../Highlights';
 import './templates.css';
 
 const SunIcon = () => (
@@ -65,6 +66,8 @@ const ProfileTemplate = ({ data, tpl, theme, onToggleTheme, onShare, onLinkClick
                 {data.description && <p className="tpl-bio">{data.description}</p>}
                 {meta.rule && <div className="tpl-rule" />}
 
+                <Highlights blocks={blocks} getMediaUrl={getLogoUrl} toEmbed={toEmbed} />
+
                 <nav className="tpl-links">
                     {links.map((link, i) => (
                         <a
@@ -88,29 +91,6 @@ const ProfileTemplate = ({ data, tpl, theme, onToggleTheme, onShare, onLinkClick
 
                 {links.length === 0 && blocks.length === 0 && (
                     <div className="tpl-empty">{t('landing.no_links')}</div>
-                )}
-
-                {blocks.length > 0 && (
-                    <div className="tpl-blocks">
-                        {blocks.map((b) => (
-                            <div key={b.id} className="tpl-block">
-                                {b.title && <div className="tpl-block-title">{b.title}</div>}
-                                {b.block_type === 'text' && b.text && <p className="tpl-block-text">{b.text}</p>}
-                                {b.block_type === 'image' && b.image && (
-                                    <img className="tpl-block-img" src={getLogoUrl(b.image)} alt={b.title || ''} />
-                                )}
-                                {b.block_type === 'video' && (
-                                    b.video ? (
-                                        <video className="tpl-block-video" src={getLogoUrl(b.video)} controls />
-                                    ) : b.embed_url ? (
-                                        <div className="tpl-block-embed">
-                                            <iframe src={toEmbed(b.embed_url)} title={b.title || 'video'} allowFullScreen />
-                                        </div>
-                                    ) : null
-                                )}
-                            </div>
-                        ))}
-                    </div>
                 )}
 
                 {!data.branding_removed && (

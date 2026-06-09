@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api';
 import LinkButton from '../components/LinkButton';
+import Highlights from '../components/Highlights';
 import ProfileTemplate from '../components/templates/ProfileTemplate';
 import { TEMPLATE_META } from '../components/templates/templateMeta';
 import { FaSun, FaMoon, FaCheckCircle, FaShareAlt } from 'react-icons/fa';
@@ -171,6 +172,9 @@ const LandingPage = () => {
                     )}
                 </div>
 
+                {/* Highlights — circular media under the bio, above the links */}
+                <Highlights blocks={data.content_blocks} getMediaUrl={getLogoUrl} toEmbed={toEmbed} />
+
                 {/* Links section */}
                 <div className="landing-links">
                     {data.links && data.links.map((link, index) => (
@@ -183,32 +187,6 @@ const LandingPage = () => {
                     <div className="landing-empty">
                         <div className="empty-icon">🔗</div>
                         <p>{t('landing.no_links')}</p>
-                    </div>
-                )}
-
-                {/* Content blocks (banners / video / text) */}
-                {data.content_blocks && data.content_blocks.length > 0 && (
-                    <div className="landing-blocks">
-                        {data.content_blocks.map((b) => (
-                            <div key={b.id} className="landing-block">
-                                {b.title && <h3 className="landing-block-title">{b.title}</h3>}
-                                {b.block_type === 'text' && b.text && (
-                                    <p className="landing-block-text">{b.text}</p>
-                                )}
-                                {b.block_type === 'image' && b.image && (
-                                    <img src={getLogoUrl(b.image)} alt={b.title || ''} className="landing-block-img" />
-                                )}
-                                {b.block_type === 'video' && (
-                                    b.video ? (
-                                        <video src={getLogoUrl(b.video)} controls className="landing-block-video" />
-                                    ) : b.embed_url ? (
-                                        <div className="landing-block-embed">
-                                            <iframe src={toEmbed(b.embed_url)} title={b.title || 'video'} allowFullScreen />
-                                        </div>
-                                    ) : null
-                                )}
-                            </div>
-                        ))}
                     </div>
                 )}
 

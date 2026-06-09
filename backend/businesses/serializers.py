@@ -36,7 +36,7 @@ class BusinessSerializer(serializers.ModelSerializer):
     class Meta:
         model = Business
         fields = ['id', 'path', 'name', 'description', 'logo', 'logo_upload', 'logo_remove',
-                  'template', 'is_locked', 'is_pinned', 'branding_removed', 'verified',
+                  'template', 'theme', 'is_locked', 'is_pinned', 'branding_removed', 'verified',
                   'created_at', 'links', 'content_blocks']
         read_only_fields = ['is_locked', 'is_pinned']
 
@@ -88,6 +88,15 @@ class BusinessSerializer(serializers.ModelSerializer):
         instance.name = validated_data.get('name', instance.name)
         instance.description = validated_data.get('description', instance.description)
         instance.template = validated_data.get('template', instance.template)
+
+        # Colour palette change is gated by the color_edit feature (Oddiy/Pro).
+        new_theme = validated_data.get('theme')
+        if new_theme is not None and new_theme != instance.theme:
+            request = self.context.get('request')
+            user = getattr(request, 'user', None)
+            from billing.services import get_entitlements
+            if user and get_entitlements(user)['features']['color_edit']:
+                instance.theme = new_theme
 
         # Logo o'chirish yoki yangilash
         if logo_remove:

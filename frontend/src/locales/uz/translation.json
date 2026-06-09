@@ -248,6 +248,16 @@
     "blog_read": "O'qish",
     "blog_empty": "Hozircha post yo'q"
   },
+  "theme": {
+    "title": "Rang palitrasi",
+    "locked": "Rang sozlash Oddiy va Pro tarifda mavjud.",
+    "default": "Standart",
+    "ocean": "Okean",
+    "forest": "O'rmon",
+    "noir": "Tungi",
+    "rose": "Pushti",
+    "sunset": "Shafaq"
+  },
   "crop": {
     "title": "Logoni kesing",
     "apply": "Tayyor",

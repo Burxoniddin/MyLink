@@ -5,6 +5,7 @@ import LinkButton from '../components/LinkButton';
 import Highlights from '../components/Highlights';
 import ProfileTemplate from '../components/templates/ProfileTemplate';
 import { TEMPLATE_META } from '../components/templates/templateMeta';
+import { getPalette } from '../lib/palettes';
 import { FaSun, FaMoon, FaCheckCircle, FaShareAlt } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
@@ -128,10 +129,15 @@ const LandingPage = () => {
         );
     }
 
+    const palette = getPalette(data.theme);
+
     return (
-        <div className={`landing-page ${theme === 'light' ? 'light-theme' : ''}`}>
-            {/* Animated background */}
-            <div className="landing-bg-gradient"></div>
+        <div
+            className={`landing-page ${theme === 'light' ? 'light-theme' : ''}`}
+            style={palette.bg ? { background: palette.bg } : undefined}
+        >
+            {/* Animated background — only for the default palette (others set their own bg) */}
+            {!palette.bg && <div className="landing-bg-gradient"></div>}
 
             {/* Share + Theme Toggle Buttons */}
             <button className="share-toggle-btn" onClick={handleShare} title={t('detail.share')}>
@@ -178,7 +184,7 @@ const LandingPage = () => {
                 {/* Links section */}
                 <div className="landing-links">
                     {data.links && data.links.map((link, index) => (
-                        <LinkButton key={link.id} link={link} index={index} onClick={() => track('click', link.title)} />
+                        <LinkButton key={link.id} link={link} index={index} accent={palette.accent} onClick={() => track('click', link.title)} />
                     ))}
                 </div>
 

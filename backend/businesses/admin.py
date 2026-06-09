@@ -33,7 +33,7 @@ class BusinessAdmin(admin.ModelAdmin):
     
     fieldsets = (
         (None, {
-            'fields': ('owner', 'path', 'name', 'description', 'logo', 'template', 'is_locked', 'is_pinned')
+            'fields': ('owner', 'path', 'name', 'description', 'logo', 'template', 'theme', 'is_locked', 'is_pinned')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),

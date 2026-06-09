@@ -7,6 +7,7 @@ import LinkButton from '../components/LinkButton';
 import ContentBlocks from '../components/ContentBlocks';
 import LogoCropper from '../components/LogoCropper';
 import TemplatePicker from '../components/templates/TemplatePicker';
+import ThemePicker from '../components/ThemePicker';
 import { useTranslation } from 'react-i18next';
 import { useEntitlements } from '../context/EntitlementContext';
 
@@ -127,7 +128,7 @@ const BusinessDetail = ({ isNew = false }) => {
     const { entitlements } = useEntitlements();
     const [activeTab, setActiveTab] = useState('edit');
     const [business, setBusiness] = useState(null);
-    const [formData, setFormData] = useState({ path: '', name: '', description: '', template: 'classic' });
+    const [formData, setFormData] = useState({ path: '', name: '', description: '', template: 'classic', theme: 'default' });
     const [links, setLinks] = useState([]);
     const [logoFile, setLogoFile] = useState(null);
     const [logoPreview, setLogoPreview] = useState(null);
@@ -202,7 +203,7 @@ const BusinessDetail = ({ isNew = false }) => {
             const res = await api.get(`businesses/${path}/`);
             setBusiness(res.data);
             setPinned(!!res.data.is_pinned);
-            setFormData({ path: res.data.path, name: res.data.name, description: res.data.description || '', template: res.data.template || 'classic' });
+            setFormData({ path: res.data.path, name: res.data.name, description: res.data.description || '', template: res.data.template || 'classic', theme: res.data.theme || 'default' });
 
             // Generate IDs for existing links to make them sortable
             const linksWithIds = (res.data.links || []).map((link, idx) => ({
@@ -685,6 +686,13 @@ const BusinessDetail = ({ isNew = false }) => {
                                 value={formData.template}
                                 onChange={(tpl) => setFormData({ ...formData, template: tpl })}
                             />
+                            {formData.template === 'classic' && (
+                                <ThemePicker
+                                    value={formData.theme}
+                                    onChange={(id) => setFormData({ ...formData, theme: id })}
+                                    locked={!entitlements?.features?.color_edit}
+                                />
+                            )}
                             <button className="save-btn" style={{ marginTop: 24 }} onClick={handleSave}
                                 disabled={saving || (isNew && pathStatus === 'taken')}>
                                 {saving ? t('detail.saving') : t('common.save')}

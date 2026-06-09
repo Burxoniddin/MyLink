@@ -405,3 +405,30 @@ class AnalyticsTests(TestCase):
         make_business(other, 'theirs', 'Theirs')
         res = self.client.get('/api/businesses/theirs/analytics/')
         self.assertEqual(res.status_code, 404)
+
+
+@override_settings(CACHES=LOCMEM)
+class ThemeGateTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(phone_number='+998901116600')
+        self.client = APIClient()
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+        self.biz = make_business(self.user, 'brand', 'Brand')
+
+    def test_free_cannot_change_theme(self):
+        res = self.client.patch('/api/businesses/brand/', {'theme': 'ocean'}, format='json')
+        self.assertEqual(res.status_code, 200)
+        self.biz.refresh_from_db()
+        self.assertEqual(self.biz.theme, 'default')  # gated -> ignored
+
+    def test_pro_can_change_theme(self):
+        Subscription.objects.create(user=self.user, tier=ent.PRO, expires_at=None)
+        res = self.client.patch('/api/businesses/brand/', {'theme': 'ocean'}, format='json')
+        self.assertEqual(res.status_code, 200)
+        self.biz.refresh_from_db()
+        self.assertEqual(self.biz.theme, 'ocean')
+
+    def test_theme_in_public_payload(self):
+        res = self.client.get('/api/public/brand/')
+        self.assertEqual(res.data['theme'], 'default')

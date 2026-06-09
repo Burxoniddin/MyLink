@@ -248,6 +248,16 @@
     "blog_read": "Read",
     "blog_empty": "No posts yet"
   },
+  "theme": {
+    "title": "Colour palette",
+    "locked": "Colour customization is available on the Oddiy and Pro plans.",
+    "default": "Default",
+    "ocean": "Ocean",
+    "forest": "Forest",
+    "noir": "Noir",
+    "rose": "Rose",
+    "sunset": "Sunset"
+  },
   "crop": {
     "title": "Crop your logo",
     "apply": "Done",

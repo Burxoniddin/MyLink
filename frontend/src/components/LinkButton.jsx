@@ -85,7 +85,7 @@ const getIconAndColor = (iconType) => {
     }
 };
 
-const LinkButton = ({ link, index = 0, onClick }) => {
+const LinkButton = ({ link, index = 0, onClick, accent }) => {
     const { icon, gradient, shadow } = getIconAndColor(link.icon_type);
 
     return (
@@ -96,8 +96,8 @@ const LinkButton = ({ link, index = 0, onClick }) => {
             className="premium-link-btn"
             onClick={onClick}
             style={{
-                background: gradient,
-                '--btn-shadow': shadow,
+                background: accent || gradient,
+                '--btn-shadow': accent ? `${accent}59` : shadow,
                 animationDelay: `${index * 0.1}s`
             }}
         >

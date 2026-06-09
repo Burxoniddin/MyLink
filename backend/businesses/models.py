@@ -21,6 +21,18 @@ class Business(models.Model):
     description = models.TextField(blank=True)
     logo = models.ImageField(upload_to='logos/', blank=True, null=True)
     template = models.CharField(max_length=20, choices=TEMPLATE_CHOICES, default='classic')
+    # Colour palette for the classic template (page background + button accent).
+    # Changing it is gated by the color_edit feature (Oddiy/Pro); sector templates
+    # carry their own palette so this only affects 'classic'.
+    THEME_CHOICES = [
+        ('default', 'Default (indigo)'),
+        ('ocean', 'Ocean'),
+        ('forest', 'Forest'),
+        ('noir', 'Noir'),
+        ('rose', 'Rose'),
+        ('sunset', 'Sunset'),
+    ]
+    theme = models.CharField(max_length=20, choices=THEME_CHOICES, default='default')
     # Locked when the owner is over their tier's profile_limit (e.g. after a
     # downgrade). Locked pages are hidden publicly; the owner picks which to keep
     # active. See billing.services.sync_locks / businesses toggle endpoint.

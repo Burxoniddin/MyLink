@@ -5,6 +5,7 @@ import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaRegStar
 import { FaXTwitter } from "react-icons/fa6";
 import LinkButton from '../components/LinkButton';
 import ContentBlocks from '../components/ContentBlocks';
+import LogoCropper from '../components/LogoCropper';
 import TemplatePicker from '../components/templates/TemplatePicker';
 import { useTranslation } from 'react-i18next';
 import { useEntitlements } from '../context/EntitlementContext';
@@ -131,6 +132,7 @@ const BusinessDetail = ({ isNew = false }) => {
     const [logoFile, setLogoFile] = useState(null);
     const [logoPreview, setLogoPreview] = useState(null);
     const [logoRemoved, setLogoRemoved] = useState(false);
+    const [cropSrc, setCropSrc] = useState(null);
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
@@ -385,20 +387,23 @@ const BusinessDetail = ({ isNew = false }) => {
         setIsDraggingLogo(false);
     };
 
+    // Open the square crop modal for a freshly selected image.
+    const openCropper = (file) => {
+        if (!file || !file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = () => setCropSrc(reader.result);
+        reader.readAsDataURL(file);
+    };
+
     const handleDrop = (e) => {
         e.preventDefault();
         setIsDraggingLogo(false);
-        const file = e.dataTransfer.files[0];
-        if (file && file.type.startsWith('image/')) {
-            setLogoFile(file);
-        }
+        openCropper(e.dataTransfer.files[0]);
     };
 
     const handleFileSelect = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setLogoFile(file);
-        }
+        openCropper(e.target.files[0]);
+        e.target.value = ''; // allow re-selecting the same file
     };
 
     const tabs = [
@@ -746,6 +751,18 @@ const BusinessDetail = ({ isNew = false }) => {
                         )}
                     </div>
                 </div>
+            )}
+
+            {cropSrc && (
+                <LogoCropper
+                    src={cropSrc}
+                    onCancel={() => setCropSrc(null)}
+                    onComplete={(file) => {
+                        setLogoFile(file);
+                        setLogoRemoved(false);
+                        setCropSrc(null);
+                    }}
+                />
             )}
         </div>
     );

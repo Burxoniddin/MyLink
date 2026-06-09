@@ -248,6 +248,11 @@
     "blog_read": "O'qish",
     "blog_empty": "Hozircha post yo'q"
   },
+  "crop": {
+    "title": "Logoni kesing",
+    "apply": "Tayyor",
+    "saving": "..."
+  },
   "analytics": {
     "title": "Analitika",
     "views": "Ko'rishlar",

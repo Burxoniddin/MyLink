@@ -248,6 +248,11 @@
     "blog_read": "Read",
     "blog_empty": "No posts yet"
   },
+  "crop": {
+    "title": "Crop your logo",
+    "apply": "Done",
+    "saving": "..."
+  },
   "analytics": {
     "title": "Analytics",
     "views": "Views",

@@ -1231,6 +1231,48 @@ select {
 .hl-prev { left: 14px; }
 .hl-next { right: 14px; }
 
+/* LOGO CROPPER MODAL */
+.cropper-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  background: rgba(17, 24, 39, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.cropper-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 22px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.4);
+}
+.cropper-box h3 { margin: 0 0 16px; font-size: 18px; text-align: center; }
+.cropper-area {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  background: #111;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.cropper-zoom { width: 100%; margin: 16px 0 18px; accent-color: #4f46e5; cursor: pointer; }
+.cropper-actions { display: flex; gap: 10px; }
+.cropper-cancel, .cropper-save {
+  flex: 1;
+  padding: 11px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+.cropper-cancel { border: 1px solid #e5e7eb; background: #fff; color: #374151; }
+.cropper-save { border: none; background: #4f46e5; color: #fff; }
+.cropper-save:disabled { opacity: 0.6; cursor: default; }
+
 /* ANALYTICS */
 .analytics-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
 .analytics-head h1 { margin: 0; }

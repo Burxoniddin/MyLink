@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.db.models import Count
 from django.utils.html import format_html
-from .models import Business, Link, ContentBlock, MenuItem, SiteSettings, ContactMessage, StaticPage, BlogPost
+from .models import Business, Link, ContentBlock, Event, MenuItem, SiteSettings, ContactMessage, StaticPage, BlogPost
 
 
 class LinkInline(admin.TabularInline):
@@ -66,6 +66,17 @@ class LinkAdmin(admin.ModelAdmin):
         short_url = obj.url[:50] + '...' if len(obj.url) > 50 else obj.url
         return format_html('<a href="{}" target="_blank">{}</a>', obj.url, short_url)
     url_preview.short_description = 'URL'
+
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    list_display = ['event_type', 'business', 'label', 'created_at']
+    list_filter = ['event_type', 'created_at']
+    search_fields = ['business__name', 'business__path', 'label']
+    date_hierarchy = 'created_at'
+
+    def has_add_permission(self, request):
+        return False
 
 
 @admin.register(MenuItem)

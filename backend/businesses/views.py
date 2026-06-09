@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
@@ -5,12 +7,14 @@ from rest_framework.views import APIView
 from rest_framework.throttling import AnonRateThrottle
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db.models import Max
+from django.db.models import Count, Max
+from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from billing.services import can_create_business, get_entitlements, sync_locks
 from . import qr
-from .models import Business, Link, ContentBlock, SiteSettings, ContactMessage, StaticPage, BlogPost
+from .models import Business, Link, ContentBlock, Event, SiteSettings, ContactMessage, StaticPage, BlogPost
 from .serializers import (
     BusinessSerializer,
     ContentBlockSerializer,
@@ -179,6 +183,79 @@ class ContentBlockReorderView(APIView):
         for index, block_id in enumerate(request.data.get('order', [])):
             ContentBlock.objects.filter(id=block_id, business=business).update(order=index)
         return Response({'ok': True})
+
+
+class TrackThrottle(AnonRateThrottle):
+    scope = 'track'
+    rate = '1000/hour'
+
+
+class TrackView(APIView):
+    """Public: record an interaction on a page. Body: ``{path, event_type, label?}``.
+    Silently ignores unknown paths/locked pages so a tracking beacon never errors
+    the visitor's page."""
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+    throttle_classes = [TrackThrottle]
+
+    VALID = {'view', 'click', 'share', 'banner'}
+
+    def post(self, request):
+        event_type = request.data.get('event_type')
+        if event_type not in self.VALID:
+            return Response({'detail': 'bad event_type'}, status=status.HTTP_400_BAD_REQUEST)
+        business = Business.objects.filter(path=request.data.get('path'), is_locked=False).first()
+        if business is None:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        Event.objects.create(
+            business=business,
+            event_type=event_type,
+            label=(request.data.get('label') or '')[:200],
+        )
+        return Response(status=status.HTTP_201_CREATED)
+
+
+class BusinessAnalyticsView(APIView):
+    """Owner analytics for one business, tier-gated (``analytics``: none→403,
+    partial→7-day window, full→30-day window + top links)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, path):
+        business = get_object_or_404(Business, path=path, owner=request.user)
+        level = get_entitlements(request.user)['features']['analytics']  # none|partial|full
+        if level == 'none':
+            raise PermissionDenied({'reason': 'analytics'})
+
+        days = 30 if level == 'full' else 7
+        since = timezone.now() - timedelta(days=days)
+        qs = Event.objects.filter(business=business, created_at__gte=since)
+
+        totals = {'view': 0, 'click': 0, 'share': 0, 'banner': 0}
+        for row in qs.values('event_type').annotate(n=Count('id')):
+            totals[row['event_type']] = row['n']
+
+        daily_map = {}
+        for row in qs.annotate(d=TruncDate('created_at')).values('d', 'event_type').annotate(n=Count('id')):
+            key = row['d'].isoformat()
+            entry = daily_map.setdefault(key, {'date': key, 'view': 0, 'click': 0})
+            if row['event_type'] in ('view', 'click'):
+                entry[row['event_type']] = row['n']
+
+        today = timezone.now().date()
+        daily = [
+            daily_map.get(
+                (today - timedelta(days=i)).isoformat(),
+                {'date': (today - timedelta(days=i)).isoformat(), 'view': 0, 'click': 0},
+            )
+            for i in range(days, -1, -1)
+        ]
+
+        result = {'level': level, 'days': days, 'totals': totals, 'daily': daily}
+        if level == 'full':
+            top = (qs.filter(event_type='click').exclude(label='')
+                   .values('label').annotate(clicks=Count('id')).order_by('-clicks')[:10])
+            result['top_links'] = [{'label': r['label'], 'clicks': r['clicks']} for r in top]
+        return Response(result)
 
 
 class PublicStatsView(APIView):

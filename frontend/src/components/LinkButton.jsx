@@ -85,7 +85,7 @@ const getIconAndColor = (iconType) => {
     }
 };
 
-const LinkButton = ({ link, index = 0 }) => {
+const LinkButton = ({ link, index = 0, onClick }) => {
     const { icon, gradient, shadow } = getIconAndColor(link.icon_type);
 
     return (
@@ -94,6 +94,7 @@ const LinkButton = ({ link, index = 0 }) => {
             target="_blank"
             rel="noopener noreferrer"
             className="premium-link-btn"
+            onClick={onClick}
             style={{
                 background: gradient,
                 '--btn-shadow': shadow,

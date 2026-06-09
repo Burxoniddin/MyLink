@@ -248,6 +248,16 @@
     "blog_read": "O'qish",
     "blog_empty": "Hozircha post yo'q"
   },
+  "analytics": {
+    "title": "Analitika",
+    "views": "Ko'rishlar",
+    "clicks": "Bosishlar",
+    "shares": "Ulashishlar",
+    "top_links": "Eng ko'p bosilgan havolalar",
+    "window": "Oxirgi {{days}} kun",
+    "upsell": "Analitika Oddiy va Pro tariflarda mavjud.",
+    "no_business": "Avval biznes sahifa yarating."
+  },
   "blocks": {
     "title": "Kontent bloklar",
     "image": "Rasm",

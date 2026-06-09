@@ -248,6 +248,16 @@
     "blog_read": "Read",
     "blog_empty": "No posts yet"
   },
+  "analytics": {
+    "title": "Analytics",
+    "views": "Views",
+    "clicks": "Clicks",
+    "shares": "Shares",
+    "top_links": "Top clicked links",
+    "window": "Last {{days}} days",
+    "upsell": "Analytics is available on the Oddiy and Pro plans.",
+    "no_business": "Create a business page first."
+  },
   "blocks": {
     "title": "Content blocks",
     "image": "Image",

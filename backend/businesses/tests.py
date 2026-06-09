@@ -9,7 +9,7 @@ from rest_framework.test import APIClient
 from billing import entitlements as ent
 from billing.models import Subscription
 from billing.services import sync_locks
-from businesses.models import Business, ContentBlock
+from businesses.models import Business, ContentBlock, Event
 
 User = get_user_model()
 
@@ -291,4 +291,84 @@ class ContentBlockTests(TestCase):
         Subscription.objects.create(user=other, tier=ent.PRO, expires_at=None)
         make_business(other, 'theirs', 'Theirs')
         res = self.client.post('/api/businesses/theirs/blocks/', {'block_type': 'text', 'text': 'x'}, format='json')
+        self.assertEqual(res.status_code, 404)
+
+
+@override_settings(CACHES=LOCMEM)
+class TrackTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(phone_number='+998901115500')
+        self.biz = make_business(self.user, 'brand', 'Brand')
+        self.client = APIClient()  # anonymous visitor
+
+    def test_track_view_and_click(self):
+        self.assertEqual(self.client.post('/api/track/', {'path': 'brand', 'event_type': 'view'}, format='json').status_code, 201)
+        self.assertEqual(self.client.post('/api/track/', {'path': 'brand', 'event_type': 'click', 'label': 'Instagram'}, format='json').status_code, 201)
+        self.assertEqual(Event.objects.filter(business=self.biz).count(), 2)
+
+    def test_bad_event_type(self):
+        res = self.client.post('/api/track/', {'path': 'brand', 'event_type': 'hack'}, format='json')
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(Event.objects.count(), 0)
+
+    def test_unknown_path_noop(self):
+        res = self.client.post('/api/track/', {'path': 'nope', 'event_type': 'view'}, format='json')
+        self.assertEqual(res.status_code, 204)
+        self.assertEqual(Event.objects.count(), 0)
+
+    def test_locked_page_not_tracked(self):
+        self.biz.is_locked = True
+        self.biz.save(update_fields=['is_locked'])
+        res = self.client.post('/api/track/', {'path': 'brand', 'event_type': 'view'}, format='json')
+        self.assertEqual(res.status_code, 204)
+        self.assertEqual(Event.objects.count(), 0)
+
+
+@override_settings(CACHES=LOCMEM)
+class AnalyticsTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(phone_number='+998901115511')
+        self.client = APIClient()
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+        self.biz = make_business(self.user, 'brand', 'Brand')
+
+    def grant(self, tier):
+        Subscription.objects.create(user=self.user, tier=tier, expires_at=None)
+
+    def seed(self):
+        Event.objects.create(business=self.biz, event_type='view')
+        Event.objects.create(business=self.biz, event_type='view')
+        Event.objects.create(business=self.biz, event_type='click', label='Instagram')
+
+    def test_free_forbidden(self):
+        res = self.client.get('/api/businesses/brand/analytics/')
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.data['reason'], 'analytics')
+
+    def test_oddiy_partial_no_top_links(self):
+        self.grant(ent.ODDIY)
+        self.seed()
+        res = self.client.get('/api/businesses/brand/analytics/')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['level'], 'partial')
+        self.assertEqual(res.data['days'], 7)
+        self.assertEqual(res.data['totals']['view'], 2)
+        self.assertEqual(res.data['totals']['click'], 1)
+        self.assertNotIn('top_links', res.data)
+
+    def test_pro_full_with_top_links(self):
+        self.grant(ent.PRO)
+        self.seed()
+        res = self.client.get('/api/businesses/brand/analytics/')
+        self.assertEqual(res.data['level'], 'full')
+        self.assertEqual(res.data['days'], 30)
+        self.assertEqual(len(res.data['daily']), 31)
+        self.assertEqual(res.data['top_links'][0]['label'], 'Instagram')
+        self.assertEqual(res.data['top_links'][0]['clicks'], 1)
+
+    def test_cannot_view_others(self):
+        other = User.objects.create_user(phone_number='+998909991122')
+        make_business(other, 'theirs', 'Theirs')
+        res = self.client.get('/api/businesses/theirs/analytics/')
         self.assertEqual(res.status_code, 404)

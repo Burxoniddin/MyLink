@@ -80,6 +80,27 @@ class ContentBlock(models.Model):
         return f"{self.get_block_type_display()} — {self.business.name}"
 
 
+class Event(models.Model):
+    """A tracked interaction on a public page: page view, link click, share, or
+    banner/block view. Written by the public ``/api/track/`` endpoint and
+    aggregated by the owner analytics endpoint (tier-gated ``analytics``)."""
+    EVENT_TYPES = [('view', 'View'), ('click', 'Click'), ('share', 'Share'), ('banner', 'Banner')]
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='events')
+    event_type = models.CharField(max_length=10, choices=EVENT_TYPES)
+    # Free-text target label (e.g. clicked link's title). Not an FK because Link
+    # rows are recreated on every save, so PKs aren't stable.
+    label = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['business', 'event_type', 'created_at'])]
+
+    def __str__(self):
+        return f"{self.event_type} — {self.business.path}"
+
+
 class MenuItem(models.Model):
     """Dynamic menu items for navbar, sidebar, footer"""
     LOCATION_CHOICES = [

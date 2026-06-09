@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api';
 import LinkButton from '../components/LinkButton';
-import { FaSun, FaMoon, FaCheckCircle } from 'react-icons/fa';
+import { FaSun, FaMoon, FaCheckCircle, FaShareAlt } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
 // Backend base URL for media files - auto detect based on environment
@@ -19,12 +19,22 @@ const LandingPage = () => {
     const [theme, setTheme] = useState(() => {
         return localStorage.getItem('mylink-theme') || 'dark';
     });
+    const viewTracked = useRef('');
+
+    // Fire-and-forget analytics beacon; never breaks the visitor's page.
+    const track = (event_type, label = '') => {
+        api.post('track/', { path, event_type, label }).catch(() => {});
+    };
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const res = await api.get(`public/${path}/`);
                 setData(res.data);
+                if (viewTracked.current !== path) {
+                    viewTracked.current = path; // once per path (guards StrictMode double-mount)
+                    track('view');
+                }
             } catch {
                 setError(true);
             } finally {
@@ -32,7 +42,18 @@ const LandingPage = () => {
             }
         };
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [path]);
+
+    const handleShare = async () => {
+        track('share');
+        const url = window.location.href;
+        if (navigator.share) {
+            try { await navigator.share({ title: data?.name, url }); } catch { /* dismissed */ }
+        } else {
+            try { await navigator.clipboard.writeText(url); } catch { /* unavailable */ }
+        }
+    };
 
     // Save theme to localStorage when it changes
     useEffect(() => {
@@ -89,7 +110,10 @@ const LandingPage = () => {
             {/* Animated background */}
             <div className="landing-bg-gradient"></div>
 
-            {/* Theme Toggle Button */}
+            {/* Share + Theme Toggle Buttons */}
+            <button className="share-toggle-btn" onClick={handleShare} title={t('detail.share')}>
+                <FaShareAlt />
+            </button>
             <button className="theme-toggle-btn" onClick={toggleTheme} title={theme === 'dark' ? 'Light mode' : 'Dark mode'}>
                 {theme === 'dark' ? <FaSun /> : <FaMoon />}
             </button>
@@ -128,7 +152,7 @@ const LandingPage = () => {
                 {/* Links section */}
                 <div className="landing-links">
                     {data.links && data.links.map((link, index) => (
-                        <LinkButton key={link.id} link={link} index={index} />
+                        <LinkButton key={link.id} link={link} index={index} onClick={() => track('click', link.title)} />
                     ))}
                 </div>
 

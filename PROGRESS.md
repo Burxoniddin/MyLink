@@ -126,7 +126,7 @@ VITE_GOOGLE_CLIENT_ID=<google oauth client id — backend bilan bir xil>
 
 ---
 
-## 4.1 ✅ Tekshirilishi kerak — 1b + 1c (oxirgi seans)
+## 4.1 ✅ Tekshirilishi kerak — 1b/1c + 2-faza (2a–2d)
 
 > Boshqa kompda: `git pull origin dev` → backend `pip install -r requirements.txt` + `python manage.py migrate` + `python manage.py createcachetable` → frontend `npm install`. **Test ma'lumotlari:** `python manage.py seed_demo` (faqat DEBUG; idempotent).
 
@@ -151,9 +151,21 @@ VITE_GOOGLE_CLIENT_ID=<google oauth client id — backend bilan bir xil>
 - [ ] Bloklanganda "Faollashtirish" → limit to'lgani uchun rad; avval faol bittasini "O'chirish" → keyin boshqasini "Faollashtirish" ishlaydi
 - [ ] Public: `localhost:5173/freebiz` → "Powered by MyLink" **bor**; `localhost:5173/probiz1` → branding **yo'q** + nom yonida ✓ galochka; bloklangan biznes path → "Sahifa topilmadi" (404)
 
-**Avtotestlar:** `python manage.py test billing users businesses` → **41 ta o'tishi kerak**. Frontend: `npm run lint` (0 error), `npm run build`.
+**UX (oldingi seans):** Navbar'da **Profil** + tarif badge; `/pricing` real sahifa; Dashboard limitda **upgrade modal**; Login/Register/Forgot'da logo → landing; landing header faqat "Tizimga kirish".
 
-**Yangi endpointlar/migrationlar:** `POST /api/promo/redeem/`, `POST /api/businesses/<path>/lock/`; `billing/0003`, `businesses/0008`. `/api/me/` → `entitlements.expires_at` + `usage.active`.
+**2a — Toolbar + pin:** Pro user → biznes oching → tepada toolbar (📋 nusxa / 🔗 ulashish / ↗ ko'rinish / ⭐ qadash). ⭐ bosing → Dashboard'da tepaga ko'tariladi + ⭐ badge.
+
+**2b — QR + PDF:** Pro → toolbar **QR / PDF** → modal'da PNG + PDF + Vizitka yuklab olish. Free → upsell. Oddiy (`ODDIY1` promo) → faqat PNG, PDF/vizitka 🔒Pro.
+
+**2c — Content bloklari:** Pro → **Bloklar** tab → Rasm/Video/Matn qo'shing, tahrirlang, **Saqlash**, dnd tartiblang, o'chiring. Public sahifada ko'rinadi (matn/rasm/video/YouTube). Oddiy: 3 ta, video yo'q. Free: upsell.
+
+**2d — Analitika:** Public sahifani oching (ko'rish track bo'ladi) → link bosing → **Ulashish** tugmasi. Pro → Navbar **Analitika** → biznes tanlang → kartalar + LineChart + top havolalar. Free → upsell. *(seed: `probiz1`da demo event'lar bor.)*
+
+**Avtotestlar:** `python manage.py test billing users businesses` → **64 ta o'tishi kerak**. Frontend: `npm run lint` (0 error), `npm run build`. **Yangi deps:** backend `qrcode`+`reportlab`, frontend `recharts` → boshqa kompda `pip install -r requirements.txt` + `npm install` shart.
+
+**Yangi endpointlar/migrationlar (2-faza):** `POST /businesses/<path>/pin/`, `{qr.png,qr.pdf,card.pdf}`, `blocks/` CRUD + `blocks/reorder/`, `POST /track/`, `GET /businesses/<path>/analytics/`; migrationlar `businesses/0009`(pin)`/0010`(blocks)`/0011`(event). Public payload → `content_blocks`; biznes → `is_pinned`.
+
+**⚠️ Prod (deploy oldidan):** nginx `client_max_body_size 50M` (2c video upload uchun) + `requirements.txt` o'rnatish (qrcode/reportlab).
 
 ---
 

@@ -1,7 +1,17 @@
 from django.contrib import admin
 from django.db.models import Count
 from django.utils.html import format_html
-from .models import Business, Link, ContentBlock, Event, MenuItem, SiteSettings, ContactMessage, NfcOrder, StaticPage, BlogPost
+from .models import Business, Link, ContentBlock, BusinessMembership, Event, MenuItem, SiteSettings, ContactMessage, NfcOrder, StaticPage, BlogPost
+
+
+@admin.register(BusinessMembership)
+class BusinessMembershipAdmin(admin.ModelAdmin):
+    list_display = ['business', 'user', 'invite_email', 'invite_phone', 'role', 'accepted_at', 'created_at']
+    list_filter = ['role', 'created_at']
+    list_editable = ['role']
+    search_fields = ['business__name', 'business__path', 'user__email', 'user__phone_number', 'invite_email', 'invite_phone']
+    autocomplete_fields = ['business', 'user', 'invited_by']
+    readonly_fields = ['created_at', 'accepted_at']
 
 
 class LinkInline(admin.TabularInline):

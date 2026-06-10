@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from django.conf import settings
 from django.utils import timezone
 
@@ -76,6 +77,61 @@ class Link(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.business.name}"
+
+
+class BusinessMembership(models.Model):
+    """A team member's access to a business (4e).
+
+    Roles, weakest→strongest: ``viewer`` (read + analytics) < ``editor`` (edit
+    content/links/blocks) < ``admin`` (also manage members). The page ``owner`` is
+    implicit and outranks all roles — see ``businesses.access``.
+
+    Supports *pending* invites: when the invitee has no account yet, ``user`` is
+    null and the invited email/phone is stored. ``access.claim_pending_invites``
+    attaches the membership the moment that person registers. Inviting is gated by
+    the *owner's* ``team`` entitlement (Pro)."""
+    ROLE_ADMIN = 'admin'
+    ROLE_EDITOR = 'editor'
+    ROLE_VIEWER = 'viewer'
+    ROLES = [(ROLE_ADMIN, 'Admin'), (ROLE_EDITOR, 'Muharrir'), (ROLE_VIEWER, 'Kuzatuvchi')]
+
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        null=True, blank=True, related_name='business_memberships',
+    )
+    # Identifier the invite was sent to (used to claim a pending invite on signup).
+    invite_email = models.EmailField(blank=True)
+    invite_phone = models.CharField(max_length=15, blank=True)
+    role = models.CharField(max_length=10, choices=ROLES, default=ROLE_VIEWER)
+    invited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='+',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Jamoa a'zosi"
+        verbose_name_plural = "Jamoa a'zolari"
+        constraints = [
+            # A given user can belong to a business at most once (pending rows have
+            # user=NULL and are excluded so multiple pending invites are possible).
+            models.UniqueConstraint(
+                fields=['business', 'user'],
+                condition=Q(user__isnull=False),
+                name='uniq_membership_business_user',
+            ),
+        ]
+
+    @property
+    def is_pending(self):
+        return self.user_id is None
+
+    def __str__(self):
+        who = self.user or self.invite_email or self.invite_phone or '—'
+        return f"{who} · {self.get_role_display()} @ {self.business.path}"
 
 
 class ContentBlock(models.Model):

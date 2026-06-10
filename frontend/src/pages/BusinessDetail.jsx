@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api';
-import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaRegStar, FaCopy, FaShareAlt, FaQrcode, FaLock, FaFilePdf, FaIdCard, FaLayerGroup, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines, FaTiktok, FaYandex, FaMapMarkedAlt } from 'react-icons/fa';
+import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaRegStar, FaCopy, FaShareAlt, FaQrcode, FaLock, FaFilePdf, FaIdCard, FaLayerGroup, FaUsers, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines, FaTiktok, FaYandex, FaMapMarkedAlt } from 'react-icons/fa';
 import { FaXTwitter } from "react-icons/fa6";
 import LinkButton from '../components/LinkButton';
 import ContentBlocks from '../components/ContentBlocks';
+import TeamManager from '../components/TeamManager';
 import LogoCropper from '../components/LogoCropper';
 import TemplatePicker from '../components/templates/TemplatePicker';
 import ThemePicker from '../components/ThemePicker';
@@ -138,6 +139,7 @@ const BusinessDetail = ({ isNew = false }) => {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [pinned, setPinned] = useState(false);
+    const [role, setRole] = useState(null); // null while new; 'owner'|'admin'|'editor'|'viewer'
     const [copied, setCopied] = useState(false);
     const [showQr, setShowQr] = useState(false);
     const [qrPreview, setQrPreview] = useState(null);
@@ -203,6 +205,7 @@ const BusinessDetail = ({ isNew = false }) => {
             const res = await api.get(`businesses/${path}/`);
             setBusiness(res.data);
             setPinned(!!res.data.is_pinned);
+            setRole(res.data.role || null);
             setFormData({ path: res.data.path, name: res.data.name, description: res.data.description || '', template: res.data.template || 'classic', theme: res.data.theme || 'default' });
 
             // Generate IDs for existing links to make them sortable
@@ -407,11 +410,17 @@ const BusinessDetail = ({ isNew = false }) => {
         e.target.value = ''; // allow re-selecting the same file
     };
 
+    // Role-based capabilities. A brand-new page has no role yet but its creator
+    // is the owner, so editing is allowed.
+    const canEdit = isNew || role !== 'viewer';
+    const canManageTeam = !isNew && (role === 'owner' || role === 'admin');
+
     const tabs = [
         { id: 'preview', label: t('detail.tab_preview'), icon: <FaEye /> },
         { id: 'edit', label: t('detail.tab_edit'), icon: <FaEdit /> },
         ...(!isNew ? [{ id: 'blocks', label: t('detail.tab_blocks'), icon: <FaLayerGroup /> }] : []),
         { id: 'customize', label: t('detail.tab_customize'), icon: <FaPalette /> },
+        ...(canManageTeam ? [{ id: 'team', label: t('detail.tab_team'), icon: <FaUsers /> }] : []),
         { id: 'advanced', label: t('detail.tab_advanced'), icon: <FaCog />, disabled: true },
         { id: 'upgrade', label: t('detail.tab_upgrade'), icon: <FaStar />, disabled: true },
     ];
@@ -531,6 +540,11 @@ const BusinessDetail = ({ isNew = false }) => {
                         <div className="edit-section">
                             {message.text && (
                                 <div className={`message ${message.type}`}>{message.text}</div>
+                            )}
+                            {!canEdit && (
+                                <div className="message" style={{ background: '#f3f4f6', color: '#374151' }}>
+                                    {t('detail.readonly')}
+                                </div>
                             )}
 
                             <div className="edit-two-column">
@@ -668,9 +682,11 @@ const BusinessDetail = ({ isNew = false }) => {
                                 </div>
                             </div>
 
-                            <button className="save-btn" onClick={handleSave} disabled={saving || (isNew && pathStatus === 'taken')}>
-                                <FaSave /> {saving ? t('detail.saving') : t('common.save')}
-                            </button>
+                            {canEdit && (
+                                <button className="save-btn" onClick={handleSave} disabled={saving || (isNew && pathStatus === 'taken')}>
+                                    <FaSave /> {saving ? t('detail.saving') : t('common.save')}
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -693,10 +709,18 @@ const BusinessDetail = ({ isNew = false }) => {
                                     locked={!entitlements?.features?.color_edit}
                                 />
                             )}
-                            <button className="save-btn" style={{ marginTop: 24 }} onClick={handleSave}
-                                disabled={saving || (isNew && pathStatus === 'taken')}>
-                                {saving ? t('detail.saving') : t('common.save')}
-                            </button>
+                            {canEdit && (
+                                <button className="save-btn" style={{ marginTop: 24 }} onClick={handleSave}
+                                    disabled={saving || (isNew && pathStatus === 'taken')}>
+                                    {saving ? t('detail.saving') : t('common.save')}
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {activeTab === 'team' && canManageTeam && (
+                        <div className="edit-section">
+                            <TeamManager path={business.path} />
                         </div>
                     )}
 

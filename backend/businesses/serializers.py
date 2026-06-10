@@ -1,5 +1,12 @@
 from rest_framework import serializers
-from .models import Business, Link, ContentBlock, ContactMessage, NfcOrder, StaticPage, BlogPost
+from .models import Business, Link, ContentBlock, BusinessMembership, ContactMessage, NfcOrder, StaticPage, BlogPost
+
+
+def user_display(user):
+    """Short human label for a team member (no PII beyond their own identifier)."""
+    if not user:
+        return ''
+    return user.email or user.phone_number or f'user#{user.pk}'
 
 class LinkSerializer(serializers.ModelSerializer):
     # Use CharField instead of URLField to allow tel: and mailto: links
@@ -32,13 +39,35 @@ class BusinessSerializer(serializers.ModelSerializer):
     branding_removed = serializers.SerializerMethodField()
     verified = serializers.SerializerMethodField()
     content_blocks = serializers.SerializerMethodField()
+    # Requesting user's role on this page ('owner' | admin | editor | viewer).
+    role = serializers.SerializerMethodField()
+    # Owner label, shown on the dashboard for pages shared *with* you.
+    owner_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Business
         fields = ['id', 'path', 'name', 'description', 'logo', 'logo_upload', 'logo_remove',
                   'template', 'theme', 'is_locked', 'is_pinned', 'branding_removed', 'verified',
-                  'created_at', 'links', 'content_blocks']
+                  'role', 'owner_name', 'created_at', 'links', 'content_blocks']
         read_only_fields = ['is_locked', 'is_pinned']
+
+    def get_role(self, obj):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if not user:
+            return None
+        from .access import role_for
+        return role_for(user, obj)
+
+    def get_owner_name(self, obj):
+        # Only exposed to authenticated users who have access (owner / team member);
+        # never on the public page endpoint (would leak the owner's email/phone).
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if not user or not getattr(user, 'is_authenticated', False):
+            return None
+        from .access import role_for
+        return user_display(obj.owner) if role_for(user, obj) else None
 
     def get_content_blocks(self, obj):
         return ContentBlockSerializer(obj.content_blocks.all(), many=True, context=self.context).data
@@ -92,10 +121,9 @@ class BusinessSerializer(serializers.ModelSerializer):
         # Colour palette change is gated by the color_edit feature (Oddiy/Pro).
         new_theme = validated_data.get('theme')
         if new_theme is not None and new_theme != instance.theme:
-            request = self.context.get('request')
-            user = getattr(request, 'user', None)
+            # Colour editing follows the page owner's tier, not the editing member's.
             from billing.services import get_entitlements
-            if user and get_entitlements(user)['features']['color_edit']:
+            if get_entitlements(instance.owner)['features']['color_edit']:
                 instance.theme = new_theme
 
         # Logo o'chirish yoki yangilash
@@ -120,6 +148,33 @@ class BusinessSerializer(serializers.ModelSerializer):
                 Link.objects.create(business=instance, **link_data)
 
         return instance
+
+
+class MembershipSerializer(serializers.ModelSerializer):
+    """A team member (or pending invite) as shown in the Team panel."""
+    display = serializers.SerializerMethodField()
+    role_display = serializers.CharField(source='get_role_display', read_only=True)
+    status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BusinessMembership
+        fields = ['id', 'display', 'role', 'role_display', 'status', 'created_at']
+
+    def get_display(self, obj):
+        return user_display(obj.user) if obj.user_id else (obj.invite_email or obj.invite_phone)
+
+    def get_status(self, obj):
+        return 'pending' if obj.is_pending else 'active'
+
+
+class MembershipInviteSerializer(serializers.Serializer):
+    """Invite payload: an email/phone identifier + a role to grant."""
+    identifier = serializers.CharField()
+    role = serializers.ChoiceField(choices=[r[0] for r in BusinessMembership.ROLES])
+
+
+class MembershipRoleSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=[r[0] for r in BusinessMembership.ROLES])
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):

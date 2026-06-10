@@ -3,7 +3,7 @@
 > **Maqsad:** Ikki kompyuter o'rtasida ishni uzluksiz davom ettirish. Bu fayl `dev` branch'da turadi va git orqali sinxronlanadi.
 > **Qoida:** Har ish seansidan so'ng pastdagi **§4 Holat** bo'limini yangilab, commit qilib qo'ying.
 
-**Oxirgi yangilanish:** 2026-06-10 (3a + 4a referral + 4c qidiruv + 4b NFC; qoldi: 4e jamoa/rollar) · **Faol branch:** `dev` · **Repo:** https://github.com/Burxoniddin/MyLink (public)
+**Oxirgi yangilanish:** 2026-06-10 (4e jamoa/rollar TUGADI — yo'l xaritasidagi barcha funksiyalar bajarildi; qoldi faqat 1a to'lov, ⏸️ kechiktirilgan) · **Faol branch:** `dev` · **Repo:** https://github.com/Burxoniddin/MyLink (public)
 
 ---
 
@@ -122,7 +122,7 @@ VITE_GOOGLE_CLIENT_ID=<google oauth client id — backend bilan bir xil>
 - [x] **4a · Referral** — `users.ReferralCode` (unik kod, O/0/I/1 siz) + `billing.ReferralReward` (referred=OneToOne, migration `users/0003`, `billing/0004`). Register `?ref=` → `referred_by` o'rnatadi. `services.grant_subscription` Pro berilganda (source≠referral) `maybe_reward_referrer` → referrer'ga **+1 oy Pro** (`grant_pro_extension` mavjud muddat ustiga qo'shadi), do'st boshiga 1 marta, yiliga ≤12 (cap'da subscription=None yoziladi). `GET /api/referral/` (kod + link + stats). Admin (ReferralCode, ReferralReward read-only). Frontend: Register `?ref=` allaqachon yuborardi; `pages/Referral.jsx` (`/referral` endi real) — havola + nusxa/ulashish + stats + "qanday ishlaydi". uz/ru/en. Testlar: +11 (jami **82**).
 - [x] **4b · NFC** — `NfcOrder` modeli (user/full_name/phone/quantity/note/status, migration `0014`) + admin (status editable). `GET/POST /api/nfc/orders/` (auth; create→Telegram forward, ContactMessage patternida; list→o'z buyurtmalari). Frontend: `pages/Nfc.jsx` (`/nfc` route + Navbar havola) — info hero + ariza forma + buyurtmalar tarixi (status badge). Onlayn to'lovsiz (lead). uz/ru/en. Testlar: +4 (jami **86**).
 - [x] **4c · Dashboard qidiruv + soni** — "N/limit" indikator allaqachon bor edi (1c'dan). Qo'shildi: Dashboard'da **qidiruv** (nom/path bo'yicha client-side filter, 2+ biznesda ko'rinadi, "topilmadi" holati). Faqat frontend (`pages/Dashboard.jsx`); uz/ru/en `dashboard.search_ph`/`no_results`.
-- [ ] **4e · Biznes jamoa/rollar** — `BusinessMembership` (admin/editor/viewer); taklif; permissionlar
+- [x] **4e · Biznes jamoa/rollar** — `BusinessMembership` (admin/editor/viewer + implicit owner; migration `businesses/0015`). Rol ierarxiyasi va gate'lar `businesses/access.py` da (`role_for`/`require_role`/`get_business_or_404`). **Kutilayotgan taklif (pending):** akkaunti yo'q odam ham taklif qilinadi — ro'yxatdan o'tganda `claim_pending_invites` avto-ulaydi (Register/Google/telefon-OTP signup'ga ulangan). Taklif **Pro egasi** uchun (`team` flag). Endpointlar: `GET/POST /api/businesses/<path>/members/` (owner+admin; POST Pro gate), `PATCH/DELETE /api/members/<id>/`. Mavjud business/blocks/qr/analytics viewlar rolga ko'ra ochildi (viewer=ko'rish+analitika, editor=tahrir, admin=+a'zo boshqaruvi, owner=+o'chirish); **shared sahifa uchun feature gate EGA tarifiga bog'liq**. Dashboard: shared sahifalar rol bilan ko'rinadi (limit faqat o'z sahifalariga). BusinessDetail: **Jamoa** tab (owner/admin) + viewer faqat-ko'rish. uz/ru/en. Testlar: +14 (jami **100**).
 
 ---
 
@@ -165,9 +165,14 @@ VITE_GOOGLE_CLIENT_ID=<google oauth client id — backend bilan bir xil>
 - Public: `…/probiz1` (restoran) · `…/probiz2` (moda) · `…/probiz3` (klinika) · `…/motorhub` (avto) · `…/pulsegym` (fitnes) · `…/freebiz` (classic). Har birida o'ng-yuqorida light/dark toggle + ulashish.
 - Editor: istalgan biznes → **Sozlash** tab → shablonni tanlang → **Saqlash** → public sahifa o'zgaradi. Bio/logo/linklar har shablonda to'g'ri ko'rinishi kerak. ⏳ rang sozlash + avatar-crop hali yo'q.
 
-**Avtotestlar:** `python manage.py test billing users businesses` → **68 ta o'tishi kerak**. Frontend: `npm run lint` (0 error), `npm run build` (recharts tufayli chunk-size ogohlantirishi — zararsiz). **Yangi deps:** backend `qrcode`+`reportlab`, frontend `recharts` → boshqa kompda `pip install -r requirements.txt` + `npm install` shart.
+**4e — Jamoa/rollar:** Pro biznes oching → **Jamoa** tab → email/telefon + rol bilan a'zo qo'shing.
+- Mavjud foydalanuvchini taklif → darrov a'zo bo'ladi; akkauntsiz email/telefon → **Kutilmoqda** (pending), u ro'yxatdan o'tganda avtomatik ulanadi.
+- A'zo o'z Dashboard'ida sahifani **rol badge** bilan ko'radi (limitiga ta'sir qilmaydi). Viewer → faqat-ko'rish (Saqlash yo'q); Editor → tahrir; Admin → +Jamoa boshqaruvi; faqat Owner → o'chirish.
+- Free egasi Jamoa tab'da → upsell (Pro kerak).
 
-**Yangi endpointlar/migrationlar:** (2-faza) `POST /businesses/<path>/pin/`, `{qr.png,qr.pdf,card.pdf}`, `blocks/` CRUD + `blocks/reorder/`, `POST /track/`, `GET /businesses/<path>/analytics/`; migrationlar `0009`(pin)`/0010`(blocks)`/0011`(event). (3a) `Business.template` + migration `businesses/0012`; public payload → `content_blocks` + `template`; biznes → `is_pinned`, `template`.
+**Avtotestlar:** `python manage.py test billing users businesses` → **100 ta o'tishi kerak**. Frontend: `npm run lint` (0 error), `npm run build` (recharts tufayli chunk-size ogohlantirishi — zararsiz). **Yangi deps:** backend `qrcode`+`reportlab`, frontend `recharts` → boshqa kompda `pip install -r requirements.txt` + `npm install` shart.
+
+**Yangi endpointlar/migrationlar:** (2-faza) `POST /businesses/<path>/pin/`, `{qr.png,qr.pdf,card.pdf}`, `blocks/` CRUD + `blocks/reorder/`, `POST /track/`, `GET /businesses/<path>/analytics/`; migrationlar `0009`(pin)`/0010`(blocks)`/0011`(event). (3a) `Business.template` + migration `businesses/0012`; public payload → `content_blocks` + `template`; biznes → `is_pinned`, `template`. (4e) `GET/POST /businesses/<path>/members/`, `PATCH/DELETE /members/<id>/`; migration `businesses/0015`; biznes serializer'da `role` + `owner_name`.
 
 **⚠️ Prod (deploy oldidan):** nginx `client_max_body_size 50M` (2c video upload uchun) + `requirements.txt` o'rnatish (qrcode/reportlab).
 

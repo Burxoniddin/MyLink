@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from rest_framework import generics, permissions, status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.throttling import AnonRateThrottle
@@ -14,15 +14,23 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from billing.services import can_create_business, get_entitlements, sync_locks
 from . import qr
-from .models import Business, Link, ContentBlock, Event, SiteSettings, ContactMessage, NfcOrder, StaticPage, BlogPost
+from .access import (
+    ROLE_ADMIN, ROLE_EDITOR, ROLE_VIEWER,
+    accessible_businesses, get_business_or_404, require_role,
+)
+from .models import Business, Link, ContentBlock, BusinessMembership, Event, SiteSettings, ContactMessage, NfcOrder, StaticPage, BlogPost
 from .serializers import (
     BusinessSerializer,
     ContentBlockSerializer,
+    MembershipSerializer,
+    MembershipInviteSerializer,
+    MembershipRoleSerializer,
     ContactMessageSerializer,
     NfcOrderSerializer,
     StaticPageSerializer,
     BlogPostListSerializer,
     BlogPostDetailSerializer,
+    user_display,
 )
 from .utils import send_telegram_message
 
@@ -40,8 +48,8 @@ class BusinessListCreateView(generics.ListCreateAPIView):
         # Re-enforce locks on dashboard load so a downgrade takes effect even if
         # the user never hit the toggle endpoint.
         sync_locks(self.request.user)
-        # Pinned ("starred") pages first, then newest.
-        return Business.objects.filter(owner=self.request.user).order_by('-is_pinned', '-created_at')
+        # Owned + shared-with-me pages; pinned ("starred") first, then newest.
+        return accessible_businesses(self.request.user).order_by('-is_pinned', '-created_at')
 
     def perform_create(self, serializer):
         if not can_create_business(self.request.user):
@@ -50,17 +58,21 @@ class BusinessListCreateView(generics.ListCreateAPIView):
         serializer.save()
 
 class BusinessDetailView(generics.RetrieveUpdateDestroyAPIView):
-    # Lookup by path or id? Usually ID for editing, PATH for public.
-    # User can change path, so ID is safer for editing dashboard.
-    queryset = Business.objects.all()
+    # Looked up by path. Access is role-gated: read = viewer+, edit = editor+,
+    # delete = owner only (see businesses.access).
     serializer_class = BusinessSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOwner]
-    lookup_field = 'path' # Or 'pk' if frontend prefers. Let's use path for consistency with user request, but PK is better if path changes.
-    # Let's support PK for editing to avoid issues if path updates. 
-    # Actually, let's stick to 'path' but be careful. If path changes, URL changes.
-    
-    def get_queryset(self):
-        return Business.objects.filter(owner=self.request.user)
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'path'
+
+    def get_object(self):
+        if self.request.method in ('PUT', 'PATCH'):
+            min_role = ROLE_EDITOR
+        elif self.request.method == 'DELETE':
+            min_role = 'owner'
+        else:
+            min_role = ROLE_VIEWER
+        business, _ = get_business_or_404(self.request.user, self.kwargs['path'], min_role)
+        return business
 
 class PublicBusinessView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -105,6 +117,93 @@ class BusinessTogglePinView(APIView):
         return Response({'path': business.path, 'is_pinned': business.is_pinned})
 
 
+def _resolve_invitee(identifier):
+    """Split an invite identifier into (existing_user, email, phone).
+
+    An '@' means email, otherwise a phone number. ``existing_user`` is the matching
+    account if one already exists (invite attaches immediately); otherwise the
+    membership is created pending and claimed on signup."""
+    identifier = (identifier or '').strip()
+    if '@' in identifier:
+        email = identifier.lower()
+        user = User.objects.filter(email__iexact=email).first()
+        return user, email, ''
+    phone = identifier
+    user = User.objects.filter(phone_number=phone).first()
+    return user, '', phone
+
+
+class MembershipListCreateView(APIView):
+    """List a page's team / invite a member. Visible to owner + admins; inviting
+    additionally requires the *owner* to hold the ``team`` entitlement (Pro)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, path):
+        business, role = get_business_or_404(request.user, path, ROLE_ADMIN)
+        members = BusinessMembership.objects.filter(business=business).select_related('user')
+        return Response({
+            'owner': {'display': user_display(business.owner)},
+            'members': MembershipSerializer(members, many=True).data,
+            'my_role': role,
+            'team_enabled': bool(get_entitlements(business.owner)['features']['team']),
+        })
+
+    def post(self, request, path):
+        business, _ = get_business_or_404(request.user, path, ROLE_ADMIN)
+        if not get_entitlements(business.owner)['features']['team']:
+            raise PermissionDenied({'reason': 'team'})
+
+        serializer = MembershipInviteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        role = serializer.validated_data['role']
+        user, email, phone = _resolve_invitee(serializer.validated_data['identifier'])
+        if not email and not phone:
+            raise ValidationError({'reason': 'invalid_identifier'})
+
+        if user is not None:
+            if user.id == business.owner_id:
+                raise ValidationError({'reason': 'owner'})
+            if BusinessMembership.objects.filter(business=business, user=user).exists():
+                raise ValidationError({'reason': 'already_member'})
+            m = BusinessMembership.objects.create(
+                business=business, user=user, role=role,
+                invited_by=request.user, accepted_at=timezone.now(),
+            )
+        else:
+            dup = BusinessMembership.objects.filter(business=business, user__isnull=True)
+            dup = dup.filter(invite_email__iexact=email) if email else dup.filter(invite_phone=phone)
+            if dup.exists():
+                raise ValidationError({'reason': 'already_invited'})
+            m = BusinessMembership.objects.create(
+                business=business, role=role, invite_email=email,
+                invite_phone=phone, invited_by=request.user,
+            )
+        return Response(MembershipSerializer(m).data, status=status.HTTP_201_CREATED)
+
+
+class MembershipDetailView(APIView):
+    """Change a member's role / remove them (owner + admins)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _get(self, request, pk):
+        membership = get_object_or_404(BusinessMembership, pk=pk)
+        require_role(request.user, membership.business, ROLE_ADMIN)
+        return membership
+
+    def patch(self, request, pk):
+        membership = self._get(request, pk)
+        serializer = MembershipRoleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        membership.role = serializer.validated_data['role']
+        membership.save(update_fields=['role'])
+        return Response(MembershipSerializer(membership).data)
+
+    def delete(self, request, pk):
+        membership = self._get(request, pk)
+        membership.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class BusinessAssetView(APIView):
     """Download a QR / PDF asset for the owner's business.
 
@@ -113,8 +212,8 @@ class BusinessAssetView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, path, fmt):
-        business = get_object_or_404(Business, path=path, owner=request.user)
-        qr_level = get_entitlements(request.user)['features']['qr']  # none|png|full
+        business, _ = get_business_or_404(request.user, path, ROLE_VIEWER)
+        qr_level = get_entitlements(business.owner)['features']['qr']  # none|png|full
         url = f"{settings.FRONTEND_URL.rstrip('/')}/{business.path}"
 
         if fmt == 'qr_png':
@@ -142,15 +241,14 @@ class ContentBlockListCreateView(generics.ListCreateAPIView):
     serializer_class = ContentBlockSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def _business(self):
-        return get_object_or_404(Business, path=self.kwargs['path'], owner=self.request.user)
-
     def get_queryset(self):
-        return ContentBlock.objects.filter(business=self._business())
+        business, _ = get_business_or_404(self.request.user, self.kwargs['path'], ROLE_VIEWER)
+        return ContentBlock.objects.filter(business=business)
 
     def perform_create(self, serializer):
-        business = self._business()
-        feats = get_entitlements(self.request.user)['features']
+        business, _ = get_business_or_404(self.request.user, self.kwargs['path'], ROLE_EDITOR)
+        # Tier limits follow the page owner's plan, not the editing member's.
+        feats = get_entitlements(business.owner)['features']
         if ContentBlock.objects.filter(business=business).count() >= feats['banners']:
             raise PermissionDenied({'reason': 'banner_limit', 'limit': feats['banners']})
         if serializer.validated_data.get('block_type') == 'video' and not feats['banner_video']:
@@ -160,15 +258,17 @@ class ContentBlockListCreateView(generics.ListCreateAPIView):
 
 
 class ContentBlockDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """Update/delete a single block (owner only)."""
+    """Update/delete a single block (owner or an editor+ member)."""
     serializer_class = ContentBlockSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        return ContentBlock.objects.filter(business__owner=self.request.user)
+    def get_object(self):
+        block = get_object_or_404(ContentBlock, pk=self.kwargs['pk'])
+        require_role(self.request.user, block.business, ROLE_EDITOR)
+        return block
 
     def perform_update(self, serializer):
-        feats = get_entitlements(self.request.user)['features']
+        feats = get_entitlements(serializer.instance.business.owner)['features']
         block_type = serializer.validated_data.get('block_type', serializer.instance.block_type)
         if block_type == 'video' and not feats['banner_video']:
             raise PermissionDenied({'reason': 'banner_video'})
@@ -180,7 +280,7 @@ class ContentBlockReorderView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, path):
-        business = get_object_or_404(Business, path=path, owner=request.user)
+        business, _ = get_business_or_404(request.user, path, ROLE_EDITOR)
         for index, block_id in enumerate(request.data.get('order', [])):
             ContentBlock.objects.filter(id=block_id, business=business).update(order=index)
         return Response({'ok': True})
@@ -222,8 +322,8 @@ class BusinessAnalyticsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, path):
-        business = get_object_or_404(Business, path=path, owner=request.user)
-        level = get_entitlements(request.user)['features']['analytics']  # none|partial|full
+        business, _ = get_business_or_404(request.user, path, ROLE_VIEWER)
+        level = get_entitlements(business.owner)['features']['analytics']  # none|partial|full
         if level == 'none':
             raise PermissionDenied({'reason': 'analytics'})
 

@@ -10,7 +10,8 @@ from rest_framework.test import APIClient
 from billing import entitlements as ent
 from billing.models import Subscription
 from billing.services import sync_locks
-from businesses.models import Business, ContentBlock, Event, NfcOrder
+from businesses.models import Business, BusinessMembership, ContentBlock, Event, NfcOrder
+from businesses.access import claim_pending_invites
 
 User = get_user_model()
 
@@ -472,3 +473,133 @@ class NfcOrderTests(TestCase):
         res = self.client.post('/api/nfc/orders/',
                                {'full_name': 'Ali', 'phone': '+998901112233', 'quantity': 0}, format='json')
         self.assertEqual(res.status_code, 400)
+
+
+def auth_client(user):
+    client = APIClient()
+    token = Token.objects.create(user=user)
+    client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+    return client
+
+
+@override_settings(CACHES=LOCMEM)
+class TeamMembershipTests(TestCase):
+    """4e — business team/roles (admin/editor/viewer) + pending invites."""
+
+    def setUp(self):
+        # Owner is Pro (team feature requires Pro).
+        self.owner = User.objects.create_user(phone_number='+998900000001')
+        Subscription.objects.create(user=self.owner, tier=ent.PRO, expires_at=None)
+        self.business = make_business(self.owner, 'shop', 'Shop')
+        self.owner_client = auth_client(self.owner)
+
+    def add_member(self, role, email=None, phone=None):
+        user = User.objects.create_user(phone_number=phone, email=email)
+        m = BusinessMembership.objects.create(business=self.business, user=user, role=role)
+        return user, m
+
+    # --- inviting ---
+    def test_owner_invites_existing_user(self):
+        invitee = User.objects.create_user(email='bob@x.com')
+        res = self.owner_client.post(
+            '/api/businesses/shop/members/', {'identifier': 'bob@x.com', 'role': 'editor'}, format='json')
+        self.assertEqual(res.status_code, 201)
+        m = BusinessMembership.objects.get(business=self.business, user=invitee)
+        self.assertEqual(m.role, 'editor')
+        self.assertIsNotNone(m.accepted_at)
+
+    def test_invite_unregistered_is_pending_then_claimed(self):
+        res = self.owner_client.post(
+            '/api/businesses/shop/members/', {'identifier': 'new@x.com', 'role': 'viewer'}, format='json')
+        self.assertEqual(res.status_code, 201)
+        m = BusinessMembership.objects.get(invite_email='new@x.com')
+        self.assertIsNone(m.user_id)  # pending
+        # The invitee registers later → invite is claimed.
+        newcomer = User.objects.create_user(email='new@x.com')
+        claimed = claim_pending_invites(newcomer)
+        self.assertEqual(claimed, 1)
+        m.refresh_from_db()
+        self.assertEqual(m.user_id, newcomer.id)
+
+    def test_invite_blocked_without_pro(self):
+        free_owner = User.objects.create_user(phone_number='+998900000099')
+        make_business(free_owner, 'freeshop', 'Free')
+        res = auth_client(free_owner).post(
+            '/api/businesses/freeshop/members/', {'identifier': 'a@x.com', 'role': 'viewer'}, format='json')
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.data['reason'], 'team')
+
+    def test_cannot_invite_owner(self):
+        res = self.owner_client.post(
+            '/api/businesses/shop/members/',
+            {'identifier': self.owner.phone_number, 'role': 'admin'}, format='json')
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.data['reason'], 'owner')
+
+    def test_duplicate_member_rejected(self):
+        self.add_member('viewer', email='c@x.com')
+        res = self.owner_client.post(
+            '/api/businesses/shop/members/', {'identifier': 'c@x.com', 'role': 'admin'}, format='json')
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.data['reason'], 'already_member')
+
+    # --- role-gated access ---
+    def test_editor_can_edit_viewer_cannot(self):
+        editor, _ = self.add_member('editor', phone='+998900000010')
+        viewer, _ = self.add_member('viewer', phone='+998900000011')
+        payload = {'path': 'shop', 'name': 'Renamed', 'links': []}
+        self.assertEqual(auth_client(editor).put('/api/businesses/shop/', payload, format='json').status_code, 200)
+        res = auth_client(viewer).put('/api/businesses/shop/', payload, format='json')
+        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.data['reason'], 'role')
+
+    def test_viewer_can_read(self):
+        viewer, _ = self.add_member('viewer', phone='+998900000012')
+        self.assertEqual(auth_client(viewer).get('/api/businesses/shop/').status_code, 200)
+
+    def test_non_member_gets_404(self):
+        stranger = User.objects.create_user(phone_number='+998900000013')
+        self.assertEqual(auth_client(stranger).get('/api/businesses/shop/').status_code, 404)
+
+    def test_only_owner_can_delete(self):
+        admin, _ = self.add_member('admin', phone='+998900000014')
+        self.assertEqual(auth_client(admin).delete('/api/businesses/shop/').status_code, 403)
+        self.assertEqual(self.owner_client.delete('/api/businesses/shop/').status_code, 204)
+
+    def test_admin_manages_members_editor_cannot(self):
+        admin, _ = self.add_member('admin', phone='+998900000015')
+        editor, _ = self.add_member('editor', phone='+998900000016')
+        self.assertEqual(auth_client(admin).get('/api/businesses/shop/members/').status_code, 200)
+        self.assertEqual(auth_client(editor).get('/api/businesses/shop/members/').status_code, 403)
+
+    # --- dashboard list + role exposure ---
+    def test_shared_business_in_member_dashboard(self):
+        member, _ = self.add_member('viewer', phone='+998900000017')
+        res = auth_client(member).get('/api/businesses/')
+        self.assertEqual(res.status_code, 200)
+        paths = {b['path']: b['role'] for b in res.data}
+        self.assertEqual(paths.get('shop'), 'viewer')
+
+    def test_shared_business_does_not_count_toward_member_limit(self):
+        # Free member already owns their 1 page; a shared page must not block them.
+        member, _ = self.add_member('viewer', phone='+998900000018')
+        c = auth_client(member)
+        # They still have their full free quota (1 owned page).
+        res = c.post('/api/businesses/', {'path': 'mine', 'name': 'Mine'}, format='json')
+        self.assertEqual(res.status_code, 201)
+
+    def test_public_endpoint_hides_owner_identity(self):
+        # owner_name must never leak on the anonymous public page payload.
+        res = APIClient().get('/api/public/shop/')
+        self.assertEqual(res.status_code, 200)
+        self.assertIsNone(res.data['owner_name'])
+        self.assertIsNone(res.data['role'])
+
+    def test_change_role_and_remove(self):
+        member, m = self.add_member('viewer', phone='+998900000019')
+        res = self.owner_client.patch(f'/api/members/{m.id}/', {'role': 'admin'}, format='json')
+        self.assertEqual(res.status_code, 200)
+        m.refresh_from_db()
+        self.assertEqual(m.role, 'admin')
+        self.assertEqual(self.owner_client.delete(f'/api/members/{m.id}/').status_code, 204)
+        self.assertFalse(BusinessMembership.objects.filter(id=m.id).exists())

@@ -128,6 +128,8 @@ class LoginView(APIView):
                 if created:
                     user.is_verified = True
                     user.save()
+                    from businesses.access import claim_pending_invites
+                    claim_pending_invites(user)
 
                 token, _ = Token.objects.get_or_create(user=user)
                 cache.delete(f"otp_{phone}")
@@ -233,6 +235,10 @@ class RegisterView(APIView):
         user.save()
         cache.delete(cache_key)
 
+        # Attach any pending team invites addressed to this email/phone (4e).
+        from businesses.access import claim_pending_invites
+        claim_pending_invites(user)
+
         token, _ = Token.objects.get_or_create(user=user)
         return Response(
             {"token": token.key, "email": user.email, "phone_number": user.phone_number},
@@ -279,6 +285,8 @@ class GoogleAuthView(APIView):
             user = User.objects.create_user(email=email)  # passwordless (Google)
             user.email_verified = True
             user.save()
+            from businesses.access import claim_pending_invites
+            claim_pending_invites(user)
 
         token, _ = Token.objects.get_or_create(user=user)
         return Response({"token": token.key, "email": user.email}, status=status.HTTP_200_OK)

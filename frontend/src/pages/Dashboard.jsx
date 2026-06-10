@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaExternalLinkAlt, FaEdit, FaLock, FaLockOpen, FaStar, FaSearch } from 'react-icons/fa';
+import { FaPlus, FaExternalLinkAlt, FaEdit, FaLock, FaLockOpen, FaStar, FaSearch, FaUsers } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useEntitlements } from '../context/EntitlementContext';
 
@@ -37,10 +37,13 @@ const Dashboard = () => {
         }
     };
 
+    // The tier limit applies only to pages you own; pages shared with you
+    // (role !== 'owner') don't count toward it.
+    const owned = businesses.filter((b) => b.role === 'owner');
     const limit = entitlements?.features?.profile_limit ?? 1;
-    const activeCount = businesses.filter((b) => !b.is_locked).length;
+    const activeCount = owned.filter((b) => !b.is_locked).length;
     const atLimit = activeCount >= limit;
-    const hasLocked = businesses.some((b) => b.is_locked);
+    const hasLocked = owned.some((b) => b.is_locked);
 
     const q = query.trim().toLowerCase();
     const filtered = q
@@ -134,9 +137,18 @@ const Dashboard = () => {
                         <div className="business-grid">
                             {filtered.map((biz) => (
                                 <div key={biz.id} className="business-card"
-                                    style={biz.is_locked ? { opacity: 0.6 } : undefined}
+                                    style={biz.is_locked && biz.role === 'owner' ? { opacity: 0.6 } : undefined}
                                     onClick={() => navigate(`/business/${biz.path}`)}>
-                                    {biz.is_locked && (
+                                    {biz.role !== 'owner' && (
+                                        <div style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                                            background: '#ede9fe', color: '#5b21b6', fontSize: 12, fontWeight: 600,
+                                            padding: '3px 10px', borderRadius: 999, marginBottom: 10,
+                                        }}>
+                                            <FaUsers size={11} /> {t(`team.role_${biz.role}`)}
+                                        </div>
+                                    )}
+                                    {biz.role === 'owner' && biz.is_locked && (
                                         <div style={{
                                             display: 'inline-flex', alignItems: 'center', gap: 6,
                                             background: '#fee2e2', color: '#991b1b', fontSize: 12, fontWeight: 600,
@@ -145,7 +157,7 @@ const Dashboard = () => {
                                             <FaLock size={11} /> {t('limit.locked_badge')}
                                         </div>
                                     )}
-                                    {biz.is_pinned && !biz.is_locked && (
+                                    {biz.role === 'owner' && biz.is_pinned && !biz.is_locked && (
                                         <div style={{
                                             display: 'inline-flex', alignItems: 'center', gap: 6,
                                             background: '#fef3c7', color: '#92400e', fontSize: 12, fontWeight: 600,
@@ -177,11 +189,11 @@ const Dashboard = () => {
                                         <button className="card-btn edit">
                                             <FaEdit /> {t('common.edit')}
                                         </button>
-                                        {biz.is_locked ? (
+                                        {biz.role === 'owner' && biz.is_locked ? (
                                             <button className="card-btn view" onClick={(e) => toggleLock(e, biz)}>
                                                 <FaLockOpen /> {t('limit.activate')}
                                             </button>
-                                        ) : hasLocked ? (
+                                        ) : biz.role === 'owner' && hasLocked ? (
                                             <button className="card-btn view" onClick={(e) => toggleLock(e, biz)}>
                                                 <FaLock /> {t('limit.deactivate')}
                                             </button>

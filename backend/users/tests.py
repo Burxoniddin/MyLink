@@ -113,3 +113,44 @@ class AuthTests(TestCase):
 
         r = self.client.post('/api/auth/login-password/', {'identifier': 'reset@b.com', 'password': 'newpass2'}, format='json')
         self.assertEqual(r.status_code, 200)
+
+
+@override_settings(CACHES=LOCMEM)
+class ReferralTests(TestCase):
+    def setUp(self):
+        from users.models import ReferralCode
+        self.client = APIClient()
+        cache.clear()
+        self.referrer = User.objects.create_user(phone_number='+998901230001')
+        self.code = ReferralCode.get_or_create_for(self.referrer).code
+
+    def _register_email(self, email, ref=None):
+        self.client.post('/api/auth/email/otp/', {'email': email}, format='json')
+        code = cache.get(f'otp_email_{email}')
+        payload = {'method': 'email', 'identifier': email, 'code': code, 'password': 'secret1'}
+        if ref is not None:
+            payload['ref'] = ref
+        return self.client.post('/api/auth/register/', payload, format='json')
+
+    def test_register_with_ref_sets_referred_by(self):
+        r = self._register_email('friend@x.com', ref=self.code)
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(User.objects.get(email='friend@x.com').referred_by_id, self.referrer.id)
+
+    def test_register_with_bad_ref_ignored(self):
+        r = self._register_email('friend2@x.com', ref='NOPE99')
+        self.assertEqual(r.status_code, 201)
+        self.assertIsNone(User.objects.get(email='friend2@x.com').referred_by)
+
+    def test_referral_endpoint_returns_code_and_stats(self):
+        token = Token.objects.create(user=self.referrer)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+        r = self.client.get('/api/referral/')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data['code'], self.code)
+        self.assertIn('ref=' + self.code, r.data['link'])
+        self.assertEqual(r.data['total_referred'], 0)
+        self.assertEqual(r.data['cap'], 12)
+
+    def test_referral_requires_auth(self):
+        self.assertEqual(self.client.get('/api/referral/').status_code, 401)

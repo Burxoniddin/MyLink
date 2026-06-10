@@ -107,6 +107,28 @@ class PromoCode(models.Model):
         return f"{self.code} → {self.get_grant_tier_display()}"
 
 
+class ReferralReward(models.Model):
+    """One reward event: a referred friend's first Pro conversion. ``subscription``
+    is the +1 month Pro granted to the referrer (``None`` if the referrer was over
+    the yearly cap). One row per referred friend (OneToOne) so a friend can only
+    reward once."""
+    referrer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                                 related_name='referral_rewards_given')
+    referred = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                                    related_name='referral_reward_received')
+    subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.SET_NULL,
+                                     related_name='referral_rewards')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Referral mukofoti'
+        verbose_name_plural = 'Referral mukofotlari'
+
+    def __str__(self):
+        return f"{self.referrer} ← {self.referred}"
+
+
 class PromoRedemption(models.Model):
     """Audit row: one user redeeming one code, linked to the granted sub."""
     code = models.ForeignKey(PromoCode, on_delete=models.CASCADE, related_name='redemptions')

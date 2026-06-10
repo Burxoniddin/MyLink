@@ -248,6 +248,19 @@
     "blog_read": "O'qish",
     "blog_empty": "Hozircha post yo'q"
   },
+  "referral": {
+    "title": "Do'stlarni taklif qiling",
+    "lead": "Havolangiz orqali ro'yxatdan o'tgan do'stingiz Pro tarifga o'tsa — sizga +1 oy Pro. Yiliga {{cap}} oygacha.",
+    "your_link": "Sizning taklif havolangiz",
+    "copy": "Nusxa",
+    "invited": "Taklif qilingan",
+    "converted": "Pro bo'lgan",
+    "months": "Oy (shu yil)",
+    "how_title": "Qanday ishlaydi?",
+    "how_1": "Havolani do'stlaringizga yuboring.",
+    "how_2": "Ular shu havola orqali ro'yxatdan o'tadi.",
+    "how_3": "Do'st Pro tarif olganda — sizga +1 oy Pro qo'shiladi."
+  },
   "theme": {
     "title": "Rang palitrasi",
     "locked": "Rang sozlash Oddiy va Pro tarifda mavjud.",

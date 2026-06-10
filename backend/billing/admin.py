@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import PlanPrice, PromoCode, PromoRedemption, Subscription
+from .models import PlanPrice, PromoCode, PromoRedemption, ReferralReward, Subscription
 
 
 @admin.register(PlanPrice)
@@ -44,6 +44,18 @@ class PromoRedemptionAdmin(admin.ModelAdmin):
     list_display = ('code', 'user', 'subscription', 'created_at')
     search_fields = ('code__code', 'user__phone_number', 'user__email')
     autocomplete_fields = ('user',)
+    date_hierarchy = 'created_at'
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(ReferralReward)
+class ReferralRewardAdmin(admin.ModelAdmin):
+    list_display = ('referrer', 'referred', 'subscription', 'created_at')
+    search_fields = ('referrer__phone_number', 'referrer__email',
+                     'referred__phone_number', 'referred__email')
+    autocomplete_fields = ('referrer', 'referred', 'subscription')
     date_hierarchy = 'created_at'
 
     def has_add_permission(self, request):

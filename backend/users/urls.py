@@ -13,6 +13,7 @@ from .views import (
     ForgotPasswordView,
     ResetPasswordView,
     ResetPasswordCodeView,
+    ReferralView,
 )
 
 urlpatterns = [
@@ -34,4 +35,6 @@ urlpatterns = [
     path('auth/reset-password-code/', ResetPasswordCodeView.as_view()),
     # Current user
     path('me/', MeView.as_view()),
+    # Referral program
+    path('referral/', ReferralView.as_view()),
 ]

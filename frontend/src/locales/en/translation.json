@@ -248,6 +248,19 @@
     "blog_read": "Read",
     "blog_empty": "No posts yet"
   },
+  "referral": {
+    "title": "Invite friends",
+    "lead": "When a friend who signed up via your link upgrades to Pro, you get +1 month of Pro. Up to {{cap}} months per year.",
+    "your_link": "Your referral link",
+    "copy": "Copy",
+    "invited": "Invited",
+    "converted": "Went Pro",
+    "months": "Months (this year)",
+    "how_title": "How it works",
+    "how_1": "Send the link to your friends.",
+    "how_2": "They sign up via the link.",
+    "how_3": "When a friend gets Pro, you get +1 month of Pro."
+  },
   "theme": {
     "title": "Colour palette",
     "locked": "Colour customization is available on the Oddiy and Pro plans.",

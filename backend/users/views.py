@@ -1,8 +1,10 @@
 import random
+from datetime import timedelta
 
 import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from django.contrib.auth.tokens import default_token_generator
 from django.core.cache import cache
 from django.core.mail import send_mail
@@ -219,10 +221,18 @@ class RegisterView(APIView):
         else:
             user = User.objects.create_user(phone_number=identifier, password=password)
             user.is_verified = True
+
+        # Referral: attribute the new user to the inviter (if ?ref=<code> is valid).
+        ref = (request.data.get('ref') or '').strip()
+        if ref:
+            from .models import ReferralCode
+            rc = ReferralCode.objects.filter(code__iexact=ref).select_related('user').first()
+            if rc and rc.user_id != user.id:
+                user.referred_by = rc.user
+
         user.save()
         cache.delete(cache_key)
 
-        # NOTE: referral code (d.get('ref')) is handled in the referral phase.
         token, _ = Token.objects.get_or_create(user=user)
         return Response(
             {"token": token.key, "email": user.email, "phone_number": user.phone_number},
@@ -451,3 +461,27 @@ class ResetPasswordCodeView(APIView):
             {"token": token.key, "phone_number": user.phone_number, "email": user.email},
             status=status.HTTP_200_OK,
         )
+
+
+class ReferralView(APIView):
+    """The current user's invite code, share link and referral stats."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from .models import ReferralCode
+        from billing.models import ReferralReward
+        from billing.services import REFERRAL_YEARLY_CAP
+
+        rc = ReferralCode.get_or_create_for(request.user)
+        rewards = ReferralReward.objects.filter(referrer=request.user)
+        year_ago = timezone.now() - timedelta(days=365)
+        months = rewards.filter(subscription__isnull=False, created_at__gte=year_ago).count()
+        base = settings.FRONTEND_URL.rstrip('/')
+        return Response({
+            'code': rc.code,
+            'link': f"{base}/register?ref={rc.code}",
+            'total_referred': User.objects.filter(referred_by=request.user).count(),
+            'converted': rewards.count(),
+            'months_earned': months,
+            'cap': REFERRAL_YEARLY_CAP,
+        })

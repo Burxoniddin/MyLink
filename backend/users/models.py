@@ -1,6 +1,16 @@
+import secrets
+import string
+
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+# Unambiguous alphabet for referral codes (no O/0/I/1).
+_CODE_ALPHABET = ''.join(c for c in (string.ascii_uppercase + string.digits) if c not in 'O0I1')
+
+
+def _gen_referral_code(n=7):
+    return ''.join(secrets.choice(_CODE_ALPHABET) for _ in range(n))
 
 
 class CustomUserManager(BaseUserManager):
@@ -51,3 +61,26 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.phone_number or self.email or f'user#{self.pk}'
+
+
+class ReferralCode(models.Model):
+    """A user's unique invite code. Friends who register with ?ref=<code> get
+    their `referred_by` set; the referrer earns +1 month Pro when a friend
+    converts to Pro (see billing.services.maybe_reward_referrer)."""
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='referral_code')
+    code = models.CharField(max_length=12, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.code} ({self.user})"
+
+    @classmethod
+    def get_or_create_for(cls, user):
+        existing = cls.objects.filter(user=user).first()
+        if existing:
+            return existing
+        for _ in range(12):
+            code = _gen_referral_code()
+            if not cls.objects.filter(code=code).exists():
+                return cls.objects.create(user=user, code=code)
+        return cls.objects.create(user=user, code=_gen_referral_code(10))

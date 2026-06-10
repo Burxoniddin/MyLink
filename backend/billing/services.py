@@ -94,14 +94,58 @@ def sync_locks(user):
     return len(excess)
 
 
+REFERRAL_REWARD_DAYS = 30   # +1 month Pro per converted friend
+REFERRAL_YEARLY_CAP = 12    # at most 12 reward-months per referrer per rolling year
+
+
+def grant_pro_extension(user, days=REFERRAL_REWARD_DAYS, source='referral', note=''):
+    """Extend a user's Pro by ``days``, stacking on top of their current expiry so
+    the reward genuinely adds time. Returns the created Subscription, or ``None`` if
+    the user already has lifetime (permanent) Pro."""
+    tier, expires = effective_plan(user)
+    if tier == ent.PRO and expires is None:
+        return None  # already lifetime Pro — nothing to extend
+    base = expires if (tier == ent.PRO and expires and expires > timezone.now()) else timezone.now()
+    return Subscription.objects.create(
+        user=user, tier=ent.PRO, expires_at=base + timedelta(days=days),
+        status='active', source=source, note=note,
+    )
+
+
+def maybe_reward_referrer(referred_user):
+    """When ``referred_user`` first converts to Pro, reward their referrer with +1
+    month Pro (subject to the yearly cap). Idempotent per referred friend."""
+    referrer = getattr(referred_user, 'referred_by', None)
+    if not referrer:
+        return None
+    from .models import ReferralReward
+    if ReferralReward.objects.filter(referred=referred_user).exists():
+        return None  # this friend already triggered a reward
+    year_ago = timezone.now() - timedelta(days=365)
+    granted = ReferralReward.objects.filter(
+        referrer=referrer, subscription__isnull=False, created_at__gte=year_ago,
+    ).count()
+    if granted >= REFERRAL_YEARLY_CAP:
+        # Cap hit: record the conversion but grant nothing (friend won't retry).
+        ReferralReward.objects.create(referrer=referrer, referred=referred_user, subscription=None)
+        return None
+    sub = grant_pro_extension(referrer, source='referral', note=f'Referral: {referred_user}')
+    ReferralReward.objects.create(referrer=referrer, referred=referred_user, subscription=sub)
+    return sub
+
+
 def grant_subscription(user, tier, duration_days=None, source='manual', note=''):
     """Create an active subscription for ``user``. ``duration_days=None`` grants a
-    permanent (lifetime) subscription."""
+    permanent (lifetime) subscription. A first-time Pro grant (not itself a referral
+    reward) rewards the user's referrer."""
     expires_at = None if duration_days is None else timezone.now() + timedelta(days=duration_days)
-    return Subscription.objects.create(
+    sub = Subscription.objects.create(
         user=user, tier=tier, expires_at=expires_at,
         status='active', source=source, note=note,
     )
+    if tier == ent.PRO and source != 'referral':
+        maybe_reward_referrer(user)
+    return sub
 
 
 class PromoError(Exception):

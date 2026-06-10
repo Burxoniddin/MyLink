@@ -1327,6 +1327,27 @@ select {
 .referral-how h3 { margin: 0 0 12px; }
 .referral-how ol { margin: 0; padding-left: 20px; color: #4b5563; line-height: 1.8; }
 
+/* DASHBOARD SEARCH */
+.dashboard-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  margin-bottom: 20px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  color: #9ca3af;
+}
+.dashboard-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font: inherit;
+  background: none;
+  color: #374151;
+}
+
 /* PREVIEW - Clean, no ugly border */
 .preview-section {
   display: flex;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaExternalLinkAlt, FaEdit, FaLock, FaLockOpen, FaStar } from 'react-icons/fa';
+import { FaPlus, FaExternalLinkAlt, FaEdit, FaLock, FaLockOpen, FaStar, FaSearch } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useEntitlements } from '../context/EntitlementContext';
 
@@ -12,6 +12,7 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState('');
     const [showUpgrade, setShowUpgrade] = useState(false);
+    const [query, setQuery] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -40,6 +41,11 @@ const Dashboard = () => {
     const activeCount = businesses.filter((b) => !b.is_locked).length;
     const atLimit = activeCount >= limit;
     const hasLocked = businesses.some((b) => b.is_locked);
+
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? businesses.filter((b) => b.name.toLowerCase().includes(q) || b.path.toLowerCase().includes(q))
+        : businesses;
 
     const handleAdd = () => {
         if (atLimit) {
@@ -93,6 +99,18 @@ const Dashboard = () => {
                         </button>
                     </div>
 
+                    {businesses.length > 1 && (
+                        <div className="dashboard-search">
+                            <FaSearch />
+                            <input
+                                type="text"
+                                placeholder={t('dashboard.search_ph')}
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                            />
+                        </div>
+                    )}
+
                     {msg && (
                         <div style={{
                             padding: '10px 14px', borderRadius: 8, marginBottom: 16,
@@ -110,9 +128,11 @@ const Dashboard = () => {
                                 {t('dashboard.add_business')}
                             </button>
                         </div>
+                    ) : filtered.length === 0 ? (
+                        <p className="blocks-empty">{t('dashboard.no_results')}</p>
                     ) : (
                         <div className="business-grid">
-                            {businesses.map((biz) => (
+                            {filtered.map((biz) => (
                                 <div key={biz.id} className="business-card"
                                     style={biz.is_locked ? { opacity: 0.6 } : undefined}
                                     onClick={() => navigate(`/business/${biz.path}`)}>

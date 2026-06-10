@@ -45,7 +45,9 @@
     "empty_title": "No businesses yet",
     "empty_desc": "Add your first business and create your links page",
     "add_business": "Add business",
-    "link_count": "{{n}} links"
+    "link_count": "{{n}} links",
+    "search_ph": "Search businesses...",
+    "no_results": "Nothing found"
   },
   "coming_soon": {
     "title": "Coming soon",

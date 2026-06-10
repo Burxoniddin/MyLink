@@ -45,7 +45,9 @@
     "empty_title": "Hali biznes yo'q",
     "empty_desc": "Birinchi biznesingizni qo'shing va linklar sahifangizni yarating",
     "add_business": "Biznes qo'shish",
-    "link_count": "{{n}} link"
+    "link_count": "{{n}} link",
+    "search_ph": "Biznes qidirish...",
+    "no_results": "Hech narsa topilmadi"
   },
   "coming_soon": {
     "title": "Tez kunda",

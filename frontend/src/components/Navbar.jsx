@@ -52,6 +52,7 @@ const Navbar = () => {
                     <Link to="/dashboard" className={`nav-link ${isActive('/dashboard')}`}>{t('nav.businesses')}</Link>
                     <Link to="/analytics" className={`nav-link ${isActive('/analytics')}`}>{t('nav.analytics')}</Link>
                     <Link to="/referral" className={`nav-link ${isActive('/referral')}`}>{t('nav.referral')}</Link>
+                    <Link to="/nfc" className={`nav-link ${isActive('/nfc')}`}>{t('nav.nfc')}</Link>
                     <Link to="/pricing" className={`nav-link ${isActive('/pricing')}`}>{t('nav.pricing')}</Link>
                 </nav>
 
@@ -91,6 +92,9 @@ const Navbar = () => {
                         </Link>
                         <Link to="/referral" className={`mobile-nav-link ${isActive('/referral')}`} onClick={closeMenu}>
                             {t('nav.referral')}
+                        </Link>
+                        <Link to="/nfc" className={`mobile-nav-link ${isActive('/nfc')}`} onClick={closeMenu}>
+                            {t('nav.nfc')}
                         </Link>
                         <Link to="/pricing" className={`mobile-nav-link ${isActive('/pricing')}`} onClick={closeMenu}>
                             {t('nav.pricing')}

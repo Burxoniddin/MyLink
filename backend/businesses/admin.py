@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.db.models import Count
 from django.utils.html import format_html
-from .models import Business, Link, ContentBlock, Event, MenuItem, SiteSettings, ContactMessage, StaticPage, BlogPost
+from .models import Business, Link, ContentBlock, Event, MenuItem, SiteSettings, ContactMessage, NfcOrder, StaticPage, BlogPost
 
 
 class LinkInline(admin.TabularInline):
@@ -66,6 +66,15 @@ class LinkAdmin(admin.ModelAdmin):
         short_url = obj.url[:50] + '...' if len(obj.url) > 50 else obj.url
         return format_html('<a href="{}" target="_blank">{}</a>', obj.url, short_url)
     url_preview.short_description = 'URL'
+
+
+@admin.register(NfcOrder)
+class NfcOrderAdmin(admin.ModelAdmin):
+    list_display = ('full_name', 'phone', 'quantity', 'user', 'status', 'created_at')
+    list_editable = ('status',)
+    list_filter = ('status', 'created_at')
+    search_fields = ('full_name', 'phone', 'user__phone_number', 'user__email')
+    date_hierarchy = 'created_at'
 
 
 @admin.register(Event)

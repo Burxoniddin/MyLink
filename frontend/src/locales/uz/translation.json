@@ -19,6 +19,7 @@
     "businesses": "Bizneslarim",
     "analytics": "Analitika",
     "referral": "Referal",
+    "nfc": "NFC",
     "pricing": "Tariflar",
     "profile": "Profil",
     "logout": "Chiqish",
@@ -249,6 +250,23 @@
     "blog_title": "Blog",
     "blog_read": "O'qish",
     "blog_empty": "Hozircha post yo'q"
+  },
+  "nfc": {
+    "title": "NFC vizitka",
+    "lead": "Bir tegish bilan sahifangizni ulashing. NFC vizitkani telefonga tekkizsangiz — mijoz darrov sahifangizni ko'radi.",
+    "benefit_1": "Bir tegishda ulashish",
+    "benefit_2": "Ilova kerak emas",
+    "benefit_3": "Brendingiz dizaynida",
+    "order_title": "Buyurtma berish",
+    "name": "Ism familiya",
+    "phone": "Telefon raqami",
+    "quantity": "Soni",
+    "note": "Izoh (ixtiyoriy)",
+    "submit": "Buyurtma berish",
+    "sending": "Yuborilmoqda...",
+    "sent": "Buyurtmangiz qabul qilindi! Tez orada bog'lanamiz.",
+    "no_payment": "Onlayn to'lov yo'q — jamoamiz siz bilan bog'lanadi.",
+    "history": "Buyurtmalarim"
   },
   "referral": {
     "title": "Do'stlarni taklif qiling",

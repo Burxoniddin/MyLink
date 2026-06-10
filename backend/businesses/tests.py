@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
@@ -9,7 +10,7 @@ from rest_framework.test import APIClient
 from billing import entitlements as ent
 from billing.models import Subscription
 from billing.services import sync_locks
-from businesses.models import Business, ContentBlock, Event
+from businesses.models import Business, ContentBlock, Event, NfcOrder
 
 User = get_user_model()
 
@@ -432,3 +433,42 @@ class ThemeGateTests(TestCase):
     def test_theme_in_public_payload(self):
         res = self.client.get('/api/public/brand/')
         self.assertEqual(res.data['theme'], 'default')
+
+
+@override_settings(CACHES=LOCMEM)
+class NfcOrderTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(phone_number='+998901117700')
+        self.client = APIClient()
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+
+    @patch('businesses.views.send_telegram_message')
+    def test_create_order_forwards_to_telegram(self, mock_tg):
+        res = self.client.post('/api/nfc/orders/',
+                               {'full_name': 'Ali', 'phone': '+998901112233', 'quantity': 5, 'note': 'logo bilan'},
+                               format='json')
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(NfcOrder.objects.filter(user=self.user).count(), 1)
+        mock_tg.assert_called_once()
+
+    @patch('businesses.views.send_telegram_message')
+    def test_list_returns_only_own_orders(self, mock_tg):
+        other = User.objects.create_user(phone_number='+998909990022')
+        NfcOrder.objects.create(user=other, full_name='X', phone='+998900000000', quantity=1)
+        NfcOrder.objects.create(user=self.user, full_name='Me', phone='+998901112233', quantity=2)
+        res = self.client.get('/api/nfc/orders/')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]['full_name'], 'Me')
+
+    def test_requires_auth(self):
+        self.client.credentials()
+        res = self.client.post('/api/nfc/orders/', {'full_name': 'A', 'phone': '1', 'quantity': 1}, format='json')
+        self.assertEqual(res.status_code, 401)
+
+    @patch('businesses.views.send_telegram_message')
+    def test_invalid_quantity_rejected(self, mock_tg):
+        res = self.client.post('/api/nfc/orders/',
+                               {'full_name': 'Ali', 'phone': '+998901112233', 'quantity': 0}, format='json')
+        self.assertEqual(res.status_code, 400)

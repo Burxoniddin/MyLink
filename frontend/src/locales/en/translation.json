@@ -19,6 +19,7 @@
     "businesses": "My businesses",
     "analytics": "Analytics",
     "referral": "Referral",
+    "nfc": "NFC",
     "pricing": "Pricing",
     "profile": "Profile",
     "logout": "Log out",
@@ -249,6 +250,23 @@
     "blog_title": "Blog",
     "blog_read": "Read",
     "blog_empty": "No posts yet"
+  },
+  "nfc": {
+    "title": "NFC card",
+    "lead": "Share your page with one tap. Hold the NFC card to a phone and the customer instantly sees your page.",
+    "benefit_1": "Share in one tap",
+    "benefit_2": "No app needed",
+    "benefit_3": "In your brand design",
+    "order_title": "Place an order",
+    "name": "Full name",
+    "phone": "Phone number",
+    "quantity": "Quantity",
+    "note": "Note (optional)",
+    "submit": "Order",
+    "sending": "Sending...",
+    "sent": "Order received! We'll contact you soon.",
+    "no_payment": "No online payment — our team will contact you.",
+    "history": "My orders"
   },
   "referral": {
     "title": "Invite friends",

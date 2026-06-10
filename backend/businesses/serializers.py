@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Business, Link, ContentBlock, ContactMessage, StaticPage, BlogPost
+from .models import Business, Link, ContentBlock, ContactMessage, NfcOrder, StaticPage, BlogPost
 
 class LinkSerializer(serializers.ModelSerializer):
     # Use CharField instead of URLField to allow tel: and mailto: links
@@ -126,6 +126,20 @@ class ContactMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactMessage
         fields = ['name', 'contact', 'message']
+
+
+class NfcOrderSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = NfcOrder
+        fields = ['id', 'full_name', 'phone', 'quantity', 'note', 'status', 'status_display', 'created_at']
+        read_only_fields = ['status', 'status_display', 'created_at']
+
+    def validate_quantity(self, value):
+        if value < 1 or value > 1000:
+            raise serializers.ValidationError('1–1000 oralig\'ida bo\'lishi kerak')
+        return value
 
 
 class StaticPageSerializer(serializers.ModelSerializer):

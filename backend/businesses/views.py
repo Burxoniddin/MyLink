@@ -14,11 +14,12 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from billing.services import can_create_business, get_entitlements, sync_locks
 from . import qr
-from .models import Business, Link, ContentBlock, Event, SiteSettings, ContactMessage, StaticPage, BlogPost
+from .models import Business, Link, ContentBlock, Event, SiteSettings, ContactMessage, NfcOrder, StaticPage, BlogPost
 from .serializers import (
     BusinessSerializer,
     ContentBlockSerializer,
     ContactMessageSerializer,
+    NfcOrderSerializer,
     StaticPageSerializer,
     BlogPostListSerializer,
     BlogPostDetailSerializer,
@@ -311,6 +312,27 @@ class ContactCreateView(APIView):
         )
         send_telegram_message(text)
         return Response({"message": "ok"}, status=status.HTTP_201_CREATED)
+
+
+class NfcOrderListCreateView(generics.ListCreateAPIView):
+    """List the user's NFC card orders / place a new one (lead — no payment).
+    New orders are forwarded to the Telegram group."""
+    serializer_class = NfcOrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return NfcOrder.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        order = serializer.save(user=self.request.user)
+        text = (
+            "\U0001F4B3 <b>Yangi NFC buyurtma</b>\n"
+            f"<b>Ism:</b> {order.full_name}\n"
+            f"<b>Tel:</b> {order.phone}\n"
+            f"<b>Soni:</b> {order.quantity}\n"
+            f"<b>Izoh:</b> {order.note or '—'}"
+        )
+        send_telegram_message(text)
 
 
 class StaticPageView(APIView):

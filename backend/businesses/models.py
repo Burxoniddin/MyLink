@@ -185,6 +185,28 @@ class SiteSettings(models.Model):
 LANG_CHOICES = [('uz', "O'zbek"), ('ru', 'Русский'), ('en', 'English')]
 
 
+class NfcOrder(models.Model):
+    """A request for NFC business cards (lead). No online payment — the team
+    contacts the user. Forwarded to the Telegram group on creation."""
+    STATUS = [('new', 'Yangi'), ('processing', 'Jarayonda'), ('done', 'Bajarildi'), ('canceled', 'Bekor')]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='nfc_orders')
+    full_name = models.CharField(max_length=120)
+    phone = models.CharField(max_length=30)
+    quantity = models.PositiveIntegerField(default=1)
+    note = models.TextField(blank=True)
+    status = models.CharField(max_length=12, choices=STATUS, default='new')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "NFC buyurtma"
+        verbose_name_plural = "NFC buyurtmalar"
+
+    def __str__(self):
+        return f"{self.full_name} ×{self.quantity} ({self.get_status_display()})"
+
+
 class ContactMessage(models.Model):
     """Landing aloqa formasi xabarlari."""
     name = models.CharField(max_length=120)

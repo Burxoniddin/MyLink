@@ -1348,6 +1348,23 @@ select {
   color: #374151;
 }
 
+/* NFC */
+.nfc-hero { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff; border-radius: 18px; padding: 32px; text-align: center; margin-bottom: 24px; }
+.nfc-hero-icon { font-size: 40px; margin-bottom: 12px; }
+.nfc-hero h1 { margin: 0 0 10px; color: #fff; }
+.nfc-hero p { margin: 0 auto; max-width: 480px; opacity: 0.92; line-height: 1.6; }
+.nfc-benefits { list-style: none; padding: 0; margin: 20px 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 22px; }
+.nfc-benefits li { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; opacity: 0.95; }
+.nfc-form-card { background: #fff; border: 1px solid #eef2f7; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+.nfc-form-card h3 { margin: 0 0 16px; }
+.nfc-disclaimer { margin: 14px 0 0; font-size: 13px; color: #9ca3af; text-align: center; }
+.nfc-history { background: #fff; border: 1px solid #eef2f7; border-radius: 16px; padding: 20px 24px; margin-top: 22px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+.nfc-history h3 { margin: 0 0 12px; }
+.nfc-order-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+.nfc-order-row:last-child { border-bottom: none; }
+.nfc-order-date { color: #9ca3af; font-size: 13px; margin-left: 10px; }
+.nfc-status { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+
 /* PREVIEW - Clean, no ugly border */
 .preview-section {
   display: flex;

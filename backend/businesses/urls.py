@@ -16,6 +16,7 @@ from .views import (
     PublicBusinessView,
     PublicStatsView,
     PublicSettingsView,
+    PublicFeaturedView,
     ContactCreateView,
     StaticPageView,
     BlogListView,
@@ -46,5 +47,6 @@ urlpatterns = [
     # aren't captured as a business path.
     path('public/stats/', PublicStatsView.as_view()),
     path('public/settings/', PublicSettingsView.as_view()),
+    path('public/featured/', PublicFeaturedView.as_view()),
     path('public/<slug:path>/', PublicBusinessView.as_view()),
 ]

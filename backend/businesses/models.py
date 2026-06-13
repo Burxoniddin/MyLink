@@ -41,6 +41,8 @@ class Business(models.Model):
     # Owner-pinned ("starred") pages float to the top of the dashboard list.
     # Toggled via the businesses pin endpoint; affects dashboard ordering only.
     is_pinned = models.BooleanField(default=False)
+    # Admin-curated: shown in the landing-page "Bizning mijozlar" carousel.
+    is_featured = models.BooleanField(default=False, verbose_name="Landing'da ko'rsatish")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -264,9 +266,11 @@ class NfcOrder(models.Model):
 
 
 class ContactMessage(models.Model):
-    """Landing aloqa formasi xabarlari."""
+    """Landing aloqa formasi xabarlari. Email yoki telefon — kamida bittasi shart
+    (serializer'da tekshiriladi)."""
     name = models.CharField(max_length=120)
-    contact = models.CharField(max_length=200, help_text="Email yoki Telegram")
+    phone = models.CharField(max_length=30, blank=True, help_text="Telefon raqam")
+    contact = models.CharField(max_length=200, blank=True, help_text="Email yoki Telegram")
     message = models.TextField()
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -300,20 +304,22 @@ class StaticPage(models.Model):
 
 
 class BlogPost(models.Model):
-    """Admin'dan boshqariladigan blog postlar."""
+    """Admin'dan boshqariladigan blog postlar. ``order`` — ro'yxatdagi o'rni
+    (kichigi birinchi); teng bo'lsa yangisi oldinda."""
     language = models.CharField(max_length=2, choices=LANG_CHOICES, default='uz')
     slug = models.SlugField(max_length=120)
     title = models.CharField(max_length=200)
     excerpt = models.TextField(blank=True)
     cover = models.ImageField(upload_to='blog/', blank=True, null=True)
     body = models.TextField(help_text="HTML yoki oddiy matn")
+    order = models.PositiveIntegerField(default=0, verbose_name="Tartib", help_text="Ro'yxatdagi o'rni — kichigi birinchi chiqadi")
     is_published = models.BooleanField(default=True)
     published_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ('slug', 'language')
-        ordering = ['-published_at']
+        ordering = ['order', '-published_at']
         verbose_name = "Blog post"
         verbose_name_plural = "Blog postlar"
 

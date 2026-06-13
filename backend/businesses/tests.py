@@ -45,11 +45,18 @@ class ProfileLimitTests(TestCase):
         res = self.client.post('/api/businesses/', {'path': 'a', 'name': 'A'}, format='json')
         self.assertEqual(res.status_code, 201)
 
-    def test_free_second_blocked(self):
+    def test_free_second_created_locked(self):
+        # Creation is unlimited on every tier; over-limit pages arrive inactive
+        # (locked) and the owner activates them after freeing a slot / upgrade.
         make_business(self.user, 'a', 'A')
         res = self.client.post('/api/businesses/', {'path': 'b', 'name': 'B'}, format='json')
-        self.assertEqual(res.status_code, 403)
-        self.assertEqual(res.data['reason'], 'profile_limit')
+        self.assertEqual(res.status_code, 201)
+        self.assertTrue(Business.objects.get(path='b').is_locked)
+        self.assertFalse(Business.objects.get(path='a').is_locked)
+        # Activating the locked one while at limit is rejected.
+        lock = self.client.post('/api/businesses/b/lock/', {'is_locked': False}, format='json')
+        self.assertEqual(lock.status_code, 403)
+        self.assertEqual(lock.data['reason'], 'profile_limit')
 
     def test_pro_allows_more(self):
         self.grant(ent.PRO, days=30)
@@ -603,3 +610,53 @@ class TeamMembershipTests(TestCase):
         self.assertEqual(m.role, 'admin')
         self.assertEqual(self.owner_client.delete(f'/api/members/{m.id}/').status_code, 204)
         self.assertFalse(BusinessMembership.objects.filter(id=m.id).exists())
+
+
+@override_settings(CACHES=LOCMEM)
+class PublicFeaturedTests(TestCase):
+    """Landing 'Bizning mijozlar' carousel source."""
+
+    def test_only_featured_and_active(self):
+        owner = User.objects.create_user(phone_number='+998901119001')
+        shown = make_business(owner, 'shown', 'Shown')
+        Business.objects.filter(pk=shown.pk).update(is_featured=True)
+        hidden_locked = make_business(owner, 'hidlock', 'HidLock')
+        Business.objects.filter(pk=hidden_locked.pk).update(is_featured=True, is_locked=True)
+        make_business(owner, 'plain', 'Plain')  # not featured
+
+        res = APIClient().get('/api/public/featured/')
+        self.assertEqual(res.status_code, 200)
+        paths = [b['path'] for b in res.data]
+        self.assertEqual(paths, ['shown'])
+        self.assertEqual(set(res.data[0]), {'path', 'name', 'logo'})
+
+
+@override_settings(CACHES=LOCMEM)
+class ContactPhoneTests(TestCase):
+    """Contact form: phone or email — at least one is required."""
+
+    def _post(self, **data):
+        return APIClient().post('/api/contact/', data, format='json')
+
+    def test_phone_only_ok(self):
+        res = self._post(name='Ali', phone='+998901234567', message='Salom')
+        self.assertEqual(res.status_code, 201)
+
+    def test_email_only_ok(self):
+        res = self._post(name='Ali', contact='a@b.com', message='Salom')
+        self.assertEqual(res.status_code, 201)
+
+    def test_neither_rejected(self):
+        res = self._post(name='Ali', message='Salom')
+        self.assertEqual(res.status_code, 400)
+
+
+@override_settings(CACHES=LOCMEM)
+class BlogOrderTests(TestCase):
+    def test_list_respects_admin_order(self):
+        from businesses.models import BlogPost
+        BlogPost.objects.create(slug='newest', title='Newest', body='x', order=5)
+        BlogPost.objects.create(slug='first', title='First', body='x', order=1)
+        res = APIClient().get('/api/blog/?lang=uz')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual([p['slug'] for p in res.data], ['first', 'newest'])

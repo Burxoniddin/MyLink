@@ -180,7 +180,13 @@ class MembershipRoleSerializer(serializers.Serializer):
 class ContactMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactMessage
-        fields = ['name', 'contact', 'message']
+        fields = ['name', 'phone', 'contact', 'message']
+
+    def validate(self, attrs):
+        # Email/telegram yoki telefon — kamida bittasi to'ldirilishi shart.
+        if not (attrs.get('phone') or '').strip() and not (attrs.get('contact') or '').strip():
+            raise serializers.ValidationError({'reason': 'contact_required'})
+        return attrs
 
 
 class NfcOrderSerializer(serializers.ModelSerializer):

@@ -31,6 +31,7 @@ from .serializers import (
     ResetPasswordCodeSerializer,
     ResetPasswordSerializer,
     SetPasswordSerializer,
+    UpdateMeSerializer,
 )
 from .utils import send_sms
 
@@ -224,6 +225,11 @@ class RegisterView(APIView):
             user = User.objects.create_user(phone_number=identifier, password=password)
             user.is_verified = True
 
+        # FIO — single "Ism Familiya" input, stored in first_name.
+        full_name = (d.get('full_name') or '').strip()
+        if full_name:
+            user.first_name = full_name[:150]
+
         # Referral: attribute the new user to the inviter (if ?ref=<code> is valid).
         ref = (request.data.get('ref') or '').strip()
         if ref:
@@ -256,14 +262,15 @@ class GoogleAuthView(APIView):
         serializer = GoogleAuthSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        credential = serializer.validated_data['credential']
+        credential = serializer.validated_data.get('credential') or ''
+        access_token = serializer.validated_data.get('access_token') or ''
 
+        # Two flows: an ID token (GoogleLogin widget) is verified via tokeninfo
+        # ?id_token=; an OAuth access token (custom-styled button, useGoogleLogin)
+        # via tokeninfo?access_token= + userinfo for the display name.
+        params = {"id_token": credential} if credential else {"access_token": access_token}
         try:
-            resp = requests.get(
-                "https://oauth2.googleapis.com/tokeninfo",
-                params={"id_token": credential},
-                timeout=8,
-            )
+            resp = requests.get("https://oauth2.googleapis.com/tokeninfo", params=params, timeout=8)
         except requests.RequestException:
             return Response({"error": "Google bilan bog'lanib bo'lmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -272,7 +279,8 @@ class GoogleAuthView(APIView):
 
         info = resp.json()
         client_id = getattr(settings, 'GOOGLE_CLIENT_ID', '')
-        if client_id and info.get('aud') != client_id:
+        token_aud = info.get('aud') or info.get('azp')
+        if client_id and token_aud != client_id:
             return Response({"error": "Google client mos kelmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
         email = (info.get('email') or '').lower()
@@ -280,13 +288,32 @@ class GoogleAuthView(APIView):
         if not email or not verified:
             return Response({"error": "Google emaili tasdiqlanmagan"}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Display name: in the id_token payload directly; for access tokens via userinfo.
+        name = (info.get('name') or '').strip()
+        if not name and access_token:
+            try:
+                ui = requests.get(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers={"Authorization": f"Bearer {access_token}"},
+                    timeout=8,
+                )
+                if ui.ok:
+                    name = (ui.json().get('name') or '').strip()
+            except requests.RequestException:
+                pass
+
         user = User.objects.filter(email__iexact=email).first()
         if user is None:
             user = User.objects.create_user(email=email)  # passwordless (Google)
             user.email_verified = True
+            if name:
+                user.first_name = name[:150]
             user.save()
             from businesses.access import claim_pending_invites
             claim_pending_invites(user)
+        elif name and not user.first_name:
+            user.first_name = name[:150]
+            user.save(update_fields=['first_name'])
 
         token, _ = Token.objects.get_or_create(user=user)
         return Response({"token": token.key, "email": user.email}, status=status.HTTP_200_OK)
@@ -333,6 +360,16 @@ class MeView(APIView):
         data = MeSerializer(request.user).data
         data['entitlements'] = get_entitlements(request.user)
         return Response(data)
+
+    def patch(self, request):
+        serializer = UpdateMeSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if 'full_name' in serializer.validated_data:
+            request.user.first_name = serializer.validated_data['full_name'].strip()[:150]
+            request.user.last_name = ''
+            request.user.save(update_fields=['first_name', 'last_name'])
+        return self.get(request)
 
 
 class SetPasswordView(APIView):

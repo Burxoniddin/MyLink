@@ -154,3 +154,31 @@ class ReferralTests(TestCase):
 
     def test_referral_requires_auth(self):
         self.assertEqual(self.client.get('/api/referral/').status_code, 401)
+
+
+@override_settings(CACHES=LOCMEM)
+class FullNameTests(TestCase):
+    """FIO: set at register, exposed by /me/, editable via PATCH /me/."""
+
+    def setUp(self):
+        self.client = APIClient()
+        cache.clear()
+
+    def test_register_saves_full_name_and_me_returns_it(self):
+        cache.set('otp_email_named@b.com', '123456', 300)
+        r = self.client.post('/api/auth/register/', {
+            'method': 'email', 'identifier': 'named@b.com', 'code': '123456',
+            'password': 'secret1', 'full_name': 'Aziz Azizov',
+        }, format='json')
+        self.assertEqual(r.status_code, 201)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + r.data['token'])
+        me = self.client.get('/api/me/')
+        self.assertEqual(me.data['full_name'], 'Aziz Azizov')
+
+    def test_patch_me_updates_full_name(self):
+        user = User.objects.create_user(email='patch@b.com', password='x1y2z3')
+        token = Token.objects.create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+        r = self.client.patch('/api/me/', {'full_name': 'Yangi Ism'}, format='json')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data['full_name'], 'Yangi Ism')

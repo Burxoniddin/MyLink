@@ -52,10 +52,10 @@ class BusinessListCreateView(generics.ListCreateAPIView):
         return accessible_businesses(self.request.user).order_by('-is_pinned', '-created_at')
 
     def perform_create(self, serializer):
-        if not can_create_business(self.request.user):
-            limit = get_entitlements(self.request.user)['features']['profile_limit']
-            raise PermissionDenied({'reason': 'profile_limit', 'limit': limit})
-        serializer.save()
+        # Creation is never blocked: any tier may own unlimited pages. The tier
+        # limit caps *active* pages instead — an over-limit page is created
+        # inactive (locked) and can be activated once a slot frees up / upgrade.
+        serializer.save(is_locked=not can_create_business(self.request.user))
 
 class BusinessDetailView(generics.RetrieveUpdateDestroyAPIView):
     # Looked up by path. Access is role-gated: read = viewer+, edit = editor+,
@@ -372,6 +372,24 @@ class PublicStatsView(APIView):
         })
 
 
+class PublicFeaturedView(APIView):
+    """Admin-curated businesses for the landing 'Bizning mijozlar' carousel.
+    Only featured + active (unlocked) pages; minimal public fields."""
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        qs = Business.objects.filter(is_featured=True, is_locked=False).order_by('name')[:24]
+        return Response([
+            {
+                'path': b.path,
+                'name': b.name,
+                'logo': request.build_absolute_uri(b.logo.url) if b.logo else None,
+            }
+            for b in qs
+        ])
+
+
 class PublicSettingsView(APIView):
     """Public, admin-editable contact/support info for the landing + Help button."""
     permission_classes = [permissions.AllowAny]
@@ -407,7 +425,8 @@ class ContactCreateView(APIView):
         text = (
             "\U0001F4E9 <b>Yangi aloqa xabari</b>\n"
             f"<b>Ism:</b> {msg.name}\n"
-            f"<b>Aloqa:</b> {msg.contact}\n"
+            f"<b>Tel:</b> {msg.phone or '—'}\n"
+            f"<b>Aloqa:</b> {msg.contact or '—'}\n"
             f"<b>Xabar:</b> {msg.message}"
         )
         send_telegram_message(text)

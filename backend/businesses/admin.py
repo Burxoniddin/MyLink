@@ -28,9 +28,9 @@ class ContentBlockInline(admin.TabularInline):
 
 @admin.register(Business)
 class BusinessAdmin(admin.ModelAdmin):
-    list_display = ['name', 'public_link', 'owner', 'template', 'is_locked', 'is_pinned', 'created_at']
-    list_filter = ['template', 'is_locked', 'is_pinned', 'created_at']
-    list_editable = ['is_locked', 'is_pinned']
+    list_display = ['name', 'public_link', 'owner', 'template', 'is_locked', 'is_pinned', 'is_featured', 'created_at']
+    list_filter = ['template', 'is_locked', 'is_pinned', 'is_featured', 'created_at']
+    list_editable = ['is_locked', 'is_pinned', 'is_featured']
     search_fields = ['name', 'path', 'owner__phone_number']
     ordering = ['-created_at']
     prepopulated_fields = {'path': ('name',)}
@@ -43,7 +43,7 @@ class BusinessAdmin(admin.ModelAdmin):
     
     fieldsets = (
         (None, {
-            'fields': ('owner', 'path', 'name', 'description', 'logo', 'template', 'theme', 'is_locked', 'is_pinned')
+            'fields': ('owner', 'path', 'name', 'description', 'logo', 'template', 'theme', 'is_locked', 'is_pinned', 'is_featured')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
@@ -147,11 +147,11 @@ class SiteSettingsAdmin(admin.ModelAdmin):
 
 @admin.register(ContactMessage)
 class ContactMessageAdmin(admin.ModelAdmin):
-    list_display = ['name', 'contact', 'short_message', 'is_read', 'created_at']
+    list_display = ['name', 'phone', 'contact', 'short_message', 'is_read', 'created_at']
     list_filter = ['is_read', 'created_at']
     list_editable = ['is_read']
-    search_fields = ['name', 'contact', 'message']
-    readonly_fields = ['name', 'contact', 'message', 'created_at']
+    search_fields = ['name', 'phone', 'contact', 'message']
+    readonly_fields = ['name', 'phone', 'contact', 'message', 'created_at']
     date_hierarchy = 'created_at'
 
     def short_message(self, obj):
@@ -171,9 +171,9 @@ class StaticPageAdmin(admin.ModelAdmin):
 
 @admin.register(BlogPost)
 class BlogPostAdmin(admin.ModelAdmin):
-    list_display = ['title', 'language', 'is_published', 'published_at']
+    list_display = ['title', 'language', 'order', 'is_published', 'published_at']
     list_filter = ['language', 'is_published']
-    list_editable = ['is_published']
+    list_editable = ['order', 'is_published']
     search_fields = ['title', 'excerpt', 'body']
     prepopulated_fields = {'slug': ('title',)}
     date_hierarchy = 'published_at'

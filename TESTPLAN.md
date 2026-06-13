@@ -177,7 +177,49 @@ npm run build    # → OK (chunk-size warning — zararsiz)
 
 ---
 
+## UX tuzatishlar to'plami (2026-06-13)
+
+### Auth
+- [ ] **Google tugmasi** "Kirish" tugmasi bilan bir xil o'lcham/stil (oq fon, ramka, G logo) va ishlaydi.
+- [ ] Register/Forgot 2-bosqichda **kod va yangi parol maydonlariga saqlangan login/parol avto-to'ldirilmaydi**.
+- [ ] Register 2-bosqichda **Ism familiya** maydoni bor (majburiy) → ro'yxatdan keyin navbar'da "Profil" o'rniga **ism** ko'rinadi.
+- [ ] Profil'da ism ko'rinadi va **tahrirlanadi**; Google bilan kirganda ism Google'dan olinadi.
+- [ ] Login/Register/Forgot/Reset — **yangi dizayn** (landing uslubidagi fon, markaziy karta; chap rasm yo'q).
+
+### Navbar / layout
+- [ ] Faol menyu **chizig'i navbar ichida** (pastdagi kontent ustiga tushmaydi).
+- [ ] **Landing header sticky** — scroll qilganda tepada qoladi.
+- [ ] **Footer + header** blog/about/privacy/terms sahifalarida ham bor; menyudan bo'limlarga (`/#about`...) o'tish ishlaydi.
+
+### Toast xabarlar
+- [ ] Xabarlar **tepa-o'ng burchakda** chiqadi, ~4 soniyada o'zi yo'qoladi; sahifaning istalgan joyida ko'rinadi.
+- [ ] Landing aloqa formasi, Profil, Dashboard, Biznes saqlash — hammasi toast ishlatadi.
+
+### Landing
+- [ ] Statistika: faqat **Foydalanuvchilar** va **Bizneslar** — katta raqamlar, count-up animatsiya.
+- [ ] **"Bizning mijozlar"** karuseli (admin → Business → "Landing'da ko'rsatish" belgilangan): cheksiz o'ngdan-chapga, hover'da to'xtaydi, bosilsa sahifa ochiladi.
+- [ ] Aloqa formasi: **telefon** maydoni (ism tagida, emaildan oldin); telefon YOKI email — bittasi majburiy (ikkalasi bo'sh → toast xato; backend ham 400).
+- [ ] **Help tugmasi**: yumaloq, suzuvchi + ping halqa animatsiyasi; hover'da yorliq chiqadi.
+
+### CMS
+- [ ] `/about` `/privacy` `/terms` `/blog` bo'sh bo'lsa — **chiroyli "Tez orada" sahifa** (admin matni YO'Q).
+- [ ] Blog postda **Tartib (order)** maydoni — admin kichik raqam berganlari birinchi chiqadi.
+
+### Biznes limiti (yangi model: faollik limiti)
+- [ ] **Istalgan tarif istalgancha biznes yaratadi** — "Yangi qo'shish" hech qachon o'chmaydi.
+- [ ] Limit to'lganda yaratilgan yangi sahifa **nofaol** holatda keladi (toast ogohlantiradi).
+- [ ] Har bir o'z kartangizda **Faol/Nofaol switch** — istalganini yoqib-o'chirish mumkin; limit to'lganda yoqishga urinish → upgrade modal.
+- [ ] Nofaol sahifa public'da 404; "Ko'rish" tugmasi o'chiq.
+
+### Yangi biznes wizard (2 bosqich)
+- [ ] `/business/new` → **1-qadam**: manzil (banligi tekshiriladi) + nom + tavsif + logo (kvadrat kesish) → "Davom etish".
+- [ ] **2-qadam**: chapda shablon kartalari + (classic'da) rang palitrasi; **o'ngda jonli telefon preview** — tanlov o'zgarganda darhol yangilanadi.
+- [ ] "Yaratish" → sahifa yaratiladi (logo bilan) → muharrirga o'tadi; band path → 1-qadamga qaytarib xato ko'rsatadi.
+- [ ] Rang palitrasi Free'da qulflangan (Pro badge), Oddiy/Pro'da ishlaydi.
+
+---
+
 ## Yakuniy
-- [ ] Barcha avtotestlar yashil: **100 backend**, lint 0 error, build OK.
+- [ ] Barcha avtotestlar yashil: **107 backend**, lint 0 error, build OK.
 - [ ] Hech bir public sahifa konsolda xato bermaydi.
 - [ ] ⚠️ Prod deploy oldidan: nginx `client_max_body_size 50M` (2c video) + `pip install -r requirements.txt`.

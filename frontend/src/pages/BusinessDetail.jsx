@@ -11,6 +11,7 @@ import TemplatePicker from '../components/templates/TemplatePicker';
 import ThemePicker from '../components/ThemePicker';
 import { useTranslation } from 'react-i18next';
 import { useEntitlements } from '../context/EntitlementContext';
+import { useToast } from '../components/Toast';
 
 // Drag & Drop
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -126,6 +127,7 @@ const BusinessDetail = ({ isNew = false }) => {
     const { path } = useParams();
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const toast = useToast();
     const { entitlements } = useEntitlements();
     const [activeTab, setActiveTab] = useState('edit');
     const [business, setBusiness] = useState(null);
@@ -325,7 +327,8 @@ const BusinessDetail = ({ isNew = false }) => {
                 });
             }
 
-            setMessage({ type: 'success', text: t('detail.saved') });
+            setMessage({ type: '', text: '' });
+            toast.success(t('detail.saved'));
 
             // Redirect to preview after save
             if (isNew) {
@@ -336,9 +339,9 @@ const BusinessDetail = ({ isNew = false }) => {
             setActiveTab('preview');
         } catch (err) {
             if (err.response?.data?.path) {
-                setMessage({ type: 'error', text: t('detail.path_taken') });
+                toast.error(t('detail.path_taken'));
             } else {
-                setMessage({ type: 'error', text: t('common.error') });
+                toast.error(t('common.error'));
             }
         } finally {
             setSaving(false);

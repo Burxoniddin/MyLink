@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import api from '../api';
+import { useEntitlements } from '../context/EntitlementContext';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from '../components/LanguageSwitcher';
+import AuthLayout from '../components/AuthLayout';
 import GoogleButton from '../components/GoogleButton';
 import PasswordInput from '../components/PasswordInput';
 
@@ -32,14 +33,16 @@ const Divider = ({ label }) => (
 const Register = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { refresh: refreshEntitlements } = useEntitlements();
     const [searchParams] = useSearchParams();
     const ref = searchParams.get('ref') || '';
 
     const [tab, setTab] = useState('email'); // 'email' | 'phone'
-    const [step, setStep] = useState(1);      // 1 = identifier, 2 = code + password
+    const [step, setStep] = useState(1);      // 1 = identifier, 2 = code + name + password
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [code, setCode] = useState('');
+    const [fullName, setFullName] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -67,8 +70,9 @@ const Register = () => {
         setError('');
         setLoading(true);
         try {
-            const res = await api.post('auth/register/', { method: tab, identifier, code, password, ref });
+            const res = await api.post('auth/register/', { method: tab, identifier, code, password, full_name: fullName.trim(), ref });
             localStorage.setItem('token', res.data.token);
+            refreshEntitlements(); // navbar name + tier badge
             navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.error || t('common.error'));
@@ -78,82 +82,92 @@ const Register = () => {
     };
 
     return (
-        <div className="login-page">
-            <div className="login-left">
-                <img src="/login-bg.png" alt="MyLink" className="login-bg-image" />
-            </div>
-            <div className="login-right">
-                <div style={{ position: 'absolute', top: 20, right: 20 }}>
-                    <LanguageSwitcher />
+        <AuthLayout
+            title={step === 1 ? t('auth.register_title') : t('auth.verify_title')}
+            subtitle={step === 1 ? t('auth.register_subtitle') : undefined}
+        >
+            {step === 1 && (
+                <div style={{ display: 'flex', gap: 4, background: '#f3f4f6', borderRadius: 10, padding: 4, marginBottom: 20 }}>
+                    <button type="button" style={tabBtn(tab === 'email')} onClick={() => { setTab('email'); setError(''); }}>{t('auth.tab_email')}</button>
+                    <button type="button" style={tabBtn(tab === 'phone')} onClick={() => { setTab('phone'); setError(''); }}>{t('auth.tab_phone')}</button>
                 </div>
-                <div className="login-form-container">
-                    <Link to="/" className="login-logo">
-                        <img src="/logo.png" alt="MyLink" />
-                        MyLink
-                    </Link>
-                    <div className="login-header">
-                        <h2>{step === 1 ? t('auth.register_title') : t('auth.verify_title')}</h2>
-                    </div>
+            )}
 
-                    {step === 1 && (
-                        <div style={{ display: 'flex', gap: 4, background: '#f3f4f6', borderRadius: 10, padding: 4, marginBottom: 20 }}>
-                            <button type="button" style={tabBtn(tab === 'email')} onClick={() => { setTab('email'); setError(''); }}>{t('auth.tab_email')}</button>
-                            <button type="button" style={tabBtn(tab === 'phone')} onClick={() => { setTab('phone'); setError(''); }}>{t('auth.tab_phone')}</button>
-                        </div>
-                    )}
+            {error && <div className="login-error">{error}</div>}
 
-                    {error && <div className="login-error">{error}</div>}
-
-                    {step === 1 ? (
-                        <>
-                            <form onSubmit={sendCode} className="login-form">
-                                {tab === 'email' ? (
-                                    <div className="input-group">
-                                        <label>{t('auth.email_label')}</label>
-                                        <input type="email" className="login-input" placeholder="email@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                                    </div>
-                                ) : (
-                                    <div className="input-group">
-                                        <label>{t('login.phone_label')}</label>
-                                        <div className="phone-input-group">
-                                            <span className="phone-prefix">+998</span>
-                                            <input type="tel" className="login-input phone-input" placeholder="90 123 45 67" value={phone} onChange={(e) => setPhone(formatPhoneNumber(e.target.value))} required />
-                                        </div>
-                                    </div>
-                                )}
-                                <button type="submit" className="login-btn" disabled={loading}>
-                                    {loading ? t('login.sending') : t('auth.send_code')}
-                                </button>
-                            </form>
-
-                            <Divider label={t('auth.or')} />
-                            <GoogleButton onError={(msg) => setError(msg || t('common.error'))} />
-                        </>
-                    ) : (
-                        <form onSubmit={finishRegister} className="login-form">
+            {step === 1 ? (
+                <>
+                    <form onSubmit={sendCode} className="login-form">
+                        {tab === 'email' ? (
                             <div className="input-group">
-                                <label>{t('login.code_label')}</label>
-                                <input type="text" className="login-input" placeholder="• • • • • •" value={code} onChange={(e) => setCode(e.target.value)} required />
+                                <label>{t('auth.email_label')}</label>
+                                <input type="email" name="email" autoComplete="email" className="login-input" placeholder="email@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                             </div>
+                        ) : (
                             <div className="input-group">
-                                <label>{t('auth.create_password')}</label>
-                                <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} required />
+                                <label>{t('login.phone_label')}</label>
+                                <div className="phone-input-group">
+                                    <span className="phone-prefix">+998</span>
+                                    <input type="tel" name="phone" autoComplete="tel-national" className="login-input phone-input" placeholder="90 123 45 67" value={phone} onChange={(e) => setPhone(formatPhoneNumber(e.target.value))} required />
+                                </div>
                             </div>
-                            <button type="submit" className="login-btn" disabled={loading}>
-                                {loading ? t('login.sending') : t('auth.register')}
-                            </button>
-                            <button type="button" className="login-back-btn" onClick={() => { setStep(1); setError(''); }}>
-                                ← {t('login.change_number')}
-                            </button>
-                        </form>
-                    )}
+                        )}
+                        <button type="submit" className="login-btn" disabled={loading}>
+                            {loading ? t('login.sending') : t('auth.send_code')}
+                        </button>
+                    </form>
 
-                    <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#6b7280' }}>
-                        {t('auth.have_account')} <Link to="/login">{t('auth.login')}</Link>
+                    <Divider label={t('auth.or')} />
+                    <GoogleButton onError={(msg) => setError(msg || t('common.error'))} />
+                </>
+            ) : (
+                // autoComplete="off" on the form + one-time-code / new-password on the
+                // inputs keeps the browser from autofilling saved login credentials here.
+                <form onSubmit={finishRegister} className="login-form" autoComplete="off">
+                    <div className="input-group">
+                        <label>{t('login.code_label')}</label>
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            name="otp"
+                            autoComplete="one-time-code"
+                            className="login-input"
+                            placeholder="• • • • • •"
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                            required
+                        />
                     </div>
-                </div>
+                    <div className="input-group">
+                        <label>{t('auth.full_name')}</label>
+                        <input
+                            type="text"
+                            name="full_name"
+                            autoComplete="name"
+                            className="login-input"
+                            placeholder={t('auth.full_name_ph')}
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="input-group">
+                        <label>{t('auth.create_password')}</label>
+                        <PasswordInput name="new-password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} required />
+                    </div>
+                    <button type="submit" className="login-btn" disabled={loading}>
+                        {loading ? t('login.sending') : t('auth.register')}
+                    </button>
+                    <button type="button" className="login-back-btn" onClick={() => { setStep(1); setError(''); }}>
+                        ← {t('login.change_number')}
+                    </button>
+                </form>
+            )}
+
+            <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#6b7280' }}>
+                {t('auth.have_account')} <Link to="/login">{t('auth.login')}</Link>
             </div>
-        </div>
+        </AuthLayout>
     );
 };
 

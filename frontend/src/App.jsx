@@ -12,6 +12,7 @@ import Referral from './pages/Referral';
 import Nfc from './pages/Nfc';
 import Dashboard from './pages/Dashboard';
 import BusinessDetail from './pages/BusinessDetail';
+import NewBusiness from './pages/NewBusiness';
 import LandingPage from './pages/LandingPage';
 import ComingSoon from './pages/ComingSoon';
 import InfoPage from './pages/InfoPage';
@@ -38,8 +39,8 @@ function App() {
         <Route path="/nfc" element={<><Navbar /><Nfc /></>} />
         <Route path="/pricing" element={<><Navbar /><Pricing /></>} />
 
-        {/* Business Detail */}
-        <Route path="/business/new" element={<><Navbar /><BusinessDetail isNew /></>} />
+        {/* Business creation wizard + editor */}
+        <Route path="/business/new" element={<><Navbar /><NewBusiness /></>} />
         <Route path="/business/:path/*" element={<><Navbar /><BusinessDetail /></>} />
 
         {/* Public content pages */}

@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
+import { useToast } from '../components/Toast';
+import SiteHeader from '../components/site/SiteHeader';
+import SiteFooter from '../components/site/SiteFooter';
 import './HomePage.css';
 
 // Fallback contact details (used until admin fills SiteSettings).
@@ -12,26 +15,34 @@ const FALLBACK = {
     support_telegram_url: 'https://t.me/mylink_asia',
 };
 
-const LANGS = [['uz', 'UZ'], ['ru', 'RU'], ['en', 'EN']];
-
 const HomePage = () => {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
+    const toast = useToast();
+    const location = useLocation();
     const rootRef = useRef(null);
     const isLoggedIn = !!localStorage.getItem('token');
     const startTo = isLoggedIn ? '/dashboard' : '/register';
 
     const [counts, setCounts] = useState({ businesses: 0, links: 0, users: 0 });
     const [settings, setSettings] = useState(null);
-    const [contactSent, setContactSent] = useState(false);
-    const [contactError, setContactError] = useState('');
+    const [featured, setFeatured] = useState([]);
+    const [sending, setSending] = useState(false);
 
-    // Fetch real stats + admin-editable contact settings.
+    // Fetch real stats + admin-editable contact settings + featured clients.
     useEffect(() => {
         api.get('public/stats/').then((r) => setCounts(r.data)).catch(() => {});
         api.get('public/settings/').then((r) => setSettings(r.data)).catch(() => {});
+        api.get('public/featured/').then((r) => setFeatured(r.data || [])).catch(() => {});
     }, []);
 
-    // Scroll reveal + count-up + header shadow (ported from design reveal.js).
+    // Arriving from another page with /#section — scroll to it once rendered.
+    useEffect(() => {
+        if (!location.hash) return;
+        const el = document.getElementById(location.hash.slice(1));
+        if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 60);
+    }, [location.hash]);
+
+    // Scroll reveal + count-up (ported from design reveal.js).
     useEffect(() => {
         const root = rootRef.current;
         if (!root) return;
@@ -77,18 +88,8 @@ const HomePage = () => {
         }
         const safety = setTimeout(() => items.forEach(trigger), 2600);
 
-        const hdr = root.querySelector('.lp-header');
-        const onScroll = () => { if (hdr) hdr.classList.toggle('scrolled', window.scrollY > 8); };
-        onScroll();
-        window.addEventListener('scroll', onScroll, { passive: true });
-
-        return () => { if (io) io.disconnect(); clearTimeout(safety); window.removeEventListener('scroll', onScroll); };
-    }, []);
-
-    const changeLang = (code) => {
-        i18n.changeLanguage(code);
-        localStorage.setItem('mylink-lang', code);
-    };
+        return () => { if (io) io.disconnect(); clearTimeout(safety); };
+    }, [counts]);
 
     const c = {
         email: settings?.contact_email || FALLBACK.contact_email,
@@ -96,13 +97,6 @@ const HomePage = () => {
         telegram: settings?.contact_telegram || FALLBACK.contact_telegram,
         tgUrl: settings?.support_telegram_url || FALLBACK.support_telegram_url,
     };
-
-    const statItems = [
-        { ico: '◆', value: counts.businesses, label: t('home.stat_pages'), w: '78%' },
-        { ico: '↗', value: counts.links, label: t('home.stat_links'), w: '64%' },
-        { ico: '✦', value: counts.users, label: t('home.stat_users'), w: '52%' },
-        { ico: '✓', value: 3, label: t('home.stat_langs'), w: '99%' },
-    ];
 
     const prices = [
         { tier: t('home.tier_free'), amt: '0', unit: t('home.unit_free'), pop: false, btn: 'btn-soft', cta: t('home.price_cta_free'), feats: [t('home.f_free_1'), t('home.f_free_2'), t('home.f_free_3')] },
@@ -112,47 +106,36 @@ const HomePage = () => {
 
     const onContactSubmit = async (e) => {
         e.preventDefault();
-        setContactError('');
         const f = e.target;
+        const phone = f.elements.phone.value.trim();
+        const contact = f.elements.contact.value.trim();
+        if (!phone && !contact) {
+            toast.error(t('home.form_one_required'));
+            return;
+        }
+        setSending(true);
         try {
             await api.post('contact/', {
                 name: f.elements.name.value,
-                contact: f.elements.contact.value,
+                phone,
+                contact,
                 message: f.elements.message.value,
             });
-            setContactSent(true);
+            toast.success(t('home.form_ok'));
             f.reset();
         } catch {
-            setContactError(t('common.error'));
+            toast.error(t('common.error'));
+        } finally {
+            setSending(false);
         }
     };
 
+    // Seamless marquee needs the list at least twice.
+    const marquee = featured.length > 0 ? [...featured, ...featured] : [];
+
     return (
         <div className="lpc" ref={rootRef}>
-            {/* HEADER */}
-            <header className="lp-header">
-                <div className="wrap nav">
-                    <Link className="brand" to="/"><span className="glyph"></span> Mylink</Link>
-                    <nav className="nav-links">
-                        <a href="#about">{t('home.nav_about')}</a>
-                        <a href="#how">{t('home.nav_how')}</a>
-                        <a href="#pricing">{t('home.nav_pricing')}</a>
-                        <a href="#contact">{t('home.nav_contact')}</a>
-                    </nav>
-                    <div className="nav-right">
-                        <div className="lang">
-                            {LANGS.map(([code, label]) => (
-                                <button key={code} className={i18n.language === code ? 'is-active' : ''} onClick={() => changeLang(code)}>{label}</button>
-                            ))}
-                        </div>
-                        {isLoggedIn ? (
-                            <Link to="/dashboard" className="btn btn-primary">{t('home.dashboard')}</Link>
-                        ) : (
-                            <Link to="/login" className="btn btn-primary">{t('home.login')}</Link>
-                        )}
-                    </div>
-                </div>
-            </header>
+            <SiteHeader />
 
             <main>
                 {/* HERO */}
@@ -229,7 +212,7 @@ const HomePage = () => {
                     </div>
                 </section>
 
-                {/* STATS */}
+                {/* STATS — two big live counters */}
                 <section className="block">
                     <div className="wrap">
                         <div className="stats-wrap reveal">
@@ -240,19 +223,45 @@ const HomePage = () => {
                                 <h2>{t('home.stats_title')}</h2>
                                 <p>{t('home.stats_text')}</p>
                             </div>
-                            <div className="stats">
-                                {statItems.map((s, i) => (
-                                    <div className="stat reveal" data-d={i} key={i}>
-                                        <div className="ico">{s.ico}</div>
-                                        <b><span data-count={s.value}>{s.value}</span></b>
-                                        <span>{s.label}</span>
-                                        <div className="bar"><i style={{ '--w': s.w }}></i></div>
-                                    </div>
-                                ))}
+                            <div className="stats-duo">
+                                <div className="stat-big reveal">
+                                    <div className="sb-ring"><span>✦</span></div>
+                                    <b><span data-count={counts.users}>{counts.users}</span><i>+</i></b>
+                                    <span className="sb-label">{t('home.stat_users')}</span>
+                                </div>
+                                <div className="stat-big reveal" data-d="1">
+                                    <div className="sb-ring"><span>◆</span></div>
+                                    <b><span data-count={counts.businesses}>{counts.businesses}</span><i>+</i></b>
+                                    <span className="sb-label">{t('home.stat_pages')}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </section>
+
+                {/* CLIENTS — admin-curated infinite carousel */}
+                {featured.length > 0 && (
+                    <section className="block clients-block">
+                        <div className="wrap">
+                            <div className="sec-head center reveal" style={{ maxWidth: 600 }}>
+                                <span className="eyebrow">{t('home.clients_eyebrow')}</span>
+                                <h2>{t('home.clients_title')}</h2>
+                            </div>
+                        </div>
+                        <div className="clients-marquee reveal" data-d="1">
+                            <div className="clients-track" style={{ '--n': featured.length }}>
+                                {marquee.map((b, i) => (
+                                    <a key={`${b.path}-${i}`} href={`/${b.path}`} target="_blank" rel="noreferrer" className="client-card" aria-hidden={i >= featured.length}>
+                                        {b.logo
+                                            ? <img src={b.logo} alt={b.name} />
+                                            : <span className="client-letter">{b.name.charAt(0)}</span>}
+                                        <span className="client-name">{b.name}</span>
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                )}
 
                 {/* PRICING */}
                 <section className="block" id="pricing" style={{ background: '#fff' }}>
@@ -294,49 +303,18 @@ const HomePage = () => {
                             </div>
                             <form className="lp-form" onSubmit={onContactSubmit}>
                                 <div className="field"><label>{t('home.form_name')}</label><input name="name" required placeholder={t('home.form_name_ph')} /></div>
-                                <div className="field"><label>{t('home.form_contact')}</label><input name="contact" required placeholder="you@example.com" /></div>
+                                <div className="field"><label>{t('home.form_phone')}</label><input name="phone" type="tel" placeholder="+998 90 123 45 67" /></div>
+                                <div className="field"><label>{t('home.form_contact')}</label><input name="contact" type="email" placeholder="you@example.com" /></div>
+                                <div className="form-hint">{t('home.form_one_required')}</div>
                                 <div className="field"><label>{t('home.form_msg')}</label><textarea name="message" required placeholder={t('home.form_msg_ph')}></textarea></div>
-                                <button className="btn btn-primary" type="submit" style={{ width: '100%', justifyContent: 'center' }}>{t('home.form_send')}</button>
-                                {contactSent && <div className="ok-msg">{t('home.form_ok')}</div>}
-                                {contactError && <div className="ok-msg" style={{ color: '#dc2626' }}>{contactError}</div>}
+                                <button className="btn btn-primary" type="submit" disabled={sending} style={{ width: '100%', justifyContent: 'center' }}>{t('home.form_send')}</button>
                             </form>
                         </div>
                     </div>
                 </section>
             </main>
 
-            {/* FOOTER */}
-            <footer>
-                <div className="wrap">
-                    <div className="foot-grid">
-                        <div>
-                            <Link className="brand" to="/"><span className="glyph"></span> Mylink</Link>
-                            <p>{t('home.footer_tagline')}</p>
-                        </div>
-                        <div className="foot-col">
-                            <h4>{t('home.footer_product')}</h4>
-                            <a href="#about">{t('home.nav_about')}</a>
-                            <a href="#how">{t('home.nav_how')}</a>
-                            <a href="#pricing">{t('home.nav_pricing')}</a>
-                        </div>
-                        <div className="foot-col">
-                            <h4>{t('home.footer_company')}</h4>
-                            <Link to="/about">{t('home.footer_about_us')}</Link>
-                            <Link to="/blog">{t('home.footer_blog')}</Link>
-                            <a href="#contact">{t('home.nav_contact')}</a>
-                        </div>
-                        <div className="foot-col">
-                            <h4>{t('home.footer_legal')}</h4>
-                            <Link to="/privacy">{t('home.footer_privacy')}</Link>
-                            <Link to="/terms">{t('home.footer_terms')}</Link>
-                        </div>
-                    </div>
-                    <div className="foot-bottom">
-                        <span>© {new Date().getFullYear()} Mylink.asia</span>
-                        <span>{t('home.footer_madein')}</span>
-                    </div>
-                </div>
-            </footer>
+            <SiteFooter />
         </div>
     );
 };

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import api from '../api';
+import { useEntitlements } from '../context/EntitlementContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from '../components/LanguageSwitcher';
+import AuthLayout from '../components/AuthLayout';
 import GoogleButton from '../components/GoogleButton';
 import PasswordInput from '../components/PasswordInput';
 
@@ -32,6 +33,7 @@ const Divider = ({ label }) => (
 const Login = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { refresh: refreshEntitlements } = useEntitlements();
     const [tab, setTab] = useState('email'); // 'email' | 'phone'
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
@@ -47,6 +49,7 @@ const Login = () => {
         try {
             const res = await api.post('auth/login-password/', { identifier, password });
             localStorage.setItem('token', res.data.token);
+            refreshEntitlements(); // navbar name + tier badge
             navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.error || t('common.error'));
@@ -56,69 +59,51 @@ const Login = () => {
     };
 
     return (
-        <div className="login-page">
-            <div className="login-left">
-                <img src="/login-bg.png" alt="MyLink" className="login-bg-image" />
+        <AuthLayout title={t('login.title_phone')} subtitle={t('auth.login_subtitle')}>
+            {/* Email / Phone tabs */}
+            <div style={{ display: 'flex', gap: 4, background: '#f3f4f6', borderRadius: 10, padding: 4, marginBottom: 20 }}>
+                <button type="button" style={tabBtn(tab === 'email')} onClick={() => { setTab('email'); setError(''); }}>{t('auth.tab_email')}</button>
+                <button type="button" style={tabBtn(tab === 'phone')} onClick={() => { setTab('phone'); setError(''); }}>{t('auth.tab_phone')}</button>
             </div>
-            <div className="login-right">
-                <div style={{ position: 'absolute', top: 20, right: 20 }}>
-                    <LanguageSwitcher />
-                </div>
-                <div className="login-form-container">
-                    <Link to="/" className="login-logo">
-                        <img src="/logo.png" alt="MyLink" />
-                        MyLink
-                    </Link>
-                    <div className="login-header">
-                        <h2>{t('login.title_phone')}</h2>
+
+            {error && <div className="login-error">{error}</div>}
+
+            <form onSubmit={submit} className="login-form">
+                {tab === 'email' ? (
+                    <div className="input-group">
+                        <label>{t('auth.email_label')}</label>
+                        <input type="email" name="email" autoComplete="email" className="login-input" placeholder="email@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                     </div>
-
-                    {/* Email / Phone tabs */}
-                    <div style={{ display: 'flex', gap: 4, background: '#f3f4f6', borderRadius: 10, padding: 4, marginBottom: 20 }}>
-                        <button type="button" style={tabBtn(tab === 'email')} onClick={() => { setTab('email'); setError(''); }}>{t('auth.tab_email')}</button>
-                        <button type="button" style={tabBtn(tab === 'phone')} onClick={() => { setTab('phone'); setError(''); }}>{t('auth.tab_phone')}</button>
-                    </div>
-
-                    {error && <div className="login-error">{error}</div>}
-
-                    <form onSubmit={submit} className="login-form">
-                        {tab === 'email' ? (
-                            <div className="input-group">
-                                <label>{t('auth.email_label')}</label>
-                                <input type="email" className="login-input" placeholder="email@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                            </div>
-                        ) : (
-                            <div className="input-group">
-                                <label>{t('login.phone_label')}</label>
-                                <div className="phone-input-group">
-                                    <span className="phone-prefix">+998</span>
-                                    <input type="tel" className="login-input phone-input" placeholder="90 123 45 67" value={phone} onChange={(e) => setPhone(formatPhoneNumber(e.target.value))} required />
-                                </div>
-                            </div>
-                        )}
-                        <div className="input-group">
-                            <label>{t('auth.password_label')}</label>
-                            <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required />
+                ) : (
+                    <div className="input-group">
+                        <label>{t('login.phone_label')}</label>
+                        <div className="phone-input-group">
+                            <span className="phone-prefix">+998</span>
+                            <input type="tel" name="phone" autoComplete="tel-national" className="login-input phone-input" placeholder="90 123 45 67" value={phone} onChange={(e) => setPhone(formatPhoneNumber(e.target.value))} required />
                         </div>
-                        <button type="submit" className="login-btn" disabled={loading}>
-                            {loading ? t('login.verifying') : t('auth.login')}
-                        </button>
-                        {tab === 'email' && (
-                            <div style={{ textAlign: 'center', marginTop: 12, fontSize: 14 }}>
-                                <Link to="/forgot-password">{t('auth.forgot')}</Link>
-                            </div>
-                        )}
-                    </form>
-
-                    <Divider label={t('auth.or')} />
-                    <GoogleButton onError={(msg) => setError(msg || t('common.error'))} />
-
-                    <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#6b7280' }}>
-                        {t('auth.no_account')} <Link to="/register">{t('auth.register')}</Link>
                     </div>
+                )}
+                <div className="input-group">
+                    <label>{t('auth.password_label')}</label>
+                    <PasswordInput name="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
+                <button type="submit" className="login-btn" disabled={loading}>
+                    {loading ? t('login.verifying') : t('auth.login')}
+                </button>
+                {tab === 'email' && (
+                    <div style={{ textAlign: 'center', marginTop: 12, fontSize: 14 }}>
+                        <Link to="/forgot-password">{t('auth.forgot')}</Link>
+                    </div>
+                )}
+            </form>
+
+            <Divider label={t('auth.or')} />
+            <GoogleButton onError={(msg) => setError(msg || t('common.error'))} />
+
+            <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#6b7280' }}>
+                {t('auth.no_account')} <Link to="/register">{t('auth.register')}</Link>
             </div>
-        </div>
+        </AuthLayout>
     );
 };
 

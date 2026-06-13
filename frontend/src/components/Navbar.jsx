@@ -25,8 +25,11 @@ const Navbar = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const { entitlements } = useEntitlements();
+    const { entitlements, me } = useEntitlements();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    // Show the user's name when we have it; fall back to the generic label.
+    const profileLabel = me?.full_name || t('nav.profile');
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -61,7 +64,7 @@ const Navbar = () => {
                     <LanguageSwitcher />
                     <Link to="/profile" className={`nav-link ${isActive('/profile')}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <FaUserCircle style={{ fontSize: 18 }} />
-                        <span>{t('nav.profile')}</span>
+                        <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profileLabel}</span>
                         <TierPill tier={tier} t={t} />
                     </Link>
                     <button className="navbar-logout" onClick={handleLogout}>
@@ -101,7 +104,7 @@ const Navbar = () => {
                         </Link>
                         <Link to="/profile" className={`mobile-nav-link ${isActive('/profile')}`} onClick={closeMenu} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <FaUserCircle />
-                            <span>{t('nav.profile')}</span>
+                            <span style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profileLabel}</span>
                             <TierPill tier={tier} t={t} />
                         </Link>
                         <div style={{ padding: '12px 16px' }}>

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import PasswordInput from '../components/PasswordInput';
 import { useEntitlements } from '../context/EntitlementContext';
+import { useToast } from '../components/Toast';
 
 const cardStyle = {
     background: '#fff',
@@ -16,6 +17,7 @@ const cardStyle = {
 const Profile = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const toast = useToast();
     const { refresh: refreshEntitlements } = useEntitlements();
 
     const [me, setMe] = useState(null);
@@ -23,9 +25,9 @@ const Profile = () => {
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [email, setEmail] = useState('');
+    const [fullName, setFullName] = useState('');
     const [promoCode, setPromoCode] = useState('');
     const [promoBusy, setPromoBusy] = useState(false);
-    const [msg, setMsg] = useState({ type: '', text: '' });
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -40,6 +42,7 @@ const Profile = () => {
         try {
             const res = await api.get('me/');
             setMe(res.data);
+            setFullName(res.data.full_name || '');
         } catch (err) {
             if (err.response?.status === 401) navigate('/login');
         } finally {
@@ -47,31 +50,41 @@ const Profile = () => {
         }
     };
 
+    const saveName = async (e) => {
+        e.preventDefault();
+        try {
+            await api.patch('me/', { full_name: fullName });
+            toast.success(t('auth.name_saved'));
+            await refreshEntitlements(); // navbar shows the new name
+            load();
+        } catch {
+            toast.error(t('common.error'));
+        }
+    };
+
     const savePassword = async (e) => {
         e.preventDefault();
-        setMsg({ type: '', text: '' });
         try {
             if (me.has_password) {
                 await api.post('auth/change-password/', { old_password: oldPassword, new_password: newPassword });
             } else {
                 await api.post('auth/set-password/', { password: newPassword });
             }
-            setMsg({ type: 'success', text: t('auth.password_saved') });
+            toast.success(t('auth.password_saved'));
             setOldPassword('');
             setNewPassword('');
             load();
         } catch (err) {
-            setMsg({ type: 'error', text: err.response?.data?.error || t('common.error') });
+            toast.error(err.response?.data?.error || t('common.error'));
         }
     };
 
     const redeemPromo = async (e) => {
         e.preventDefault();
-        setMsg({ type: '', text: '' });
         setPromoBusy(true);
         try {
             await api.post('promo/redeem/', { code: promoCode });
-            setMsg({ type: 'success', text: t('promo.success') });
+            toast.success(t('promo.success'));
             setPromoCode('');
             await refreshEntitlements();
             load();
@@ -79,7 +92,7 @@ const Profile = () => {
             const reason = err.response?.data?.reason;
             const key = reason ? `promo.err_${reason}` : 'common.error';
             const text = t(key);
-            setMsg({ type: 'error', text: text === key ? t('common.error') : text });
+            toast.error(text === key ? t('common.error') : text);
         } finally {
             setPromoBusy(false);
         }
@@ -87,14 +100,13 @@ const Profile = () => {
 
     const saveEmail = async (e) => {
         e.preventDefault();
-        setMsg({ type: '', text: '' });
         try {
             await api.post('auth/add-email/', { email });
-            setMsg({ type: 'success', text: t('auth.email_added') });
+            toast.success(t('auth.email_added'));
             setEmail('');
             load();
         } catch (err) {
-            setMsg({ type: 'error', text: err.response?.data?.email?.[0] || t('common.error') });
+            toast.error(err.response?.data?.email?.[0] || t('common.error'));
         }
     };
 
@@ -121,18 +133,25 @@ const Profile = () => {
         <div className="dashboard">
             <main className="dashboard-main">
                 <div className="dashboard-container" style={{ maxWidth: 640 }}>
-                    <h1 style={{ marginBottom: 24 }}>{t('auth.profile_title')}</h1>
+                    <h1 style={{ marginBottom: 24 }}>{me.full_name || t('auth.profile_title')}</h1>
 
-                    {msg.text && (
-                        <div className={`message ${msg.type}`} style={{
-                            padding: '10px 14px', borderRadius: 8, marginBottom: 16,
-                            background: msg.type === 'success' ? '#dcfce7' : '#fee2e2',
-                            color: msg.type === 'success' ? '#166534' : '#991b1b',
-                        }}>{msg.text}</div>
-                    )}
-
-                    {/* Account info */}
+                    {/* Account info + name */}
                     <div style={cardStyle}>
+                        <form onSubmit={saveName} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 14 }}>
+                            <div style={{ flex: 1 }}>
+                                <label style={{ display: 'block', color: '#6b7280', fontSize: 14, marginBottom: 6 }}>{t('auth.full_name')}</label>
+                                <input
+                                    className="login-input"
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                    placeholder={t('auth.full_name_ph')}
+                                    autoComplete="name"
+                                />
+                            </div>
+                            <button type="submit" className="login-btn" style={{ width: 'auto', whiteSpace: 'nowrap', padding: '14px 18px' }}>
+                                {t('common.save')}
+                            </button>
+                        </form>
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0' }}>
                             <span style={{ color: '#6b7280' }}>{t('login.phone_label')}</span>
                             <strong>{me.phone_number || '—'}</strong>

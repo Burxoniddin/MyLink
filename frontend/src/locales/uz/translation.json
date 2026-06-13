@@ -143,7 +143,13 @@
     "new_password": "Yangi parol",
     "add_email": "Email qo'shish",
     "password_saved": "Parol saqlandi",
-    "email_added": "Email qo'shildi"
+    "email_added": "Email qo'shildi",
+    "google_btn": "Google bilan davom etish",
+    "login_subtitle": "Akkauntingizga kiring",
+    "register_subtitle": "Bepul akkaunt yarating — 1 daqiqa kifoya",
+    "full_name": "Ism familiya",
+    "full_name_ph": "Aziz Azizov",
+    "name_saved": "Ism saqlandi"
   },
   "promo": {
     "current_plan": "Joriy tarif",
@@ -251,7 +257,11 @@
     "footer_blog": "Blog",
     "blog_title": "Blog",
     "blog_read": "O'qish",
-    "blog_empty": "Hozircha post yo'q"
+    "blog_empty": "Hozircha post yo'q",
+    "form_phone": "Telefon raqam",
+    "form_one_required": "Telefon yoki email — kamida bittasini kiriting",
+    "clients_eyebrow": "Mijozlar",
+    "clients_title": "Bizning mijozlar"
   },
   "nfc": {
     "title": "NFC vizitka",
@@ -375,10 +385,35 @@
     "modal_title": "Tarif limiti to'ldi",
     "modal_text": "Joriy tarifingizda {{limit}} ta sahifa mavjud. Ko'proq sahifa ochish uchun tarifni yangilang yoki promokod kiriting.",
     "see_plans": "Tariflarni ko'rish",
-    "enter_promo": "Promokod kiritish"
+    "enter_promo": "Promokod kiritish",
+    "active": "Faol",
+    "inactive": "Nofaol",
+    "activated": "Sahifa faollashtirildi",
+    "deactivated": "Sahifa nofaol qilindi",
+    "created_inactive": "Limit to'lgani uchun sahifa nofaol holatda yaratildi",
+    "add_inactive_hint": "Limit to'lgan — yangi sahifa nofaol holatda yaratiladi"
   },
   "help": {
     "label": "Yordam",
     "title": "Yordam kerakmi? Telegram orqali yozing"
+  },
+  "cms": {
+    "empty_title": "Tez orada!",
+    "empty_text": "Bu sahifa hozircha tayyorlanmoqda. Tez orada qiziqarli ma'lumotlar bilan to'ldiramiz.",
+    "go_home": "Bosh sahifaga"
+  },
+  "wizard": {
+    "step_info": "Ma'lumotlar",
+    "step_design": "Dizayn",
+    "info_title": "Biznes ma'lumotlari",
+    "info_sub": "Sahifangiz manzili va asosiy ma'lumotlarini kiriting",
+    "design_title": "Dizaynni tanlang",
+    "design_sub": "Shablonni tanlang — o'ng tomonda jonli ko'rinishini kuzating",
+    "continue": "Davom etish",
+    "back": "Orqaga",
+    "create": "Yaratish",
+    "creating": "Yaratilmoqda...",
+    "created": "Biznes sahifa yaratildi! 🎉",
+    "preview": "Jonli ko'rinish"
   }
 }

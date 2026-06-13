@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaExternalLinkAlt, FaEdit, FaLock, FaLockOpen, FaStar, FaSearch, FaUsers } from 'react-icons/fa';
+import { FaPlus, FaExternalLinkAlt, FaEdit, FaLock, FaStar, FaSearch, FaUsers } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useEntitlements } from '../context/EntitlementContext';
+import { useToast } from '../components/Toast';
 
 const Dashboard = () => {
     const { t } = useTranslation();
+    const toast = useToast();
     const { entitlements, refresh: refreshEntitlements } = useEntitlements();
     const [businesses, setBusinesses] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [msg, setMsg] = useState('');
     const [showUpgrade, setShowUpgrade] = useState(false);
     const [query, setQuery] = useState('');
     const navigate = useNavigate();
@@ -38,37 +39,31 @@ const Dashboard = () => {
     };
 
     // The tier limit applies only to pages you own; pages shared with you
-    // (role !== 'owner') don't count toward it.
+    // (role !== 'owner') don't count toward it. Creation is unlimited — the
+    // limit caps how many can be ACTIVE at once.
     const owned = businesses.filter((b) => b.role === 'owner');
     const limit = entitlements?.features?.profile_limit ?? 1;
     const activeCount = owned.filter((b) => !b.is_locked).length;
     const atLimit = activeCount >= limit;
-    const hasLocked = owned.some((b) => b.is_locked);
 
     const q = query.trim().toLowerCase();
     const filtered = q
         ? businesses.filter((b) => b.name.toLowerCase().includes(q) || b.path.toLowerCase().includes(q))
         : businesses;
 
-    const handleAdd = () => {
-        if (atLimit) {
-            setShowUpgrade(true);
-            return;
-        }
-        navigate('/business/new');
-    };
+    const handleAdd = () => navigate('/business/new');
 
     const toggleLock = async (e, biz) => {
         e.stopPropagation();
-        setMsg('');
         try {
             await api.post(`businesses/${biz.path}/lock/`, { is_locked: !biz.is_locked });
+            toast.success(biz.is_locked ? t('limit.activated') : t('limit.deactivated'));
             await Promise.all([fetchBusinesses(), refreshEntitlements()]);
         } catch (err) {
             if (err.response?.data?.reason === 'profile_limit') {
                 setShowUpgrade(true);
             } else {
-                setMsg(t('common.error'));
+                toast.error(t('common.error'));
             }
         }
     };
@@ -94,9 +89,8 @@ const Dashboard = () => {
                                 {activeCount}/{limit}
                             </span>
                         </div>
-                        <button className="add-btn" onClick={handleAdd} disabled={atLimit}
-                            style={atLimit ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
-                            title={atLimit ? t('limit.reached', { limit }) : undefined}>
+                        <button className="add-btn" onClick={handleAdd}
+                            title={atLimit ? t('limit.add_inactive_hint') : undefined}>
                             <FaPlus />
                             <span>{t('dashboard.add_new')}</span>
                         </button>
@@ -112,13 +106,6 @@ const Dashboard = () => {
                                 onChange={(e) => setQuery(e.target.value)}
                             />
                         </div>
-                    )}
-
-                    {msg && (
-                        <div style={{
-                            padding: '10px 14px', borderRadius: 8, marginBottom: 16,
-                            background: '#fef3c7', color: '#92400e', fontSize: 14,
-                        }}>{msg}</div>
                     )}
 
                     {businesses.length === 0 ? (
@@ -137,35 +124,51 @@ const Dashboard = () => {
                         <div className="business-grid">
                             {filtered.map((biz) => (
                                 <div key={biz.id} className="business-card"
-                                    style={biz.is_locked && biz.role === 'owner' ? { opacity: 0.6 } : undefined}
+                                    style={biz.is_locked && biz.role === 'owner' ? { opacity: 0.65 } : undefined}
                                     onClick={() => navigate(`/business/${biz.path}`)}>
-                                    {biz.role !== 'owner' && (
-                                        <div style={{
-                                            display: 'inline-flex', alignItems: 'center', gap: 6,
-                                            background: '#ede9fe', color: '#5b21b6', fontSize: 12, fontWeight: 600,
-                                            padding: '3px 10px', borderRadius: 999, marginBottom: 10,
-                                        }}>
-                                            <FaUsers size={11} /> {t(`team.role_${biz.role}`)}
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, minHeight: 24 }}>
+                                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                            {biz.role !== 'owner' && (
+                                                <span style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                                    background: '#ede9fe', color: '#5b21b6', fontSize: 12, fontWeight: 600,
+                                                    padding: '3px 10px', borderRadius: 999,
+                                                }}>
+                                                    <FaUsers size={11} /> {t(`team.role_${biz.role}`)}
+                                                </span>
+                                            )}
+                                            {biz.role === 'owner' && biz.is_locked && (
+                                                <span style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                                    background: '#fee2e2', color: '#991b1b', fontSize: 12, fontWeight: 600,
+                                                    padding: '3px 10px', borderRadius: 999,
+                                                }}>
+                                                    <FaLock size={11} /> {t('limit.locked_badge')}
+                                                </span>
+                                            )}
+                                            {biz.role === 'owner' && biz.is_pinned && !biz.is_locked && (
+                                                <span style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                                    background: '#fef3c7', color: '#92400e', fontSize: 12, fontWeight: 600,
+                                                    padding: '3px 10px', borderRadius: 999,
+                                                }}>
+                                                    <FaStar size={11} /> {t('detail.pinned')}
+                                                </span>
+                                            )}
                                         </div>
-                                    )}
-                                    {biz.role === 'owner' && biz.is_locked && (
-                                        <div style={{
-                                            display: 'inline-flex', alignItems: 'center', gap: 6,
-                                            background: '#fee2e2', color: '#991b1b', fontSize: 12, fontWeight: 600,
-                                            padding: '3px 10px', borderRadius: 999, marginBottom: 10,
-                                        }}>
-                                            <FaLock size={11} /> {t('limit.locked_badge')}
-                                        </div>
-                                    )}
-                                    {biz.role === 'owner' && biz.is_pinned && !biz.is_locked && (
-                                        <div style={{
-                                            display: 'inline-flex', alignItems: 'center', gap: 6,
-                                            background: '#fef3c7', color: '#92400e', fontSize: 12, fontWeight: 600,
-                                            padding: '3px 10px', borderRadius: 999, marginBottom: 10,
-                                        }}>
-                                            <FaStar size={11} /> {t('detail.pinned')}
-                                        </div>
-                                    )}
+                                        {biz.role === 'owner' && (
+                                            <span
+                                                className={`biz-switch ${biz.is_locked ? '' : 'on'}`}
+                                                onClick={(e) => toggleLock(e, biz)}
+                                                title={biz.is_locked ? t('limit.activate') : t('limit.deactivate')}
+                                                role="switch"
+                                                aria-checked={!biz.is_locked}
+                                            >
+                                                <span className="sw-label">{biz.is_locked ? t('limit.inactive') : t('limit.active')}</span>
+                                                <span className="track"></span>
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="card-header">
                                         {biz.logo ? (
                                             <img src={biz.logo} alt={biz.name} className="card-logo" />
@@ -189,25 +192,16 @@ const Dashboard = () => {
                                         <button className="card-btn edit">
                                             <FaEdit /> {t('common.edit')}
                                         </button>
-                                        {biz.role === 'owner' && biz.is_locked ? (
-                                            <button className="card-btn view" onClick={(e) => toggleLock(e, biz)}>
-                                                <FaLockOpen /> {t('limit.activate')}
-                                            </button>
-                                        ) : biz.role === 'owner' && hasLocked ? (
-                                            <button className="card-btn view" onClick={(e) => toggleLock(e, biz)}>
-                                                <FaLock /> {t('limit.deactivate')}
-                                            </button>
-                                        ) : (
-                                            <a
-                                                href={`/${biz.path}`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="card-btn view"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <FaExternalLinkAlt /> {t('common.view')}
-                                            </a>
-                                        )}
+                                        <a
+                                            href={`/${biz.path}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="card-btn view"
+                                            style={biz.is_locked ? { pointerEvents: 'none', opacity: .5 } : undefined}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <FaExternalLinkAlt /> {t('common.view')}
+                                        </a>
                                     </div>
                                 </div>
                             ))}

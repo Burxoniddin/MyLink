@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
-const PasswordInput = ({ value, onChange, placeholder = '••••••', required, minLength, name, className = 'login-input' }) => {
+const PasswordInput = ({ value, onChange, placeholder = '••••••', required, minLength, name, autoComplete, className = 'login-input' }) => {
     const [show, setShow] = useState(false);
     return (
         <div style={{ position: 'relative' }}>
@@ -14,6 +14,7 @@ const PasswordInput = ({ value, onChange, placeholder = '••••••', re
                 required={required}
                 minLength={minLength}
                 name={name}
+                autoComplete={autoComplete}
                 style={{ paddingRight: 44, width: '100%' }}
             />
             <button

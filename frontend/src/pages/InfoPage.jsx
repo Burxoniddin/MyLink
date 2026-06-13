@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
-import LanguageSwitcher from '../components/LanguageSwitcher';
+import SiteHeader from '../components/site/SiteHeader';
+import SiteFooter from '../components/site/SiteFooter';
+import CmsEmpty from '../components/site/CmsEmpty';
+import './HomePage.css';
 import './Content.css';
+
+const ICONS = { about: '🚀', privacy: '🔐', terms: '📋' };
 
 const InfoPage = ({ slug }) => {
     const { t, i18n } = useTranslation();
@@ -18,23 +22,21 @@ const InfoPage = ({ slug }) => {
     }, [slug, i18n.language]);
 
     return (
-        <div className="info-page">
-            <div className="info-bar">
-                <Link to="/" className="info-brand">← MyLink</Link>
-                <LanguageSwitcher />
-            </div>
-            <article className="info-content">
+        <div className="lpc cms-page">
+            <SiteHeader />
+            <main className="cms-main">
                 {loading ? (
-                    <p>{t('common.loading')}</p>
+                    <p className="cms-loading">{t('common.loading')}</p>
                 ) : page ? (
-                    <>
+                    <article className="info-content wrap-narrow">
                         <h1>{page.title}</h1>
                         <div dangerouslySetInnerHTML={{ __html: page.body }} />
-                    </>
+                    </article>
                 ) : (
-                    <p>{t('landing.not_found_title')}</p>
+                    <CmsEmpty icon={ICONS[slug] || '✍️'} />
                 )}
-            </article>
+            </main>
+            <SiteFooter />
         </div>
     );
 };

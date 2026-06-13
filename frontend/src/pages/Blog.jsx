@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
-import LanguageSwitcher from '../components/LanguageSwitcher';
+import SiteHeader from '../components/site/SiteHeader';
+import SiteFooter from '../components/site/SiteFooter';
+import CmsEmpty from '../components/site/CmsEmpty';
+import './HomePage.css';
 import './Content.css';
 
 const Blog = () => {
@@ -18,29 +21,31 @@ const Blog = () => {
     }, [i18n.language]);
 
     return (
-        <div className="blog-page">
-            <div className="blog-bar">
-                <Link to="/" className="info-brand">← MyLink</Link>
-                <LanguageSwitcher />
-            </div>
-            <h1>{t('home.blog_title')}</h1>
-            {loading ? (
-                <p>{t('common.loading')}</p>
-            ) : posts.length === 0 ? (
-                <p>{t('home.blog_empty')}</p>
-            ) : (
-                <div className="blog-list">
-                    {posts.map((p) => (
-                        <Link key={p.slug} to={`/blog/${p.slug}`} className="blog-card">
-                            {p.cover && <img src={p.cover} alt={p.title} />}
-                            <div className="bc-body">
-                                <h3>{p.title}</h3>
-                                {p.excerpt && <p>{p.excerpt}</p>}
-                            </div>
-                        </Link>
-                    ))}
-                </div>
-            )}
+        <div className="lpc cms-page">
+            <SiteHeader />
+            <main className="cms-main">
+                {loading ? (
+                    <p className="cms-loading">{t('common.loading')}</p>
+                ) : posts.length === 0 ? (
+                    <CmsEmpty icon="📰" />
+                ) : (
+                    <div className="wrap-narrow">
+                        <h1 className="cms-title">{t('home.blog_title')}</h1>
+                        <div className="blog-list">
+                            {posts.map((p) => (
+                                <Link key={p.slug} to={`/blog/${p.slug}`} className="blog-card">
+                                    {p.cover && <img src={p.cover} alt={p.title} />}
+                                    <div className="bc-body">
+                                        <h3>{p.title}</h3>
+                                        {p.excerpt && <p>{p.excerpt}</p>}
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </main>
+            <SiteFooter />
         </div>
     );
 };

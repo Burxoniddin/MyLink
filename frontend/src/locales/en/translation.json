@@ -143,7 +143,13 @@
     "new_password": "New password",
     "add_email": "Add email",
     "password_saved": "Password saved",
-    "email_added": "Email added"
+    "email_added": "Email added",
+    "google_btn": "Continue with Google",
+    "login_subtitle": "Sign in to your account",
+    "register_subtitle": "Create a free account — takes a minute",
+    "full_name": "Full name",
+    "full_name_ph": "John Doe",
+    "name_saved": "Name saved"
   },
   "promo": {
     "current_plan": "Current plan",
@@ -251,7 +257,11 @@
     "footer_blog": "Blog",
     "blog_title": "Blog",
     "blog_read": "Read",
-    "blog_empty": "No posts yet"
+    "blog_empty": "No posts yet",
+    "form_phone": "Phone number",
+    "form_one_required": "Phone or email — at least one is required",
+    "clients_eyebrow": "Clients",
+    "clients_title": "Our clients"
   },
   "nfc": {
     "title": "NFC card",
@@ -375,10 +385,35 @@
     "modal_title": "Plan limit reached",
     "modal_text": "Your current plan allows {{limit}} page(s). To create more, upgrade your plan or enter a promo code.",
     "see_plans": "View plans",
-    "enter_promo": "Enter promo code"
+    "enter_promo": "Enter promo code",
+    "active": "Active",
+    "inactive": "Inactive",
+    "activated": "Page activated",
+    "deactivated": "Page deactivated",
+    "created_inactive": "Limit reached — the page was created inactive",
+    "add_inactive_hint": "Limit reached — a new page will be created inactive"
   },
   "help": {
     "label": "Help",
     "title": "Need help? Message us on Telegram"
+  },
+  "cms": {
+    "empty_title": "Coming soon!",
+    "empty_text": "This page is still in the making. We'll fill it with great content soon.",
+    "go_home": "Back home"
+  },
+  "wizard": {
+    "step_info": "Details",
+    "step_design": "Design",
+    "info_title": "Business details",
+    "info_sub": "Set your page address and basic info",
+    "design_title": "Pick a design",
+    "design_sub": "Choose a template — watch the live preview on the right",
+    "continue": "Continue",
+    "back": "Back",
+    "create": "Create",
+    "creating": "Creating...",
+    "created": "Business page created! 🎉",
+    "preview": "Live preview"
   }
 }

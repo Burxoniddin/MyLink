@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import api from '../api';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from '../components/LanguageSwitcher';
+import AuthLayout from '../components/AuthLayout';
 import PasswordInput from '../components/PasswordInput';
 
 const ResetPassword = () => {
@@ -31,44 +31,30 @@ const ResetPassword = () => {
     };
 
     return (
-        <div className="login-page">
-            <div className="login-left">
-                <img src="/login-bg.png" alt="MyLink" className="login-bg-image" />
-            </div>
-            <div className="login-right">
-                <div style={{ position: 'absolute', top: 20, right: 20 }}>
-                    <LanguageSwitcher />
-                </div>
-                <div className="login-form-container">
-                    <div className="login-header">
-                        <h2>{t('auth.reset_title')}</h2>
+        <AuthLayout title={t('auth.reset_title')}>
+            {error && <div className="login-error">{error}</div>}
+
+            {done ? (
+                <div>
+                    <div className="login-error" style={{ background: '#dcfce7', color: '#166534' }}>
+                        {t('auth.reset_done')}
                     </div>
-
-                    {error && <div className="login-error">{error}</div>}
-
-                    {done ? (
-                        <div>
-                            <div className="login-error" style={{ background: '#dcfce7', color: '#166534' }}>
-                                {t('auth.reset_done')}
-                            </div>
-                            <div style={{ textAlign: 'center', marginTop: 20 }}>
-                                <Link to="/login">{t('auth.back_to_login')}</Link>
-                            </div>
-                        </div>
-                    ) : (
-                        <form onSubmit={submit} className="login-form">
-                            <div className="input-group">
-                                <label>{t('auth.new_password')}</label>
-                                <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} required />
-                            </div>
-                            <button type="submit" className="login-btn" disabled={loading || !uid || !token}>
-                                {loading ? t('login.sending') : t('auth.reset_btn')}
-                            </button>
-                        </form>
-                    )}
+                    <div style={{ textAlign: 'center', marginTop: 20 }}>
+                        <Link to="/login">{t('auth.back_to_login')}</Link>
+                    </div>
                 </div>
-            </div>
-        </div>
+            ) : (
+                <form onSubmit={submit} className="login-form" autoComplete="off">
+                    <div className="input-group">
+                        <label>{t('auth.new_password')}</label>
+                        <PasswordInput name="new-password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} required />
+                    </div>
+                    <button type="submit" className="login-btn" disabled={loading || !uid || !token}>
+                        {loading ? t('login.sending') : t('auth.reset_btn')}
+                    </button>
+                </form>
+            )}
+        </AuthLayout>
     );
 };
 

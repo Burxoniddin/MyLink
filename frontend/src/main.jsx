@@ -4,13 +4,16 @@ import './index.css'
 import './i18n'
 import App from './App.jsx'
 import { EntitlementProvider } from './context/EntitlementContext.jsx'
+import { ToastProvider } from './components/Toast.jsx'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
 const tree = (
   <EntitlementProvider>
-    <App />
+    <ToastProvider>
+      <App />
+    </ToastProvider>
   </EntitlementProvider>
 )
 

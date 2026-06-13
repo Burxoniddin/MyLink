@@ -1,3 +1,5 @@
+/* Round floating help FAB: gentle float + periodic ping ring; label slides out
+   on hover (desktop). Subtle by design — visible but not attention-hogging. */
 .help-cta {
     position: fixed;
     right: 20px;
@@ -5,23 +7,81 @@
     z-index: 1000;
     display: inline-flex;
     align-items: center;
-    gap: 9px;
-    background: #229ED9;
+    justify-content: center;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #229ED9, #4f46e5 120%);
     color: #fff;
-    padding: 13px 18px;
-    border-radius: 999px;
-    box-shadow: 0 12px 30px -8px rgba(34, 158, 217, .6);
-    font-family: 'Manrope', system-ui, sans-serif;
-    font-weight: 600;
-    font-size: 15px;
     text-decoration: none;
-    transition: transform .18s, box-shadow .25s;
+    box-shadow: 0 14px 32px -10px rgba(34, 158, 217, .65);
+    transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .25s, border-radius .25s;
+    animation: help-float 5s ease-in-out infinite;
 }
-.help-cta:hover { transform: translateY(-3px); box-shadow: 0 18px 38px -10px rgba(34, 158, 217, .75); }
-.help-cta svg { font-size: 20px; }
-.help-cta-label { white-space: nowrap; }
+.help-cta svg {
+    font-size: 23px;
+    transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+}
 
+/* expanding ping ring, fires periodically */
+.help-cta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2px solid rgba(34, 158, 217, .8);
+    animation: help-ping 4.5s cubic-bezier(0, 0, .2, 1) infinite;
+    pointer-events: none;
+}
+
+/* label bubble (desktop hover) */
+.help-cta-label {
+    position: absolute;
+    right: calc(100% + 12px);
+    background: #1a1830;
+    color: #fff;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 10px;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(8px) scale(.92);
+    transition: opacity .2s, transform .25s cubic-bezier(.34,1.56,.64,1);
+    pointer-events: none;
+    box-shadow: 0 10px 24px -12px rgba(26,24,48,.6);
+}
+.help-cta-label::after {
+    content: '';
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 6px solid transparent;
+    border-left-color: #1a1830;
+}
+
+.help-cta:hover {
+    transform: translateY(-4px) scale(1.06);
+    box-shadow: 0 20px 42px -12px rgba(34, 158, 217, .8);
+    animation-play-state: paused;
+}
+.help-cta:hover svg { transform: rotate(-18deg) translate(-1px, 1px); }
+.help-cta:hover .help-cta-label { opacity: 1; transform: translateX(0) scale(1); }
+
+@keyframes help-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+@keyframes help-ping {
+    0%, 55% { transform: scale(1); opacity: .9; }
+    85%, 100% { transform: scale(1.65); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .help-cta, .help-cta::before { animation: none; }
+}
 @media (max-width: 640px) {
+    .help-cta { width: 54px; height: 54px; right: 16px; bottom: 16px; }
     .help-cta-label { display: none; }
-    .help-cta { padding: 15px; }
 }

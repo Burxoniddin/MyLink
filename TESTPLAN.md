@@ -219,7 +219,17 @@ npm run build    # → OK (chunk-size warning — zararsiz)
 
 ---
 
+## UX tuzatishlar — 2-to'plam (2026-06-14)
+
+- [ ] **Mijozlar karuseli**: kartani ustiga borganda (hover) tepa/past chegaraga kirib ketmaydi — to'liq ko'rinadi.
+- [ ] **Auth maydonlari**: Login/Register input va tugmalar normal balandlikda (ingichka emas).
+- [ ] **Register oldindan tekshiruv**: mavjud email/telefon kiritilsa — **kod yuborilmaydi**, darrov "allaqachon ro'yxatdan o'tgan" deyiladi (avval kod kelib, keyin xato chiqardi).
+- [ ] **Ulashish → Instagram Story**: biznes toolbar → Ulashish → "Instagram Story" → tayyor 1080×1920 rasm (logo + nom + QR + MyLink watermark) modalda ko'rinadi → "Ulashish/Saqlash" (mobilda IG'ga ulashish, desktopda yuklab olish). Free tarifda ham ishlaydi.
+- [ ] **PDF vizitka** (Pro): 2 betli — old (gradient, logo, nom, path, MyLink) + orqa (QR panel, "Skanerlang", path). `card.pdf` yuklab olinadi.
+
+---
+
 ## Yakuniy
-- [ ] Barcha avtotestlar yashil: **107 backend**, lint 0 error, build OK.
+- [ ] Barcha avtotestlar yashil: **110 backend**, lint 0 error, build OK.
 - [ ] Hech bir public sahifa konsolda xato bermaydi.
 - [ ] ⚠️ Prod deploy oldidan: nginx `client_max_body_size 50M` (2c video) + `pip install -r requirements.txt`.

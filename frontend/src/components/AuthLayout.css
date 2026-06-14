@@ -60,7 +60,14 @@
 }
 .auth-card .login-form { margin-top: 4px; }
 .auth-card .input-group { margin-bottom: 14px; }
-.auth-card .login-input { background: #fff; }
+
+/* .lpc * { padding:0 } (landing reset) zeroes input/button padding here, making
+   the fields look thin — re-assert their sizing with higher specificity. */
+.auth-card .login-input { padding: 14px 16px; background: #fff; }
+.auth-card .phone-prefix { padding: 14px 16px; }
+.auth-card .login-btn { padding: 16px; }
+.auth-card .login-back-btn { padding: 12px; }
+.auth-card .google-btn { padding: 15px 16px; }
 
 /* Google sign-in: identical footprint to .login-btn, white face. */
 .google-btn {

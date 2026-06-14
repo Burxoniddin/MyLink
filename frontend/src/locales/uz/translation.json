@@ -106,7 +106,13 @@
     "link_name_ph": "Link nomi",
     "link_url_ph": "t.me/... yoki instagram.com/...",
     "view_site": "Saytni ko'rish",
-    "soon_section": "{{section}} bo'limi tez orada qo'shiladi."
+    "soon_section": "{{section}} bo'limi tez orada qo'shiladi.",
+    "share_story": "Instagram Story",
+    "share_other": "Boshqa ilovaga ulashish",
+    "story_title": "Instagram Story tayyor",
+    "story_desc": "Rasmni saqlang yoki ulashing — Instagram'da Story'ga qo'yib, Publish bosing.",
+    "story_share": "Ulashish / Saqlash",
+    "story_hint": "Rasm saqlandi — Instagram Story'ga qo'ying."
   },
   "auth": {
     "tab_otp": "OTP",

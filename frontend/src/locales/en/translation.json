@@ -106,7 +106,13 @@
     "link_name_ph": "Link name",
     "link_url_ph": "t.me/... or instagram.com/...",
     "view_site": "View site",
-    "soon_section": "The {{section}} section will be added soon."
+    "soon_section": "The {{section}} section will be added soon.",
+    "share_story": "Instagram Story",
+    "share_other": "Share to another app",
+    "story_title": "Instagram Story is ready",
+    "story_desc": "Save or share it — add it to your Instagram Story and hit Publish.",
+    "story_share": "Share / Save",
+    "story_hint": "Image saved — add it to your Instagram Story."
   },
   "auth": {
     "tab_otp": "OTP",

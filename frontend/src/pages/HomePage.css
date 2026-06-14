@@ -206,9 +206,10 @@
 .lpc .stat-big .sb-label { color: rgba(255,255,255,.9); font-size: 17px; margin-top: 12px; display: block; font-weight: 600; }
 @media (max-width: 760px) { .lpc .stats-duo { grid-template-columns: 1fr; } }
 
-/* clients — infinite marquee */
+/* clients — infinite marquee. Vertical padding gives the hover lift + shadow
+   room so the card isn't clipped top/bottom by the overflow box. */
 .lpc .clients-block { padding-top: 26px; }
-.lpc .clients-marquee { margin-top: 36px; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent); mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent); }
+.lpc .clients-marquee { margin-top: 22px; padding: 22px 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent); mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent); }
 .lpc .clients-track { display: flex; width: max-content; animation: lpc-clients calc(max(var(--n, 6), 4) * 4.5s) linear infinite; }
 .lpc .clients-marquee:hover .clients-track { animation-play-state: paused; }
 @keyframes lpc-clients { to { transform: translateX(-50%); } }

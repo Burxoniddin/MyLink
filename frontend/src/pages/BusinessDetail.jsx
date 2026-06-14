@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api';
-import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaRegStar, FaCopy, FaShareAlt, FaQrcode, FaLock, FaFilePdf, FaIdCard, FaLayerGroup, FaUsers, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines, FaTiktok, FaYandex, FaMapMarkedAlt } from 'react-icons/fa';
+import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaRegStar, FaCopy, FaShareAlt, FaQrcode, FaLock, FaFilePdf, FaIdCard, FaLayerGroup, FaUsers, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines, FaTiktok, FaYandex, FaMapMarkedAlt, FaDownload } from 'react-icons/fa';
 import { FaXTwitter } from "react-icons/fa6";
 import LinkButton from '../components/LinkButton';
 import ContentBlocks from '../components/ContentBlocks';
@@ -145,6 +145,8 @@ const BusinessDetail = ({ isNew = false }) => {
     const [copied, setCopied] = useState(false);
     const [showQr, setShowQr] = useState(false);
     const [qrPreview, setQrPreview] = useState(null);
+    const [shareOpen, setShareOpen] = useState(false);
+    const [story, setStory] = useState({ open: false, src: null, file: null, busy: false });
 
     // Path availability check
     const [pathStatus, setPathStatus] = useState(null); // null, 'available', 'taken', 'checking'
@@ -239,6 +241,7 @@ const BusinessDetail = ({ isNew = false }) => {
     };
 
     const handleShare = async () => {
+        setShareOpen(false);
         if (navigator.share) {
             try {
                 await navigator.share({ title: business.name, url: publicUrl });
@@ -248,6 +251,39 @@ const BusinessDetail = ({ isNew = false }) => {
         } else {
             handleCopy();
         }
+    };
+
+    // Build the ready-made Instagram-story image and preview it. From the
+    // preview the user shares it to IG (mobile share sheet) or downloads it.
+    const openStory = async () => {
+        setShareOpen(false);
+        setStory({ open: true, src: null, file: null, busy: true });
+        try {
+            const res = await api.get(`businesses/${business.path}/story.png`, { responseType: 'blob' });
+            const file = new File([res.data], `${business.path}-story.png`, { type: 'image/png' });
+            setStory({ open: true, src: URL.createObjectURL(res.data), file, busy: false });
+        } catch {
+            setStory({ open: false, src: null, file: null, busy: false });
+            toast.error(t('common.error'));
+        }
+    };
+
+    const shareStory = async () => {
+        if (story.file && navigator.canShare && navigator.canShare({ files: [story.file] })) {
+            try {
+                await navigator.share({ files: [story.file], title: business.name });
+                return;
+            } catch {
+                /* dismissed — fall through to download */
+            }
+        }
+        const a = document.createElement('a');
+        a.href = story.src;
+        a.download = `${business.path}-story.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        toast.info(t('detail.story_hint'));
     };
 
     const handlePin = async () => {
@@ -486,9 +522,27 @@ const BusinessDetail = ({ isNew = false }) => {
                                 {copied ? <FaCheck /> : <FaCopy />}
                                 <span>{copied ? t('detail.copied') : t('detail.copy_link')}</span>
                             </button>
-                            <button type="button" className="toolbar-btn" onClick={handleShare}>
-                                <FaShareAlt /> <span>{t('detail.share')}</span>
-                            </button>
+                            <div className="share-wrap">
+                                <button type="button" className="toolbar-btn" onClick={() => setShareOpen((s) => !s)}>
+                                    <FaShareAlt /> <span>{t('detail.share')}</span>
+                                </button>
+                                {shareOpen && (
+                                    <>
+                                        <div className="share-backdrop" onClick={() => setShareOpen(false)} />
+                                        <div className="share-menu">
+                                            <button type="button" onClick={openStory}>
+                                                <FaInstagram style={{ color: '#e1306c' }} /> {t('detail.share_story')}
+                                            </button>
+                                            <button type="button" onClick={handleCopy}>
+                                                <FaCopy /> {t('detail.copy_link')}
+                                            </button>
+                                            <button type="button" onClick={handleShare}>
+                                                <FaShareAlt /> {t('detail.share_other')}
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                             <a className="toolbar-btn" href={`/${business.path}`} target="_blank" rel="noreferrer">
                                 <FaExternalLinkAlt /> <span>{t('detail.tab_preview')}</span>
                             </a>
@@ -798,6 +852,24 @@ const BusinessDetail = ({ isNew = false }) => {
                         setCropSrc(null);
                     }}
                 />
+            )}
+
+            {story.open && (
+                <div className="qr-modal-overlay" onClick={() => setStory({ open: false, src: null, file: null, busy: false })}>
+                    <div className="story-modal" onClick={(e) => e.stopPropagation()}>
+                        <button type="button" className="qr-modal-close" onClick={() => setStory({ open: false, src: null, file: null, busy: false })} aria-label="close">
+                            <FaTimes />
+                        </button>
+                        <h2><FaInstagram style={{ color: '#e1306c' }} /> {t('detail.story_title')}</h2>
+                        <p className="story-sub">{t('detail.story_desc')}</p>
+                        <div className="story-frame">
+                            {story.busy || !story.src ? <div className="spinner" /> : <img src={story.src} alt="Instagram story" />}
+                        </div>
+                        <button type="button" className="qr-dl" disabled={story.busy || !story.src} onClick={shareStory}>
+                            <FaDownload /> {t('detail.story_share')}
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );

@@ -106,7 +106,13 @@
     "link_name_ph": "Название ссылки",
     "link_url_ph": "t.me/... или instagram.com/...",
     "view_site": "Открыть сайт",
-    "soon_section": "Раздел «{{section}}» скоро появится."
+    "soon_section": "Раздел «{{section}}» скоро появится.",
+    "share_story": "Instagram Story",
+    "share_other": "Поделиться в другом приложении",
+    "story_title": "Instagram Story готов",
+    "story_desc": "Сохраните или поделитесь — добавьте в Story в Instagram и нажмите «Опубликовать».",
+    "story_share": "Поделиться / Сохранить",
+    "story_hint": "Изображение сохранено — добавьте в Instagram Story."
   },
   "auth": {
     "tab_otp": "OTP",

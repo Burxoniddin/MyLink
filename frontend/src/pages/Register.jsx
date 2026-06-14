@@ -54,8 +54,10 @@ const Register = () => {
         setError('');
         setLoading(true);
         try {
-            if (tab === 'email') await api.post('auth/email/otp/', { email: email.trim() });
-            else await api.post('auth/otp/', { phone_number: getRawPhone(phone) });
+            // mode=register → backend rejects an already-registered email/phone
+            // BEFORE sending a code (no "code arrived, but you already exist").
+            if (tab === 'email') await api.post('auth/email/otp/', { email: email.trim(), mode: 'register' });
+            else await api.post('auth/otp/', { phone_number: getRawPhone(phone), mode: 'register' });
             setStep(2);
         } catch (err) {
             const d = err.response?.data;

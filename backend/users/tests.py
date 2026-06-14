@@ -56,6 +56,19 @@ class AuthTests(TestCase):
         r = self.client.post('/api/auth/register/', {'method': 'email', 'identifier': 'x@b.com', 'code': '999999', 'password': 'secret1'}, format='json')
         self.assertEqual(r.status_code, 400)
 
+    def test_email_otp_register_mode_rejects_existing(self):
+        # mode=register must reject BEFORE sending a code if the email exists.
+        User.objects.create_user(email='taken@b.com', password='x1y2z3')
+        r = self.client.post('/api/auth/email/otp/', {'email': 'taken@b.com', 'mode': 'register'}, format='json')
+        self.assertEqual(r.status_code, 400)
+        self.assertIsNone(cache.get('otp_email_taken@b.com'))  # no code was sent
+
+    @patch('users.views.send_sms', return_value=True)
+    def test_phone_otp_register_mode_rejects_existing(self, _mock):
+        User.objects.create_user(phone_number='+998901119988')
+        r = self.client.post('/api/auth/otp/', {'phone_number': '+998901119988', 'mode': 'register'}, format='json')
+        self.assertEqual(r.status_code, 400)
+
     @patch('users.views.send_sms', return_value=True)
     def test_otp_flow(self, mock_sms):
         phone = '+998901112233'

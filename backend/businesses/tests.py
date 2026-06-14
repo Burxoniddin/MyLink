@@ -241,6 +241,13 @@ class AssetTests(TestCase):
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.data['reason'], 'qr')
 
+    def test_story_open_to_free(self):
+        # Instagram-story image is ungated (watermarked marketing).
+        res = self.client.get('/api/businesses/brand/story.png')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res['Content-Type'], 'image/png')
+        self.assertGreater(len(res.content), 0)
+
     def test_oddiy_png_ok_pdf_forbidden(self):
         Subscription.objects.create(user=self.user, tier=ent.ODDIY, expires_at=None)
         png = self.client.get('/api/businesses/brand/qr.png')

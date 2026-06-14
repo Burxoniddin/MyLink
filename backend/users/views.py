@@ -60,6 +60,14 @@ class SendOTPView(APIView):
         if serializer.is_valid():
             phone = serializer.validated_data['phone_number']
 
+            # Register oqimida: kod yuborishdan OLDIN mavjudligini tekshiramiz,
+            # shunda "kod keldi, keyin akkaunt bor ekan" holati bo'lmaydi.
+            if request.data.get('mode') == 'register' and User.objects.filter(phone_number=phone).exists():
+                return Response(
+                    {"error": "Bu raqam allaqachon ro'yxatdan o'tgan. Kirish sahifasidan foydalaning."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             # Telefon raqam uchun alohida rate limit - 1 soatda 3 ta SMS
             phone_key = f"otp_rate_{phone}"
             otp_count = cache.get(phone_key, 0)
@@ -159,6 +167,13 @@ class SendEmailOTPView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         email = serializer.validated_data['email'].lower()
+
+        # Register oqimida kod yuborishdan oldin mavjudligini tekshiramiz.
+        if request.data.get('mode') == 'register' and User.objects.filter(email__iexact=email).exists():
+            return Response(
+                {"error": "Bu email allaqachon ro'yxatdan o'tgan. Kirish sahifasidan foydalaning."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if cache.get(f"otp_email_cd_{email}"):
             return Response({"error": "Iltimos, 60 sekund kuting."}, status=status.HTTP_429_TOO_MANY_REQUESTS)

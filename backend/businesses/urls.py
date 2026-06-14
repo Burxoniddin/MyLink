@@ -28,6 +28,7 @@ urlpatterns = [
     path('businesses/<slug:path>/lock/', BusinessToggleLockView.as_view()),
     path('businesses/<slug:path>/pin/', BusinessTogglePinView.as_view()),
     path('businesses/<slug:path>/qr.png', BusinessAssetView.as_view(), {'fmt': 'qr_png'}),
+    path('businesses/<slug:path>/story.png', BusinessAssetView.as_view(), {'fmt': 'story_png'}),
     path('businesses/<slug:path>/qr.pdf', BusinessAssetView.as_view(), {'fmt': 'qr_pdf'}),
     path('businesses/<slug:path>/card.pdf', BusinessAssetView.as_view(), {'fmt': 'card_pdf'}),
     path('businesses/<slug:path>/blocks/reorder/', ContentBlockReorderView.as_view()),

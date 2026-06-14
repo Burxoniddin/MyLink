@@ -216,6 +216,11 @@ class BusinessAssetView(APIView):
         qr_level = get_entitlements(business.owner)['features']['qr']  # none|png|full
         url = f"{settings.FRONTEND_URL.rstrip('/')}/{business.path}"
 
+        # Instagram-story image: open to ALL tiers (watermarked, drives traffic
+        # back to MyLink) — not behind the qr gate.
+        if fmt == 'story_png':
+            return self._file(qr.story_png_bytes(business, url), 'image/png', f'{business.path}-story.png')
+
         if fmt == 'qr_png':
             if qr_level not in ('png', 'full'):
                 raise PermissionDenied({'reason': 'qr'})

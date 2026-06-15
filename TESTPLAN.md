@@ -221,11 +221,32 @@ npm run build    # → OK (chunk-size warning — zararsiz)
 
 ## UX tuzatishlar — 2-to'plam (2026-06-14)
 
-- [ ] **Mijozlar karuseli**: kartani ustiga borganda (hover) tepa/past chegaraga kirib ketmaydi — to'liq ko'rinadi.
-- [ ] **Auth maydonlari**: Login/Register input va tugmalar normal balandlikda (ingichka emas).
-- [ ] **Register oldindan tekshiruv**: mavjud email/telefon kiritilsa — **kod yuborilmaydi**, darrov "allaqachon ro'yxatdan o'tgan" deyiladi (avval kod kelib, keyin xato chiqardi).
-- [ ] **Ulashish → Instagram Story**: biznes toolbar → Ulashish → "Instagram Story" → tayyor 1080×1920 rasm (logo + nom + QR + MyLink watermark) modalda ko'rinadi → "Ulashish/Saqlash" (mobilda IG'ga ulashish, desktopda yuklab olish). Free tarifda ham ishlaydi.
-- [ ] **PDF vizitka** (Pro): 2 betli — old (gradient, logo, nom, path, MyLink) + orqa (QR panel, "Skanerlang", path). `card.pdf` yuklab olinadi.
+### 2A · Mijozlar karuseli hover (landing)
+- [ ] `/` → "Bizning mijozlar" karuselida sichqonchani kartaga olib boring → karta **ko'tariladi va to'liq ko'rinadi**, tepa/past chegaraga **kirib ketmaydi** (oldin kesilardi).
+- [ ] Hover paytida karusel **to'xtaydi**; olib ketsangiz yana harakatlanadi.
+
+### 2B · Auth maydon o'lchamlari
+- [ ] `/login` va `/register` — input maydonlar va tugmalar **normal balandlikda** (ingichka/yapaloq emas).
+- [ ] Email/Telefon tab, "Kod yuborish"/"Kirish" tugmasi, Google tugmasi — barchasi bir xil bo'y-bastda, chiroyli.
+
+### 2C · Register oldindan tekshiruv
+**Tayyorgarlik:** mavjud akkaunt — `free@mylink.asia` (yoki telefon `+998901111111`).
+- [ ] `/register` → Email tab → `free@mylink.asia` → "Kod yuborish" → **kod yuborilmaydi**, darrov xato: "Bu email allaqachon ro'yxatdan o'tgan…" (oldin avval kod kelib, keyin 2-bosqichda xato chiqardi).
+- [ ] Telefon tab → `90 111 11 11` → xuddi shunday darrov xato (SMS ketmaydi).
+- [ ] **Yangi** email/telefon → kod normal yuboriladi → 2-bosqichga o'tadi.
+
+### 2D · Ulashish → Instagram Story
+**Tayyorgarlik:** istalgan tarif (Free ham), bitta biznes.
+- [ ] Biznes oching → tepa toolbar → **Ulashish** → menyu chiqadi: **Instagram Story / Havolani nusxalash / Boshqa ilovaga ulashish**.
+- [ ] **Instagram Story** → modalda **tayyor 9:16 rasm** ko'rinadi: gradient fon, logo (yoki bosh harf), nom, tavsif, "Sahifamni oching", **QR + path**, pastda **MyLink.asia** watermark.
+- [ ] **Ulashish / Saqlash** tugmasi: mobilda tizim ulashish oynasi (Instagram tanlanadi), desktopda **PNG yuklab olinadi** + toast eslatma.
+- [ ] Free tarifda ham ishlaydi (QR gate'dan mustaqil).
+
+### 2E · PDF vizitka redizayni (Pro)
+**Tayyorgarlik:** Pro (`pro@mylink.asia` yoki `TEST1`).
+- [ ] Biznes → toolbar **QR / PDF** → **Vizitka** → `card.pdf` yuklanadi.
+- [ ] **2 bet**: *old* — indigo gradient, logo (yumaloq) yoki bosh harf, nom + tavsif, path, "MyLink.asia"; *orqa* — oq fon, **QR panel**, "Skanerlang va kuzating", path + MyLink.
+- [ ] Logo yo'q biznesda — old betda bosh harf chiqadi (xato bermaydi).
 
 ---
 

@@ -13,7 +13,22 @@
   "pricing": {
     "your_plan": "Your plan",
     "activate_promo": "Activate with promo code",
-    "payment_soon": "Online payment (Click / Payme) is coming soon. For now you can activate a plan with a promo code."
+    "payment_soon": "Online payment (Click / Payme) is coming soon. For now you can activate a plan with a promo code.",
+    "feat": {
+      "limit": "{{n}} pages",
+      "templates": "{{n}} templates",
+      "color": "Color & design editing",
+      "banners": "{{n}} media blocks",
+      "video": "Video blocks",
+      "analytics_partial": "Analytics (partial)",
+      "analytics_full": "Full analytics",
+      "qr_png": "QR code",
+      "qr_full": "QR + PDF + business card",
+      "branding": "No branding",
+      "verified": "Verified badge ✓",
+      "team": "Team / roles",
+      "som": "UZS"
+    }
   },
   "nav": {
     "businesses": "My businesses",

@@ -13,7 +13,22 @@
   "pricing": {
     "your_plan": "Joriy tarifingiz",
     "activate_promo": "Promokod bilan faollashtirish",
-    "payment_soon": "Onlayn to'lov (Click / Payme) tez orada. Hozircha tarifni promokod orqali faollashtirishingiz mumkin."
+    "payment_soon": "Onlayn to'lov (Click / Payme) tez orada. Hozircha tarifni promokod orqali faollashtirishingiz mumkin.",
+    "feat": {
+      "limit": "{{n}} ta sahifa",
+      "templates": "{{n}} ta shablon",
+      "color": "Rang va dizayn tahrirlash",
+      "banners": "{{n}} ta media blok",
+      "video": "Video bloklar",
+      "analytics_partial": "Analitika (qisman)",
+      "analytics_full": "To'liq analitika",
+      "qr_png": "QR kod",
+      "qr_full": "QR + PDF + vizitka",
+      "branding": "Brendingsiz",
+      "verified": "Tasdiq belgisi ✓",
+      "team": "Jamoa / rollar",
+      "som": "so'm"
+    }
   },
   "nav": {
     "businesses": "Bizneslarim",

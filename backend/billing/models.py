@@ -5,10 +5,66 @@ from django.utils import timezone
 from . import entitlements as ent
 
 
+class Plan(models.Model):
+    """An admin-defined subscription tier and its feature set (item 6).
+
+    Fully dynamic: admins can add new tiers (e.g. 'Biznes'), set their ``rank``
+    (the highest-rank active subscription wins) and toggle every feature. The
+    feature matrix in ``entitlements.FEATURES`` is only a fallback used before
+    these rows exist (fresh DB). One plan is ``is_default`` — the tier users have
+    with no active subscription."""
+    ANALYTICS_LEVELS = [('none', "Yo'q"), ('partial', 'Qisman'), ('full', "To'liq")]
+    QR_LEVELS = [('none', "Yo'q"), ('png', 'PNG'), ('full', 'PNG + PDF + vizitka')]
+
+    # Feature columns mirrored to the entitlements payload via features_dict().
+    FEATURE_FIELDS = [
+        'profile_limit', 'templates', 'color_edit', 'banners', 'banner_video',
+        'analytics', 'qr', 'branding_removed', 'verified_badge', 'team',
+    ]
+
+    slug = models.SlugField(max_length=20, unique=True, help_text="Texnik nom: free, oddiy, pro, biznes ...")
+    name = models.CharField(max_length=50, help_text="Ko'rinadigan nom")
+    rank = models.PositiveIntegerField(default=0, help_text="Kattaroq = kuchliroq. Eng yuqori rankli faol obuna g'olib bo'ladi.")
+    is_default = models.BooleanField(default=False, help_text="Obunasiz foydalanuvchilar shu tarifda bo'ladi (faqat bittasi).")
+    is_active = models.BooleanField(default=True)
+    is_public = models.BooleanField(default=True, help_text="Narxlar sahifasida ko'rsatilsinmi.")
+    order = models.PositiveIntegerField(default=0, help_text="Narxlar sahifasidagi tartib.")
+
+    # --- feature matrix ---
+    profile_limit = models.PositiveIntegerField(default=1, verbose_name="Sahifalar soni")
+    templates = models.PositiveIntegerField(default=1, verbose_name="Shablonlar soni")
+    color_edit = models.BooleanField(default=False, verbose_name="Rang tahrirlash")
+    banners = models.PositiveIntegerField(default=0, verbose_name="Media bloklar soni")
+    banner_video = models.BooleanField(default=False, verbose_name="Video blok")
+    analytics = models.CharField(max_length=10, choices=ANALYTICS_LEVELS, default='none')
+    qr = models.CharField(max_length=10, choices=QR_LEVELS, default='none', verbose_name="QR / vizitka")
+    branding_removed = models.BooleanField(default=False, verbose_name="Brending olib tashlanadi")
+    verified_badge = models.BooleanField(default=False, verbose_name="Tasdiq belgisi")
+    team = models.BooleanField(default=False, verbose_name="Jamoa / rollar")
+
+    class Meta:
+        ordering = ['order', 'rank']
+        verbose_name = 'Tarif (Plan)'
+        verbose_name_plural = 'Tariflar (Plans)'
+
+    def features_dict(self):
+        return {f: getattr(self, f) for f in self.FEATURE_FIELDS}
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Exactly one default tier.
+        if self.is_default:
+            Plan.objects.exclude(pk=self.pk).filter(is_default=True).update(is_default=False)
+
+    def __str__(self):
+        return f"{self.name} ({self.slug}) · rank {self.rank}"
+
+
 class PlanPrice(models.Model):
     """Editable price for a (tier, period) combination. Used by the pricing
-    page and payment checkout."""
-    tier = models.CharField(max_length=10, choices=ent.TIER_CHOICES)
+    page and payment checkout. ``tier`` is a Plan slug (free-form, validated in
+    admin against existing Plans)."""
+    tier = models.CharField(max_length=20)
     period = models.CharField(max_length=10, choices=ent.PERIOD_CHOICES)
     price = models.PositiveIntegerField(help_text="Narx (UZS so'm)")
     is_active = models.BooleanField(default=True)
@@ -36,7 +92,7 @@ class Subscription(models.Model):
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='subscriptions')
-    tier = models.CharField(max_length=10, choices=ent.TIER_CHOICES)
+    tier = models.CharField(max_length=20)  # Plan slug
     period = models.CharField(max_length=10, choices=ent.PERIOD_CHOICES, blank=True)
     started_at = models.DateTimeField(default=timezone.now)
     # null expires_at = permanent (Oddiy one-time, or lifetime Pro).
@@ -69,8 +125,8 @@ class PromoCode(models.Model):
     paid-checkout discount path lands with 1a (payment); this model only covers
     the grant path."""
     code = models.CharField(max_length=40, unique=True, help_text="Foydalanuvchi kiritadigan kod (avto katta harf)")
-    grant_tier = models.CharField(max_length=10, choices=ent.TIER_CHOICES, default=ent.PRO,
-                                  verbose_name="Beriladigan tarif")
+    grant_tier = models.CharField(max_length=20, default=ent.PRO,
+                                  verbose_name="Beriladigan tarif")  # Plan slug
     duration_days = models.PositiveIntegerField(null=True, blank=True,
                                                 help_text="Necha kunga beriladi. Bo'sh = umrbod (lifetime).")
     max_redemptions = models.PositiveIntegerField(null=True, blank=True,

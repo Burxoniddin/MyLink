@@ -190,7 +190,9 @@ VITE_GOOGLE_CLIENT_ID=<google oauth client id — backend bilan bir xil>
 | Landing | `mylink.asia` → avval landing; "Boshlash" → login/register |
 | Django | **6.0.6 ga pin** (Python 3.14 uchun; 5.2 ishlamaydi) |
 
-### Tarif/feature matritsasi (entitlement asosi)
+> ⚙️ **2026-06-16 (item 6):** Tarif/feature matritsasi endi **dinamik** — `billing.Plan` modeli (adminkadan tahrirlanadi). Admin yangi tarif qo'sha oladi, har funksiyani yoqib/o'chiradi; `rank` eng yuqori faol obuna g'olib; `is_default` obunasiz tarif. `entitlements.FEATURES` faqat fallback (bo'sh DB uchun). Public `GET /api/plans/` → `/pricing` shu yerdan o'qiydi. Pastdagi jadval — boshlang'ich seed qiymatlari (migration `billing/0006`).
+
+### Tarif/feature matritsasi (entitlement asosi — boshlang'ich seed)
 | flag | Free | Oddiy (19k, 1 martalik) | Pro (39k/oy · 179k/6oy · 299k/yil) |
 |---|---|---|---|
 | profile_limit | 1 | 5 | 20 |

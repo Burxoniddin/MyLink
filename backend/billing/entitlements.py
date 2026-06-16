@@ -78,5 +78,52 @@ FEATURES = {
 }
 
 
+# Fallback ranks (used only before the Plan rows exist, e.g. a fresh DB).
+_RANK_FALLBACK = {FREE: 0, ODDIY: 10, PRO: 20}
+
+
+def _plans_by_slug():
+    """{slug: Plan} for active plans, or {} if the table is empty/unavailable."""
+    try:
+        from .models import Plan
+        return {p.slug: p for p in Plan.objects.filter(is_active=True)}
+    except Exception:
+        # Table not migrated yet (e.g. during initial migrate). Use fallback.
+        return {}
+
+
 def features_for(tier):
-    return FEATURES.get(tier, FEATURES[FREE])
+    """Feature dict for a tier slug. Reads the admin-editable Plan row if present,
+    otherwise falls back to the hardcoded matrix above."""
+    plan = _plans_by_slug().get(tier)
+    if plan is not None:
+        return plan.features_dict()
+    return dict(FEATURES.get(tier, FEATURES[FREE]))
+
+
+def plan_rank(tier):
+    plan = _plans_by_slug().get(tier)
+    if plan is not None:
+        return plan.rank
+    return _RANK_FALLBACK.get(tier, 0)
+
+
+def default_tier():
+    """The tier for users with no active subscription (admin-flagged is_default)."""
+    try:
+        from .models import Plan
+        p = Plan.objects.filter(is_default=True, is_active=True).first()
+        if p:
+            return p.slug
+    except Exception:
+        pass
+    return FREE
+
+
+def public_plans():
+    """Active, public plans ordered for the pricing page (empty list if none)."""
+    try:
+        from .models import Plan
+        return list(Plan.objects.filter(is_active=True, is_public=True))
+    except Exception:
+        return []

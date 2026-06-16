@@ -1,17 +1,52 @@
+from django import forms
 from django.contrib import admin
 
-from .models import PlanPrice, PromoCode, PromoRedemption, ReferralReward, Subscription
+from .models import Plan, PlanPrice, PromoCode, PromoRedemption, ReferralReward, Subscription
+
+
+class TierChoiceMixin:
+    """Render the free-text ``tier`` / ``grant_tier`` fields as a dropdown of the
+    current Plans, so admins pick an existing tier instead of typing a slug."""
+    tier_fields = ('tier',)
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        field = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if db_field.name in self.tier_fields:
+            choices = [(p.slug, f'{p.name} ({p.slug})') for p in Plan.objects.all()]
+            return forms.ChoiceField(
+                choices=choices, required=not db_field.blank,
+                label=field.label, help_text=field.help_text,
+                initial=field.initial,
+            )
+        return field
+
+
+@admin.register(Plan)
+class PlanAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug', 'rank', 'is_default', 'is_active', 'is_public',
+                    'profile_limit', 'analytics', 'qr', 'team')
+    list_editable = ('rank', 'is_default', 'is_active', 'is_public', 'profile_limit',
+                     'analytics', 'qr', 'team')
+    prepopulated_fields = {'slug': ('name',)}
+    fieldsets = (
+        (None, {'fields': ('name', 'slug', 'rank', 'is_default', 'is_active', 'is_public', 'order')}),
+        ('Funksiyalar', {'fields': (
+            'profile_limit', 'templates', 'color_edit', 'banners', 'banner_video',
+            'analytics', 'qr', 'branding_removed', 'verified_badge', 'team',
+        )}),
+    )
 
 
 @admin.register(PlanPrice)
-class PlanPriceAdmin(admin.ModelAdmin):
+class PlanPriceAdmin(TierChoiceMixin, admin.ModelAdmin):
     list_display = ('tier', 'period', 'price', 'is_active')
     list_editable = ('price', 'is_active')
     list_filter = ('tier', 'is_active')
 
 
 @admin.register(Subscription)
-class SubscriptionAdmin(admin.ModelAdmin):
+class SubscriptionAdmin(TierChoiceMixin, admin.ModelAdmin):
+    tier_fields = ('tier',)
     list_display = ('user', 'tier', 'period', 'status', 'started_at', 'expires_at', 'source')
     list_filter = ('tier', 'status', 'source')
     search_fields = ('user__phone_number', 'user__email')
@@ -30,7 +65,8 @@ class PromoRedemptionInline(admin.TabularInline):
 
 
 @admin.register(PromoCode)
-class PromoCodeAdmin(admin.ModelAdmin):
+class PromoCodeAdmin(TierChoiceMixin, admin.ModelAdmin):
+    tier_fields = ('grant_tier',)
     list_display = ('code', 'grant_tier', 'duration_days', 'redeemed_count', 'max_redemptions',
                     'is_active', 'valid_until')
     list_filter = ('grant_tier', 'is_active', 'once_per_user')

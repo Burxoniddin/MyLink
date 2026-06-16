@@ -250,7 +250,40 @@ npm run build    # → OK (chunk-size warning — zararsiz)
 
 ---
 
+## UX tuzatishlar — 3-to'plam (2026-06-16)
+
+### 3A · Vizitka (PDF) — biznes kontaktlari bilan
+**Tayyorgarlik:** Pro biznes (`probiz1`), linklarida telefon + Telegram + Instagram bo'lsin.
+- [ ] Toolbar **QR / PDF** → **Vizitka** → `card.pdf`: old betda logo + nom + **telefon / @telegram / @instagram** (rangli nuqtalar bilan), orqa betda QR panel.
+- [ ] Linkda Instagram yo'q bo'lsa — o'sha qator chiqmaydi (xato bermaydi).
+- [ ] QR (PDF) — endi tepada logo bilan.
+
+### 3B · Media kontent (rename + tasdiq)
+- [ ] Biznes editor → tab nomi endi **"Media kontent"** (oldin "Bloklar").
+- [ ] Blok/media **o'chirish** bosilganda — **tasdiq oynasi** chiqadi (bir marta so'raydi), "Bekor" bosilsa o'chmaydi.
+
+### 3C · Landing karuseli (demo bilan)
+- [ ] `python manage.py seed_demo` → demo bizneslar **is_featured** bo'ladi → `/` da "Bizning mijozlar" karuseli **ko'rinadi** (probiz1..pulsegym).
+- [ ] Hover'da to'xtaydi, karta to'liq ko'rinadi.
+
+### 3D · CMS bo'sh sahifa → "Tez orada"
+- [ ] Admin → Statik sahifa (about/privacy/terms) **body'ni bo'sh** qoldirib saqlash mumkin (endi majburiy emas).
+- [ ] Body bo'sh sahifa → `/about` (yoki .../privacy/terms) → **"Tez orada"** (CmsEmpty), admin matni yo'q.
+- [ ] Blog post body bo'sh → ro'yxatda chiqmaydi; barchasi bo'sh → `/blog` "Tez orada".
+
+### 3E · Dinamik tariflar (admin) ⭐
+**Tayyorgarlik:** admin panel (`/admin/`).
+- [ ] **Billing → Tariflar (Plans)**: free/oddiy/pro ko'rinadi; har birida barcha funksiyalar (profile_limit, analytics, qr, team ...) **tahrirlanadi**.
+- [ ] Oddiy tarifga `team`'ni yoqib saqlang → Oddiy foydalanuvchi (`ODDIY1`) endi **Jamoa** funksiyasiga ega bo'ladi (Jamoa tab ochiladi).
+- [ ] **Yangi tarif qo'shing** (masalan slug=`biznes`, rank=15, profile_limit=9) → unga obuna bergan user (Subscription → tier=biznes) **9 sahifa** limitiga ega bo'ladi.
+- [ ] `rank` eng yuqori faol obuna g'olib (masalan biznes rank=15 va pro rank=20 bo'lsa → pro).
+- [ ] **is_default** faqat bitta tarifda turadi (boshqasini belgilash avvalgisini o'chiradi).
+- [ ] `/pricing` sahifa endi **`/api/plans/`** dan o'qiydi — admin'da tarif/funksiya o'zgartirsangiz, sahifada ham o'zgaradi.
+- [ ] PromoCode / Subscription / PlanPrice adminkada **tarif dropdown** (mavjud Plan'lardan tanlanadi).
+
+---
+
 ## Yakuniy
-- [ ] Barcha avtotestlar yashil: **110 backend**, lint 0 error, build OK.
+- [ ] Barcha avtotestlar yashil: **117 backend**, lint 0 error, build OK.
 - [ ] Hech bir public sahifa konsolda xato bermaydi.
 - [ ] ⚠️ Prod deploy oldidan: nginx `client_max_body_size 50M` (2c video) + `pip install -r requirements.txt`.

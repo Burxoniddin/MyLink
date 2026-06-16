@@ -211,3 +211,63 @@ class ReferralRewardTests(TestCase):
     def test_extension_skipped_for_lifetime(self):
         Subscription.objects.create(user=self.referrer, tier=ent.PRO, expires_at=None, source='gift')
         self.assertIsNone(grant_pro_extension(self.referrer, days=30))
+
+
+class DynamicPlanTests(TestCase):
+    """Item 6 — admin-defined tiers + editable feature matrix."""
+
+    def setUp(self):
+        from billing.models import Plan
+        self.Plan = Plan
+        self.user = User.objects.create_user(phone_number='+998905550001')
+
+    def test_seeded_plans_exist(self):
+        slugs = set(self.Plan.objects.values_list('slug', flat=True))
+        self.assertTrue({ent.FREE, ent.ODDIY, ent.PRO} <= slugs)
+        self.assertEqual(self.Plan.objects.get(is_default=True).slug, ent.FREE)
+
+    def test_editing_feature_takes_effect(self):
+        # Turn on team for the Oddiy plan from "admin" → entitlements reflect it.
+        self.assertFalse(ent.features_for(ent.ODDIY)['team'])
+        p = self.Plan.objects.get(slug=ent.ODDIY)
+        p.team = True
+        p.save()
+        self.assertTrue(ent.features_for(ent.ODDIY)['team'])
+
+    def test_new_tier_wins_by_rank(self):
+        # A brand-new 'biznes' tier between Oddiy and Pro.
+        self.Plan.objects.create(slug='biznes', name='Biznes', rank=15, profile_limit=9, team=True)
+        Subscription.objects.create(user=self.user, tier='biznes', expires_at=None)
+        self.assertEqual(effective_tier(self.user), 'biznes')
+        feats = get_entitlements(self.user)['features']
+        self.assertEqual(feats['profile_limit'], 9)
+        self.assertTrue(feats['team'])
+
+    def test_highest_rank_among_active_subs_wins(self):
+        self.Plan.objects.create(slug='biznes', name='Biznes', rank=15, profile_limit=9)
+        Subscription.objects.create(user=self.user, tier='biznes', expires_at=None)
+        Subscription.objects.create(user=self.user, tier=ent.PRO, expires_at=None)  # rank 20
+        self.assertEqual(effective_tier(self.user), ent.PRO)
+
+    def test_single_default_enforced(self):
+        # Marking Pro default unsets Free's default flag.
+        pro = self.Plan.objects.get(slug=ent.PRO)
+        pro.is_default = True
+        pro.save()
+        self.assertEqual(self.Plan.objects.filter(is_default=True).count(), 1)
+        self.assertEqual(ent.default_tier(), ent.PRO)
+
+    def test_inactive_plan_subscription_ignored(self):
+        self.Plan.objects.create(slug='legacy', name='Legacy', rank=99, is_active=False)
+        Subscription.objects.create(user=self.user, tier='legacy', expires_at=None)
+        # Inactive plan → ignored, user stays on default (free).
+        self.assertEqual(effective_tier(self.user), ent.FREE)
+
+    def test_public_plans_endpoint(self):
+        from rest_framework.test import APIClient
+        res = APIClient().get('/api/plans/')
+        self.assertEqual(res.status_code, 200)
+        slugs = {p['slug'] for p in res.data}
+        self.assertEqual(slugs, {ent.FREE, ent.ODDIY, ent.PRO})
+        pro = next(p for p in res.data if p['slug'] == ent.PRO)
+        self.assertTrue(pro['features']['team'])

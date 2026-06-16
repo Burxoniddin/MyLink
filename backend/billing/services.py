@@ -10,34 +10,46 @@ from .models import PromoCode, PromoRedemption, Subscription
 def effective_plan(user):
     """Resolve a user's current tier and its expiry from active subscriptions.
 
-    PRO (if any active/non-expired) > ODDIY (permanent) > FREE. Returns
-    ``(tier, expires_at)`` where ``expires_at`` is ``None`` for FREE or a
-    permanent/lifetime grant, otherwise the latest expiry among the active subs
-    of the effective tier. Expired-but-still-'active'-status rows are treated as
-    inactive lazily.
+    Fully dynamic: the highest-``rank`` tier among the user's active (non-expired)
+    subscriptions wins; ties keep the latest expiry. Falls back to the default
+    tier (admin ``is_default``, else FREE) when there's no active subscription.
+    Returns ``(tier_slug, expires_at)`` where ``expires_at`` is ``None`` for a
+    permanent/lifetime grant or the default tier.
     """
+    default = ent.default_tier()
     if not user or not getattr(user, 'is_authenticated', False):
-        return ent.FREE, None
+        return default, None
 
     now = timezone.now()
-    # tier -> expiry: None means a permanent grant exists for that tier.
-    expiries = {ent.PRO: [], ent.ODDIY: []}
-    permanent = {ent.PRO: False, ent.ODDIY: False}
+    plans = ent._plans_by_slug()
 
+    # Aggregate per tier: permanent flag + latest future expiry.
+    agg = {}  # slug -> [permanent: bool, max_expiry]
     for s in Subscription.objects.filter(user=user, status='active'):
-        if s.tier not in expiries:
+        # Only honour subs whose tier maps to a known active plan (skip if the
+        # plan was deleted/deactivated). Fall back to rank table if plans empty.
+        if plans and s.tier not in plans:
             continue
+        perm, mx = agg.get(s.tier, (False, None))
         if s.expires_at is None:
-            permanent[s.tier] = True
+            perm = True
         elif s.expires_at > now:
-            expiries[s.tier].append(s.expires_at)
+            mx = s.expires_at if (mx is None or s.expires_at > mx) else mx
+        else:
+            continue  # expired
+        agg[s.tier] = (perm, mx)
 
-    for tier in (ent.PRO, ent.ODDIY):
-        if permanent[tier]:
-            return tier, None
-        if expiries[tier]:
-            return tier, max(expiries[tier])
-    return ent.FREE, None
+    best_tier, best_rank, best_expiry = None, -1, None
+    for slug, (perm, mx) in agg.items():
+        if not perm and mx is None:
+            continue
+        rank = plans[slug].rank if slug in plans else ent.plan_rank(slug)
+        if rank > best_rank:
+            best_tier, best_rank, best_expiry = slug, rank, (None if perm else mx)
+
+    if best_tier is not None:
+        return best_tier, best_expiry
+    return default, None
 
 
 def effective_tier(user):

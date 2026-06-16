@@ -39,11 +39,12 @@ DEMO_LINKS = [
 ]
 
 
-def make_biz(owner, path, name, template='classic'):
+def make_biz(owner, path, name, template='classic', featured=False):
     b, _ = Business.objects.get_or_create(path=path, defaults={'owner': owner, 'name': name})
     b.owner = owner
     b.name = name
     b.template = template
+    b.is_featured = featured
     b.save()
     if not b.links.exists():
         for i, (title, url, icon) in enumerate(DEMO_LINKS):
@@ -68,11 +69,12 @@ class Command(BaseCommand):
         Subscription.objects.get_or_create(user=pro, tier=ent.PRO, expires_at=None,
                                            defaults={'source': 'manual', 'note': 'seed'})
         # Template demos (one per design; templates are open to all tiers).
-        make_biz(pro, 'probiz1', 'FLAME BURGER', template='restoran')
-        make_biz(pro, 'probiz2', 'MAISON NUR', template='moda')
-        make_biz(pro, 'probiz3', 'DENTA SMILE', template='klinika')
-        make_biz(pro, 'motorhub', 'MOTOR HUB', template='avto')
-        make_biz(pro, 'pulsegym', 'PULSE GYM', template='fitnes')
+        # Marked featured so the landing "clients" carousel has content to show.
+        make_biz(pro, 'probiz1', 'FLAME BURGER', template='restoran', featured=True)
+        make_biz(pro, 'probiz2', 'MAISON NUR', template='moda', featured=True)
+        make_biz(pro, 'probiz3', 'DENTA SMILE', template='klinika', featured=True)
+        make_biz(pro, 'motorhub', 'MOTOR HUB', template='avto', featured=True)
+        make_biz(pro, 'pulsegym', 'PULSE GYM', template='fitnes', featured=True)
 
         codes = [
             dict(code='TEST1', grant_tier=ent.PRO, duration_days=None, note='Pro lifetime'),

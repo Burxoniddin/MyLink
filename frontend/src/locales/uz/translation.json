@@ -75,7 +75,7 @@
     "qr_card": "Vizitka (PDF)",
     "qr_free": "QR kod Oddiy va Pro tariflarda mavjud.",
     "qr_pro": "Pro",
-    "tab_blocks": "Bloklar",
+    "tab_blocks": "Media kontent",
     "tab_team": "Jamoa",
     "tab_preview": "Ko'rinish",
     "tab_edit": "Tahrirlash",
@@ -354,7 +354,8 @@
     "no_business": "Avval biznes sahifa yarating."
   },
   "blocks": {
-    "title": "Kontent bloklar",
+    "title": "Media kontent",
+    "confirm_delete": "Bu kontentni o'chirmoqchimisiz? Yuklangan media qaytarib bo'lmaydi.",
     "image": "Rasm",
     "video": "Video",
     "text": "Matn",

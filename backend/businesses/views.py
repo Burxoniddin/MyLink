@@ -465,9 +465,10 @@ class StaticPageView(APIView):
 
     def get(self, request, slug):
         lang = request.query_params.get('lang', 'uz')
-        page = StaticPage.objects.filter(slug=slug, language=lang).first()
-        if page is None:
-            page = StaticPage.objects.filter(slug=slug).first()  # fallback to any language
+        # Only pages with actual content count; empty body → 404 (frontend shows
+        # the "coming soon" placeholder).
+        qs = StaticPage.objects.exclude(body='')
+        page = qs.filter(slug=slug, language=lang).first() or qs.filter(slug=slug).first()
         if page is None:
             return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
         return Response(StaticPageSerializer(page).data)
@@ -479,9 +480,11 @@ class BlogListView(APIView):
 
     def get(self, request):
         lang = request.query_params.get('lang', 'uz')
-        qs = BlogPost.objects.filter(is_published=True, language=lang)
+        # Published + has content (empty body = unfinished draft, hidden).
+        published = BlogPost.objects.filter(is_published=True).exclude(body='')
+        qs = published.filter(language=lang)
         if not qs.exists():
-            qs = BlogPost.objects.filter(is_published=True)
+            qs = published
         return Response(BlogPostListSerializer(qs, many=True, context={'request': request}).data)
 
 
@@ -491,9 +494,8 @@ class BlogDetailView(APIView):
 
     def get(self, request, slug):
         lang = request.query_params.get('lang', 'uz')
-        post = BlogPost.objects.filter(slug=slug, language=lang, is_published=True).first()
-        if post is None:
-            post = BlogPost.objects.filter(slug=slug, is_published=True).first()
+        published = BlogPost.objects.filter(is_published=True).exclude(body='')
+        post = published.filter(slug=slug, language=lang).first() or published.filter(slug=slug).first()
         if post is None:
             return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
         return Response(BlogPostDetailSerializer(post, context={'request': request}).data)

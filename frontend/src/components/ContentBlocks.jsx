@@ -157,6 +157,8 @@ const ContentBlocks = ({ path }) => {
     };
 
     const deleteBlock = async (id) => {
+        // Ask once before discarding — content/media can't be recovered.
+        if (!window.confirm(t('blocks.confirm_delete'))) return;
         try {
             await api.delete(`blocks/${id}/`);
             setBlocks((bs) => bs.filter((b) => b.id !== id));

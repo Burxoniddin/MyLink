@@ -57,6 +57,32 @@ def qr_png_bytes(url):
     return buf.getvalue()
 
 
+def _handle_from_url(url):
+    """Last path segment of a profile URL, e.g. t.me/shop -> 'shop'."""
+    s = (url or '').split('?')[0].strip().rstrip('/')
+    s = s.replace('https://', '').replace('http://', '')
+    parts = [p for p in s.split('/') if p]
+    return parts[-1] if len(parts) >= 2 else ''
+
+
+def business_contacts(business):
+    """Pull phone / Telegram / Instagram off a business's links for the card.
+
+    Returns the first match of each as ``{'phone', 'telegram', 'instagram'}``
+    (usernames without the leading @)."""
+    phone = telegram = instagram = ''
+    for link in business.links.all():
+        u = (link.url or '').strip()
+        it = link.icon_type
+        if not phone and (it in ('phone', 'telegram_number') or u.startswith('tel:')):
+            phone = u.replace('tel:', '').strip()
+        elif not telegram and it == 'telegram':
+            telegram = _handle_from_url(u).lstrip('@')
+        elif not instagram and it == 'instagram':
+            instagram = _handle_from_url(u).lstrip('@')
+    return {'phone': phone, 'telegram': telegram, 'instagram': instagram}
+
+
 # --------------------------------------------------------------------------- #
 # PIL helpers (Instagram story)
 # --------------------------------------------------------------------------- #
@@ -186,11 +212,15 @@ def qr_pdf_bytes(business, url):
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
 
+    # Brand logo (or initial) centred near the top.
+    _draw_logo_circle(c, business, w / 2, h - 35 * mm, 18 * mm)
+
     size = 90 * mm
     x = (w - size) / 2
-    y = h - size - 45 * mm
+    y = h - size - 70 * mm
     c.drawImage(_image_reader(_qr_image(url, border=1)), x, y, size, size)
 
+    c.setFillColor(colors.HexColor('#1f1b4f'))
     c.setFont('Helvetica-Bold', 26)
     c.drawCentredString(w / 2, y - 18 * mm, business.name)
     c.setFont('Helvetica', 14)
@@ -245,8 +275,28 @@ def card_pdf_bytes(business, url):
     c.drawString(30 * mm, card_h - 17 * mm, business.name[:22])
     if business.description:
         c.setFillColor(colors.Color(1, 1, 1, alpha=0.85))
-        c.setFont('Helvetica', 8.5)
-        c.drawString(30 * mm, card_h - 22 * mm, business.description[:34])
+        c.setFont('Helvetica', 8)
+        c.drawString(30 * mm, card_h - 21.5 * mm, business.description[:36])
+
+    # Contact rows pulled from the page's links: phone, Telegram, Instagram.
+    # Each gets a small brand-coloured dot + label so the card mirrors the page.
+    contacts = business_contacts(business)
+    rows = []
+    if contacts['phone']:
+        rows.append((colors.HexColor('#16a34a'), contacts['phone'][:24]))
+    if contacts['telegram']:
+        rows.append((colors.HexColor('#229ed9'), '@' + contacts['telegram'][:22]))
+    if contacts['instagram']:
+        rows.append((colors.HexColor('#e1306c'), '@' + contacts['instagram'][:22]))
+
+    cy = card_h - 28 * mm
+    for dot, label in rows:
+        c.setFillColor(dot)
+        c.circle(9 * mm, cy + 1 * mm, 1.4 * mm, stroke=0, fill=1)
+        c.setFillColor(colors.white)
+        c.setFont('Helvetica-Bold', 8.5)
+        c.drawString(12.5 * mm, cy, label)
+        cy -= 6 * mm
 
     c.setFillColor(colors.white)
     c.setFont('Helvetica-Bold', 9.5)

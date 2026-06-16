@@ -289,8 +289,10 @@ class StaticPage(models.Model):
     SLUG_CHOICES = [('about', 'Biz haqimizda'), ('privacy', 'Maxfiylik'), ('terms', 'Shartlar')]
     slug = models.CharField(max_length=20, choices=SLUG_CHOICES)
     language = models.CharField(max_length=2, choices=LANG_CHOICES, default='uz')
-    title = models.CharField(max_length=200)
-    body = models.TextField(help_text="HTML yoki oddiy matn")
+    # Optional: a page with empty body is treated as "not published" → the public
+    # endpoint 404s and the frontend shows the "coming soon" placeholder.
+    title = models.CharField(max_length=200, blank=True)
+    body = models.TextField(blank=True, help_text="Bo'sh qoldirsangiz sahifa 'tez orada' deb ko'rsatiladi")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -308,10 +310,11 @@ class BlogPost(models.Model):
     (kichigi birinchi); teng bo'lsa yangisi oldinda."""
     language = models.CharField(max_length=2, choices=LANG_CHOICES, default='uz')
     slug = models.SlugField(max_length=120)
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200, blank=True)
     excerpt = models.TextField(blank=True)
     cover = models.ImageField(upload_to='blog/', blank=True, null=True)
-    body = models.TextField(help_text="HTML yoki oddiy matn")
+    # Empty body → post is hidden from the public list/detail (shows "coming soon").
+    body = models.TextField(blank=True, help_text="Bo'sh qoldirsangiz post chiqmaydi")
     order = models.PositiveIntegerField(default=0, verbose_name="Tartib", help_text="Ro'yxatdagi o'rni — kichigi birinchi chiqadi")
     is_published = models.BooleanField(default=True)
     published_at = models.DateTimeField(default=timezone.now)

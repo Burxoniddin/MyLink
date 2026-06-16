@@ -75,7 +75,7 @@
     "qr_card": "Business card (PDF)",
     "qr_free": "QR code is available on the Oddiy and Pro plans.",
     "qr_pro": "Pro",
-    "tab_blocks": "Blocks",
+    "tab_blocks": "Media content",
     "tab_team": "Team",
     "tab_preview": "Preview",
     "tab_edit": "Edit",
@@ -354,7 +354,8 @@
     "no_business": "Create a business page first."
   },
   "blocks": {
-    "title": "Content blocks",
+    "title": "Media content",
+    "confirm_delete": "Delete this content? Uploaded media can't be recovered.",
     "image": "Image",
     "video": "Video",
     "text": "Text",

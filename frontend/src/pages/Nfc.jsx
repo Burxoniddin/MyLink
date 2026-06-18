@@ -97,7 +97,7 @@ const Nfc = () => {
                                 <input className="login-input" type="tel" value={form.phone}
                                     placeholder="+998 90 123 45 67"
                                     onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
-                                <small style={{ color: '#9ca3af', fontSize: 12 }}>{t('nfc.phone_hint')}</small>
+                           
                             </div>
                             <div className="input-group">
                                 <label>{t('nfc.business')}</label>

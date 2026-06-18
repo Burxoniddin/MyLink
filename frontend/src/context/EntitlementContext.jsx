@@ -37,6 +37,15 @@ export const EntitlementProvider = ({ children }) => {
 
     useEffect(() => {
         refresh();
+        // Re-fetch when the tab regains focus so admin-side plan/feature changes
+        // (or a new subscription) show up without a full reload.
+        const onFocus = () => { if (document.visibilityState === 'visible') refresh(); };
+        document.addEventListener('visibilitychange', onFocus);
+        window.addEventListener('focus', onFocus);
+        return () => {
+            document.removeEventListener('visibilitychange', onFocus);
+            window.removeEventListener('focus', onFocus);
+        };
     }, [refresh]);
 
     return (

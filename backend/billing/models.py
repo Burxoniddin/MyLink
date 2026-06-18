@@ -61,19 +61,26 @@ class Plan(models.Model):
 
 
 class PlanPrice(models.Model):
-    """Editable price for a (tier, period) combination. Used by the pricing
-    page and payment checkout. ``tier`` is a Plan slug (free-form, validated in
-    admin against existing Plans)."""
-    tier = models.CharField(max_length=20)
+    """Editable price for a (plan, period) combination, managed inline inside the
+    Plan admin. ``tier`` mirrors ``plan.slug`` (kept for the pricing API/checkout)
+    and is filled automatically from the linked plan."""
+    plan = models.ForeignKey('Plan', on_delete=models.CASCADE, related_name='prices',
+                             null=True, blank=True)
+    tier = models.CharField(max_length=20, blank=True)  # auto = plan.slug
     period = models.CharField(max_length=10, choices=ent.PERIOD_CHOICES)
     price = models.PositiveIntegerField(help_text="Narx (UZS so'm)")
     is_active = models.BooleanField(default=True)
 
     class Meta:
-        unique_together = ('tier', 'period')
+        unique_together = ('plan', 'period')
         ordering = ['tier', 'period']
         verbose_name = 'Tarif narxi'
         verbose_name_plural = 'Tarif narxlari'
+
+    def save(self, *args, **kwargs):
+        if self.plan_id:
+            self.tier = self.plan.slug
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.tier} / {self.get_period_display()}: {self.price}"

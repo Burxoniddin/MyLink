@@ -21,6 +21,13 @@ class TierChoiceMixin:
         return field
 
 
+class PlanPriceInline(admin.TabularInline):
+    """Prices for a plan, edited right inside the Plan page."""
+    model = PlanPrice
+    extra = 1
+    fields = ('period', 'price', 'is_active')
+
+
 @admin.register(Plan)
 class PlanAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug', 'rank', 'is_default', 'is_active', 'is_public',
@@ -28,6 +35,7 @@ class PlanAdmin(admin.ModelAdmin):
     list_editable = ('rank', 'is_default', 'is_active', 'is_public', 'profile_limit',
                      'analytics', 'qr', 'team')
     prepopulated_fields = {'slug': ('name',)}
+    inlines = [PlanPriceInline]
     fieldsets = (
         (None, {'fields': ('name', 'slug', 'rank', 'is_default', 'is_active', 'is_public', 'order')}),
         ('Funksiyalar', {'fields': (
@@ -37,11 +45,8 @@ class PlanAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(PlanPrice)
-class PlanPriceAdmin(TierChoiceMixin, admin.ModelAdmin):
-    list_display = ('tier', 'period', 'price', 'is_active')
-    list_editable = ('price', 'is_active')
-    list_filter = ('tier', 'is_active')
+# PlanPrice is managed inline inside the Plan page (PlanPriceInline) — no
+# separate admin entry to avoid a redundant editing path.
 
 
 @admin.register(Subscription)

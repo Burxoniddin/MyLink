@@ -103,6 +103,9 @@ JAZZMIN_SETTINGS = {
     "changeform_format": "horizontal_tabs",
     "changeform_format_overrides": {
         "auth.user": "collapsible",
+        # Plan has a second "Funksiyalar" fieldset that horizontal_tabs renders
+        # unreliably; collapsible shows both groups stacked + openable.
+        "billing.plan": "collapsible",
     },
 }
 

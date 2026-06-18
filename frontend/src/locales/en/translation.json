@@ -295,7 +295,7 @@
     "phone": "Phone number",
     "phone_hint": "e.g. +998 90 123 45 67",
     "business": "Business page (optional)",
-    "business_none": "— None —",
+    "business_none": "Select a business (optional)",
     "quantity":"Quantity",
     "note": "Note (optional)",
     "submit": "Order",

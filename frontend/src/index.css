@@ -1360,6 +1360,20 @@ select {
 .nfc-benefits li { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; opacity: 0.95; }
 .nfc-form-card { background: #fff; border: 1px solid #eef2f7; border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
 .nfc-form-card h3 { margin: 0 0 16px; }
+/* Roomier spacing between fields in the NFC order form. */
+.nfc-form-card form .input-group { margin-bottom: 20px; }
+.nfc-form-card form .input-group:last-of-type { margin-bottom: 8px; }
+/* Custom-styled select (native arrow was squished to the right). */
+.nfc-form-card select.login-input {
+  appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  padding-right: 44px;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
+  color: var(--text-main);
+}
 .nfc-disclaimer { margin: 14px 0 0; font-size: 13px; color: #9ca3af; text-align: center; }
 .nfc-history { background: #fff; border: 1px solid #eef2f7; border-radius: 16px; padding: 20px 24px; margin-top: 22px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
 .nfc-history h3 { margin: 0 0 12px; }

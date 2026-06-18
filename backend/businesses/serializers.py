@@ -1,3 +1,5 @@
+import re
+
 from rest_framework import serializers
 from .models import Business, Link, ContentBlock, BusinessMembership, ContactMessage, NfcOrder, StaticPage, BlogPost
 
@@ -191,11 +193,34 @@ class ContactMessageSerializer(serializers.ModelSerializer):
 
 class NfcOrderSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    business_name = serializers.CharField(source='business.name', read_only=True, default=None)
 
     class Meta:
         model = NfcOrder
-        fields = ['id', 'full_name', 'phone', 'quantity', 'note', 'status', 'status_display', 'created_at']
+        fields = ['id', 'full_name', 'phone', 'quantity', 'note',
+                  'business', 'business_name', 'status', 'status_display', 'created_at']
         read_only_fields = ['status', 'status_display', 'created_at']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # The optional business can only be one the requester owns.
+        request = self.context.get('request')
+        if request and getattr(request.user, 'is_authenticated', False):
+            self.fields['business'].queryset = Business.objects.filter(owner=request.user)
+        self.fields['business'].required = False
+        self.fields['business'].allow_null = True
+
+    def validate_phone(self, value):
+        # Normalise to +998XXXXXXXXX; accept a 9-digit local number or a 12-digit
+        # 998-prefixed one (spaces/dashes/parens allowed in input).
+        digits = re.sub(r'\D', '', value or '')
+        if len(digits) == 12 and digits.startswith('998'):
+            return '+' + digits
+        if len(digits) == 9:
+            return '+998' + digits
+        raise serializers.ValidationError(
+            "Telefon raqamini to'g'ri kiriting, masalan: +998 90 123 45 67"
+        )
 
     def validate_quantity(self, value):
         if value < 1 or value > 1000:

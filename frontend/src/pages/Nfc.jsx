@@ -15,16 +15,22 @@ const Nfc = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [orders, setOrders] = useState([]);
+    const [businesses, setBusinesses] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [form, setForm] = useState({ full_name: '', phone: '', quantity: 1, note: '' });
+    const [form, setForm] = useState({ full_name: '', phone: '', quantity: 1, note: '', business: '' });
     const [busy, setBusy] = useState(false);
     const [msg, setMsg] = useState({ type: '', text: '' });
 
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) { navigate('/login'); return; }
-        api.get('nfc/orders/')
-            .then((res) => setOrders(res.data))
+        Promise.all([
+            api.get('nfc/orders/').then((res) => setOrders(res.data)),
+            // Only the user's own pages are offered (and accepted by the backend).
+            api.get('businesses/')
+                .then((res) => setBusinesses(res.data.filter((b) => b.role === 'owner')))
+                .catch(() => {}),
+        ])
             .catch((err) => { if (err.response?.status === 401) navigate('/login'); })
             .finally(() => setLoading(false));
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -35,12 +41,18 @@ const Nfc = () => {
         setBusy(true);
         setMsg({ type: '', text: '' });
         try {
-            const res = await api.post('nfc/orders/', { ...form, quantity: Number(form.quantity) || 1 });
+            const payload = { ...form, quantity: Number(form.quantity) || 1 };
+            if (!payload.business) delete payload.business;  // optional
+            const res = await api.post('nfc/orders/', payload);
             setOrders([res.data, ...orders]);
-            setForm({ full_name: '', phone: '', quantity: 1, note: '' });
+            setForm({ full_name: '', phone: '', quantity: 1, note: '', business: '' });
             setMsg({ type: 'success', text: t('nfc.sent') });
-        } catch {
-            setMsg({ type: 'error', text: t('common.error') });
+        } catch (err) {
+            // Surface the first field error (e.g. phone format) if present.
+            const data = err.response?.data;
+            const fieldErr = data && typeof data === 'object'
+                ? Object.values(data).flat().find(Boolean) : null;
+            setMsg({ type: 'error', text: fieldErr || t('common.error') });
         } finally {
             setBusy(false);
         }
@@ -82,8 +94,20 @@ const Nfc = () => {
                             </div>
                             <div className="input-group">
                                 <label>{t('nfc.phone')}</label>
-                                <input className="login-input" value={form.phone}
+                                <input className="login-input" type="tel" value={form.phone}
+                                    placeholder="+998 90 123 45 67"
                                     onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
+                                <small style={{ color: '#9ca3af', fontSize: 12 }}>{t('nfc.phone_hint')}</small>
+                            </div>
+                            <div className="input-group">
+                                <label>{t('nfc.business')}</label>
+                                <select className="login-input" value={form.business}
+                                    onChange={(e) => setForm({ ...form, business: e.target.value })}>
+                                    <option value="">{t('nfc.business_none')}</option>
+                                    {businesses.map((b) => (
+                                        <option key={b.id} value={b.id}>{b.name} (mylink.asia/{b.path})</option>
+                                    ))}
+                                </select>
                             </div>
                             <div className="input-group">
                                 <label>{t('nfc.quantity')}</label>
@@ -111,6 +135,7 @@ const Nfc = () => {
                                     <div key={o.id} className="nfc-order-row">
                                         <div>
                                             <strong>×{o.quantity}</strong> — {o.full_name}
+                                            {o.business_name && <span style={{ color: '#6b7280' }}> · {o.business_name}</span>}
                                             <span className="nfc-order-date">{new Date(o.created_at).toLocaleDateString()}</span>
                                         </div>
                                         <span className="nfc-status" style={{ background: c.bg, color: c.fg }}>

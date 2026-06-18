@@ -454,6 +454,7 @@ class NfcOrderListCreateView(generics.ListCreateAPIView):
             f"<b>Ism:</b> {order.full_name}\n"
             f"<b>Tel:</b> {order.phone}\n"
             f"<b>Soni:</b> {order.quantity}\n"
+            f"<b>Biznes:</b> {order.business.name if order.business else '—'}\n"
             f"<b>Izoh:</b> {order.note or '—'}"
         )
         send_telegram_message(text)

@@ -488,6 +488,45 @@ class NfcOrderTests(TestCase):
                                {'full_name': 'Ali', 'phone': '+998901112233', 'quantity': 0}, format='json')
         self.assertEqual(res.status_code, 400)
 
+    @patch('businesses.views.send_telegram_message')
+    def test_phone_required_and_format(self, mock_tg):
+        # Missing phone → required.
+        r1 = self.client.post('/api/nfc/orders/', {'full_name': 'A', 'quantity': 1}, format='json')
+        self.assertEqual(r1.status_code, 400)
+        self.assertIn('phone', r1.data)
+        # Garbage phone → format error.
+        r2 = self.client.post('/api/nfc/orders/',
+                              {'full_name': 'A', 'phone': '12-34', 'quantity': 1}, format='json')
+        self.assertEqual(r2.status_code, 400)
+        self.assertIn('phone', r2.data)
+
+    @patch('businesses.views.send_telegram_message')
+    def test_phone_normalized(self, mock_tg):
+        # Local 9-digit form is normalised to +998…
+        res = self.client.post('/api/nfc/orders/',
+                              {'full_name': 'A', 'phone': '90 123 45 67', 'quantity': 1}, format='json')
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(NfcOrder.objects.get().phone, '+998901234567')
+
+    @patch('businesses.views.send_telegram_message')
+    def test_own_business_attaches(self, mock_tg):
+        biz = make_business(self.user, 'mine', 'Mine')
+        res = self.client.post('/api/nfc/orders/',
+                              {'full_name': 'A', 'phone': '+998901112233', 'quantity': 1, 'business': biz.id},
+                              format='json')
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(NfcOrder.objects.get().business_id, biz.id)
+        self.assertEqual(res.data['business_name'], 'Mine')
+
+    @patch('businesses.views.send_telegram_message')
+    def test_cannot_attach_others_business(self, mock_tg):
+        other = User.objects.create_user(phone_number='+998909990033')
+        biz = make_business(other, 'theirs', 'Theirs')
+        res = self.client.post('/api/nfc/orders/',
+                              {'full_name': 'A', 'phone': '+998901112233', 'quantity': 1, 'business': biz.id},
+                              format='json')
+        self.assertEqual(res.status_code, 400)  # not in the user's queryset
+
 
 def auth_client(user):
     client = APIClient()

@@ -249,6 +249,11 @@ class NfcOrder(models.Model):
     STATUS = [('new', 'Yangi'), ('processing', 'Jarayonda'), ('done', 'Bajarildi'), ('canceled', 'Bekor')]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='nfc_orders')
+    # Optional: which of the user's own pages the card should point to.
+    business = models.ForeignKey(
+        Business, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='nfc_orders', verbose_name="Biznes (ixtiyoriy)",
+    )
     full_name = models.CharField(max_length=120)
     phone = models.CharField(max_length=30)
     quantity = models.PositiveIntegerField(default=1)

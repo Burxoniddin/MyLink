@@ -76,7 +76,7 @@ class PlanPrice(models.Model):
         verbose_name_plural = 'Tarif narxlari'
 
     def __str__(self):
-        return f"{self.get_tier_display()} / {self.get_period_display()}: {self.price}"
+        return f"{self.tier} / {self.get_period_display()}: {self.price}"
 
 
 class Subscription(models.Model):
@@ -115,7 +115,7 @@ class Subscription(models.Model):
         return self.expires_at > timezone.now()
 
     def __str__(self):
-        return f"{self.user} - {self.get_tier_display()} ({self.status})"
+        return f"{self.user} - {self.tier} ({self.status})"
 
 
 class PromoCode(models.Model):
@@ -160,7 +160,7 @@ class PromoCode(models.Model):
         return True, ''
 
     def __str__(self):
-        return f"{self.code} → {self.get_grant_tier_display()}"
+        return f"{self.code} → {self.grant_tier}"
 
 
 class ReferralReward(models.Model):

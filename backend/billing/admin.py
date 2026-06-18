@@ -36,12 +36,12 @@ class PlanAdmin(admin.ModelAdmin):
                      'analytics', 'qr', 'team')
     prepopulated_fields = {'slug': ('name',)}
     inlines = [PlanPriceInline]
-    fieldsets = (
-        (None, {'fields': ('name', 'slug', 'rank', 'is_default', 'is_active', 'is_public', 'order')}),
-        ('Funksiyalar', {'fields': (
-            'profile_limit', 'templates', 'color_edit', 'banners', 'banner_video',
-            'analytics', 'qr', 'branding_removed', 'verified_badge', 'team',
-        )}),
+    # Single unnamed fieldset → renders in the always-open "General" card, so the
+    # feature fields are never hidden behind a collapsible/tab header.
+    fields = (
+        'name', 'slug', 'rank', 'is_default', 'is_active', 'is_public', 'order',
+        'profile_limit', 'templates', 'color_edit', 'banners', 'banner_video',
+        'analytics', 'qr', 'branding_removed', 'verified_badge', 'team',
     )
 
 

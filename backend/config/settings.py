@@ -96,16 +96,15 @@ JAZZMIN_SETTINGS = {
     
     # UI Customization
     "custom_css": None,
-    "custom_js": None,
+    # Fixes change-form tabs/collapsibles under Jazzmin 3.0.2's BS4-markup +
+    # bundled-BS5 mismatch (see businesses/static/jazzmin_fix/tabs.js).
+    "custom_js": "jazzmin_fix/tabs.js",
     "use_google_fonts_cdn": True,
     "show_ui_builder": False,
     # Change view options
     "changeform_format": "horizontal_tabs",
     "changeform_format_overrides": {
         "auth.user": "collapsible",
-        # Plan: render as one flat page (no tabs/collapse) so every feature field
-        # is always visible — tabbed/collapsible rendering hid the 2nd fieldset.
-        "billing.plan": "single",
     },
 }
 

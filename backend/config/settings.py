@@ -30,7 +30,12 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-+-#fg#$&j3rw3h)4)h3g$k9&ns
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['mylink.asia', 'www.mylink.asia', 'api.mylink.asia', '161.97.176.239', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = [
+    'mylink.asia', 'www.mylink.asia', 'api.mylink.asia',
+    # Staging (client testing, deployed from the dev branch)
+    'dev.mylink.asia', 'api-dev.mylink.asia',
+    '161.97.176.239', 'localhost', '127.0.0.1',
+]
 
 
 # Application definition
@@ -258,6 +263,7 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     "https://mylink.asia",
     "https://www.mylink.asia",
+    "https://dev.mylink.asia",   # staging frontend
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
@@ -269,6 +275,8 @@ CSRF_TRUSTED_ORIGINS = [
     'https://mylink.asia',
     'https://api.mylink.asia',
     'https://www.mylink.asia',
+    'https://dev.mylink.asia',      # staging
+    'https://api-dev.mylink.asia',  # staging API (admin panel)
 ]
 
 

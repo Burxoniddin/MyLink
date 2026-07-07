@@ -1,0 +1,54 @@
+name: Deploy to Staging (dev)
+
+# dev branch'ga har push → staging (dev.mylink.asia) yangilanadi.
+# Bir xil server, alohida papka/service — prod'ga tegmaydi.
+# Birinchi marta serverda STAGING_GUIDE.md bo'yicha o'rnatish shart,
+# ungacha bu workflow xato beradi (papka yo'q) — bu normal.
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:  # Qo'lda ishga tushirish imkoniyati
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Staging Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          port: 22
+          script: |
+            cd /var/www/mylink-dev
+
+            # Lokal o'zgarishlarni tozalash (git pull bloklanmasligi uchun)
+            git checkout -- .
+            git clean -fd
+
+            # Git pull (dev branch)
+            git pull origin dev
+
+            # Backend yangilash
+            cd backend
+            source venv/bin/activate
+            pip install -r requirements.txt --quiet
+            python manage.py migrate --noinput
+            python manage.py collectstatic --noinput
+            deactivate
+
+            # Frontend yangilash
+            cd ../frontend
+            npm install --silent
+            npm run build
+
+            # Xizmatlarni qayta ishga tushirish
+            sudo systemctl restart gunicorn-dev
+            sudo systemctl reload nginx
+
+            echo "✅ Staging deploy muvaffaqiyatli yakunlandi!"

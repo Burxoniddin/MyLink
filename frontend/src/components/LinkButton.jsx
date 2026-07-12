@@ -1,4 +1,6 @@
-import { FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaLink, FaYoutube, FaEnvelope, FaTiktok, FaYandex, FaMapMarkedAlt } from 'react-icons/fa';
+// Platform mapping mirrors lib/linkIcons.jsx. When adding a platform: update
+// BOTH files + detectPlatform (lib/linkUtils.js) + backend Link.ICON_CHOICES.
+import { FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaLink, FaYoutube, FaEnvelope, FaTiktok, FaYandex, FaMapMarkedAlt, FaSteam, FaBehance, FaDribbble, FaTwitch, FaDiscord } from 'react-icons/fa';
 import { FaXTwitter } from "react-icons/fa6";
 
 const getIconAndColor = (iconType) => {
@@ -74,6 +76,36 @@ const getIconAndColor = (iconType) => {
                 icon: <FaMapMarkedAlt />,
                 gradient: 'linear-gradient(135deg, #4285F4 0%, #34A853 100%)',
                 shadow: 'rgba(66, 133, 244, 0.4)'
+            };
+        case 'steam':
+            return {
+                icon: <FaSteam />,
+                gradient: 'linear-gradient(135deg, #171a21 0%, #2a475e 100%)',
+                shadow: 'rgba(23, 26, 33, 0.4)'
+            };
+        case 'behance':
+            return {
+                icon: <FaBehance />,
+                gradient: 'linear-gradient(135deg, #1769FF 0%, #0F4FCC 100%)',
+                shadow: 'rgba(23, 105, 255, 0.4)'
+            };
+        case 'dribbble':
+            return {
+                icon: <FaDribbble />,
+                gradient: 'linear-gradient(135deg, #EA4C89 0%, #C32361 100%)',
+                shadow: 'rgba(234, 76, 137, 0.4)'
+            };
+        case 'twitch':
+            return {
+                icon: <FaTwitch />,
+                gradient: 'linear-gradient(135deg, #9146FF 0%, #6441A5 100%)',
+                shadow: 'rgba(145, 70, 255, 0.4)'
+            };
+        case 'discord':
+            return {
+                icon: <FaDiscord />,
+                gradient: 'linear-gradient(135deg, #5865F2 0%, #404EED 100%)',
+                shadow: 'rgba(88, 101, 242, 0.4)'
             };
         case 'website':
         default:

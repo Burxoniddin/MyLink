@@ -64,6 +64,11 @@ class Link(models.Model):
         ('gmail', 'Gmail'),
         ('yandex_map', 'Yandex Map'),
         ('google_map', 'Google Map'),
+        ('steam', 'Steam'),
+        ('behance', 'Behance'),
+        ('dribbble', 'Dribbble'),
+        ('twitch', 'Twitch'),
+        ('discord', 'Discord'),
         ('website', 'Website'),
         ('other', 'Other'),
     ]

@@ -51,9 +51,9 @@ const TeamManager = ({ path }) => {
         setSending(true);
         setMsg({ type: '', text: '' });
         try {
-            await api.post(`businesses/${path}/members/`, { identifier: identifier.trim(), role });
+            const res = await api.post(`businesses/${path}/members/`, { identifier: identifier.trim(), role });
             setIdentifier('');
-            setMsg({ type: 'success', text: t('team.invited') });
+            setMsg({ type: 'success', text: res.data?.email_sent ? t('team.invited_email_sent') : t('team.invited') });
             await load();
         } catch (err) {
             const reason = err.response?.data?.reason;

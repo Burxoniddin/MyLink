@@ -7,16 +7,18 @@ from rest_framework.views import APIView
 from rest_framework.throttling import AnonRateThrottle
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.db.models import Count, Max
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from billing.services import can_create_business, get_entitlements, sync_locks
-from . import qr
+from . import emails, qr
 from .access import (
     ROLE_ADMIN, ROLE_EDITOR, ROLE_VIEWER,
-    accessible_businesses, get_business_or_404, require_role,
+    accessible_businesses, claim_pending_invites, get_business_or_404, require_role,
 )
 from .models import Business, Link, ContentBlock, BusinessMembership, Event, SiteSettings, ContactMessage, NfcOrder, StaticPage, BlogPost
 from .serializers import (
@@ -160,6 +162,8 @@ class MembershipListCreateView(APIView):
         if not email and not phone:
             raise ValidationError({'reason': 'invalid_identifier'})
 
+        role_display = dict(BusinessMembership.ROLES).get(role, role)
+        email_sent = None
         if user is not None:
             if user.id == business.owner_id:
                 raise ValidationError({'reason': 'owner'})
@@ -169,16 +173,39 @@ class MembershipListCreateView(APIView):
                 business=business, user=user, role=role,
                 invited_by=request.user, accepted_at=timezone.now(),
             )
+            if email:
+                email_sent = emails.send_existing_member_notice(email, business, role_display)
+        elif email:
+            # No account with this email yet: create one with a temporary
+            # password and attach the membership immediately — the credentials
+            # go out by email so the invitee can log in right away.
+            temp_password = get_random_string(10, 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789')
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    phone_number=None, email=email, password=temp_password,
+                )
+                user.is_verified = True
+                user.save(update_fields=['is_verified'])
+                m = BusinessMembership.objects.create(
+                    business=business, user=user, role=role, invite_email=email,
+                    invited_by=request.user, accepted_at=timezone.now(),
+                )
+                # Pending invites from *other* businesses addressed to this
+                # email attach to the fresh account too.
+                claim_pending_invites(user)
+            email_sent = emails.send_new_member_credentials(email, temp_password, business, role_display)
         else:
             dup = BusinessMembership.objects.filter(business=business, user__isnull=True)
-            dup = dup.filter(invite_email__iexact=email) if email else dup.filter(invite_phone=phone)
+            dup = dup.filter(invite_phone=phone)
             if dup.exists():
                 raise ValidationError({'reason': 'already_invited'})
             m = BusinessMembership.objects.create(
-                business=business, role=role, invite_email=email,
-                invite_phone=phone, invited_by=request.user,
+                business=business, role=role, invite_phone=phone, invited_by=request.user,
             )
-        return Response(MembershipSerializer(m).data, status=status.HTTP_201_CREATED)
+        return Response(
+            {**MembershipSerializer(m).data, 'email_sent': email_sent},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class MembershipDetailView(APIView):

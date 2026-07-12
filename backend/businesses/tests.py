@@ -2,6 +2,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
@@ -561,18 +562,73 @@ class TeamMembershipTests(TestCase):
         self.assertEqual(m.role, 'editor')
         self.assertIsNotNone(m.accepted_at)
 
-    def test_invite_unregistered_is_pending_then_claimed(self):
+    def test_phone_invite_unregistered_is_pending_then_claimed(self):
         res = self.owner_client.post(
-            '/api/businesses/shop/members/', {'identifier': 'new@x.com', 'role': 'viewer'}, format='json')
+            '/api/businesses/shop/members/', {'identifier': '+998900000077', 'role': 'viewer'}, format='json')
         self.assertEqual(res.status_code, 201)
-        m = BusinessMembership.objects.get(invite_email='new@x.com')
+        self.assertEqual(len(mail.outbox), 0)  # phone invites send nothing
+        m = BusinessMembership.objects.get(invite_phone='+998900000077')
         self.assertIsNone(m.user_id)  # pending
         # The invitee registers later → invite is claimed.
-        newcomer = User.objects.create_user(email='new@x.com')
+        newcomer = User.objects.create_user(phone_number='+998900000077')
         claimed = claim_pending_invites(newcomer)
         self.assertEqual(claimed, 1)
         m.refresh_from_db()
         self.assertEqual(m.user_id, newcomer.id)
+
+    def test_email_invite_without_account_creates_user_and_mails(self):
+        with patch('businesses.views.get_random_string', return_value='Temp2345xy'):
+            res = self.owner_client.post(
+                '/api/businesses/shop/members/', {'identifier': 'new@x.com', 'role': 'editor'}, format='json')
+        self.assertEqual(res.status_code, 201)
+        self.assertIs(res.data['email_sent'], True)
+        user = User.objects.get(email='new@x.com')
+        self.assertTrue(user.has_usable_password())
+        m = BusinessMembership.objects.get(business=self.business, user=user)
+        self.assertEqual(m.role, 'editor')
+        self.assertIsNotNone(m.accepted_at)  # active immediately, not pending
+        self.assertEqual(len(mail.outbox), 1)
+        body = mail.outbox[0].body
+        self.assertIn('Temp2345xy', body)
+        self.assertIn('/login', body)
+        # The temp password actually works for password login.
+        login = APIClient().post(
+            '/api/auth/login-password/', {'identifier': 'new@x.com', 'password': 'Temp2345xy'}, format='json')
+        self.assertEqual(login.status_code, 200)
+
+    def test_email_invite_existing_user_sends_notice(self):
+        User.objects.create_user(email='old@x.com')
+        res = self.owner_client.post(
+            '/api/businesses/shop/members/', {'identifier': 'old@x.com', 'role': 'viewer'}, format='json')
+        self.assertEqual(res.status_code, 201)
+        self.assertIs(res.data['email_sent'], True)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertNotIn('parol', mail.outbox[0].body.lower())  # no credentials in notice
+        self.assertIn('/dashboard', mail.outbox[0].body)
+
+    def test_email_invite_smtp_failure_still_201(self):
+        with patch('businesses.emails.send_mail', side_effect=OSError('smtp down')):
+            res = self.owner_client.post(
+                '/api/businesses/shop/members/', {'identifier': 'flaky@x.com', 'role': 'viewer'}, format='json')
+        self.assertEqual(res.status_code, 201)
+        self.assertIs(res.data['email_sent'], False)
+        user = User.objects.get(email='flaky@x.com')
+        self.assertTrue(BusinessMembership.objects.filter(business=self.business, user=user).exists())
+
+    def test_email_invite_claims_other_pending_invites(self):
+        # A pending invite from ANOTHER business addressed to the same email
+        # attaches to the freshly created account.
+        other_owner = User.objects.create_user(phone_number='+998900000088')
+        Subscription.objects.create(user=other_owner, tier=ent.PRO, expires_at=None)
+        other_biz = make_business(other_owner, 'otherbiz', 'Other')
+        BusinessMembership.objects.create(business=other_biz, role='viewer', invite_email='multi@x.com')
+
+        res = self.owner_client.post(
+            '/api/businesses/shop/members/', {'identifier': 'multi@x.com', 'role': 'viewer'}, format='json')
+        self.assertEqual(res.status_code, 201)
+        user = User.objects.get(email='multi@x.com')
+        self.assertEqual(BusinessMembership.objects.filter(user=user).count(), 2)
+        self.assertFalse(BusinessMembership.objects.filter(user__isnull=True, invite_email='multi@x.com').exists())
 
     def test_invite_blocked_without_pro(self):
         free_owner = User.objects.create_user(phone_number='+998900000099')

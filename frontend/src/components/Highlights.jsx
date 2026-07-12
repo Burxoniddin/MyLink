@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FaTimes, FaPlay, FaAlignLeft, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaTimes, FaPlay, FaAlignLeft, FaChevronLeft, FaChevronRight, FaImages } from 'react-icons/fa';
 
 // YouTube thumbnail from a watch/short/embed URL.
 const ytThumb = (url) => {
@@ -14,29 +14,33 @@ const hasContent = (b) => {
     return false;
 };
 
-// Instagram-style "highlights": a centered row of circular media thumbnails that
-// open in a story-viewer modal. Sits between the bio and the links.
-const Highlights = ({ blocks, getMediaUrl, toEmbed }) => {
-    const items = (blocks || []).filter(hasContent);
-    const [active, setActive] = useState(null);
+// Media sections on the public page: a horizontal scroll-snap carousel of
+// section cover cards (between the bio and the links). Tapping a card opens
+// that section's blocks in a story-viewer modal with prev/next navigation.
+const Highlights = ({ sections, getMediaUrl, toEmbed }) => {
+    const groups = (sections || [])
+        .map((s) => ({ ...s, items: (s.blocks || []).filter(hasContent) }))
+        .filter((s) => s.items.length > 0);
+
+    // Story-viewer position: { s: sectionIdx, b: blockIdx } or null.
+    const [pos, setPos] = useState(null);
+    const items = pos ? groups[pos.s]?.items || [] : [];
 
     useEffect(() => {
-        if (active === null) return undefined;
+        if (pos === null) return undefined;
         const onKey = (e) => {
-            if (e.key === 'Escape') setActive(null);
-            else if (e.key === 'ArrowLeft') setActive((i) => (i > 0 ? i - 1 : i));
-            else if (e.key === 'ArrowRight') setActive((i) => (i < items.length - 1 ? i + 1 : i));
+            if (e.key === 'Escape') setPos(null);
+            else if (e.key === 'ArrowLeft') setPos((p) => (p.b > 0 ? { ...p, b: p.b - 1 } : p));
+            else if (e.key === 'ArrowRight') setPos((p) => (p.b < items.length - 1 ? { ...p, b: p.b + 1 } : p));
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, [active, items.length]);
+    }, [pos, items.length]);
 
-    if (items.length === 0) return null;
+    if (groups.length === 0) return null;
 
-    const renderThumb = (b) => {
-        if (b.block_type === 'image' && b.image) {
-            return <img src={getMediaUrl(b.image)} alt="" />;
-        }
+    const blockThumb = (b) => {
+        if (b.block_type === 'image' && b.image) return <img src={getMediaUrl(b.image)} alt="" />;
         if (b.block_type === 'video') {
             if (b.video) return <video src={getMediaUrl(b.video)} muted preload="metadata" />;
             const yt = ytThumb(b.embed_url);
@@ -45,33 +49,40 @@ const Highlights = ({ blocks, getMediaUrl, toEmbed }) => {
         return <FaAlignLeft />;
     };
 
-    const b = active !== null ? items[active] : null;
+    const sectionCover = (s) => {
+        if (s.cover) return <img src={getMediaUrl(s.cover)} alt="" />;
+        const first = s.items.find((b) => b.block_type !== 'text');
+        return first ? blockThumb(first) : <FaImages />;
+    };
+
+    const b = pos !== null ? items[pos.b] : null;
 
     return (
         <>
-            <div className="hl-row">
-                {items.map((item, i) => (
-                    <button key={item.id} type="button" className="hl-item" onClick={() => setActive(i)}>
-                        <span className={`hl-ring hl-${item.block_type}`}>
-                            <span className="hl-thumb">{renderThumb(item)}</span>
-                        </span>
-                        <span className="hl-label">{item.title || '•'}</span>
+            <div className="hl-sections">
+                {groups.map((s, si) => (
+                    <button key={s.id} type="button" className="hl-card" onClick={() => setPos({ s: si, b: 0 })}>
+                        <span className="hl-cover">{sectionCover(s)}</span>
+                        <span className="hl-card-name">{s.name}</span>
+                        <span className="hl-card-count">{s.items.length}</span>
                     </button>
                 ))}
             </div>
 
             {b && (
-                <div className="hl-modal" onClick={() => setActive(null)}>
-                    <button type="button" className="hl-close" onClick={() => setActive(null)} aria-label="close">
+                <div className="hl-modal" onClick={() => setPos(null)}>
+                    <button type="button" className="hl-close" onClick={() => setPos(null)} aria-label="close">
                         <FaTimes />
                     </button>
+
+                    <div className="hl-counter">{groups[pos.s].name} · {pos.b + 1}/{items.length}</div>
 
                     {items.length > 1 && (
                         <button
                             type="button"
                             className="hl-nav hl-prev"
-                            onClick={(e) => { e.stopPropagation(); setActive((i) => (i > 0 ? i - 1 : i)); }}
-                            disabled={active === 0}
+                            onClick={(e) => { e.stopPropagation(); setPos((p) => (p.b > 0 ? { ...p, b: p.b - 1 } : p)); }}
+                            disabled={pos.b === 0}
                             aria-label="prev"
                         ><FaChevronLeft /></button>
                     )}
@@ -113,8 +124,8 @@ const Highlights = ({ blocks, getMediaUrl, toEmbed }) => {
                         <button
                             type="button"
                             className="hl-nav hl-next"
-                            onClick={(e) => { e.stopPropagation(); setActive((i) => (i < items.length - 1 ? i + 1 : i)); }}
-                            disabled={active === items.length - 1}
+                            onClick={(e) => { e.stopPropagation(); setPos((p) => (p.b < items.length - 1 ? { ...p, b: p.b + 1 } : p)); }}
+                            disabled={pos.b === items.length - 1}
                             aria-label="next"
                         ><FaChevronRight /></button>
                     )}

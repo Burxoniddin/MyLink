@@ -141,15 +141,44 @@ class BusinessMembership(models.Model):
         return f"{who} · {self.get_role_display()} @ {self.business.path}"
 
 
-class ContentBlock(models.Model):
-    """A banner / content block shown on the public page below the links.
+# Hard per-section media cap (not tier-dependent; the tier caps section count
+# via the ``banners`` entitlement).
+MAX_BLOCKS_PER_SECTION = 10
 
-    One of three types: image (uploaded), video (uploaded file *or* embed URL),
-    or text. Count + video access are tier-gated (see billing entitlements
-    ``banners`` / ``banner_video``). Ordered like ``Link``."""
+
+class MediaSection(models.Model):
+    """A named group of media blocks on the public page (e.g. "Filiallarimiz",
+    "Mijozlar fikri"). The public page shows sections as a horizontal carousel
+    of cover cards; tapping one opens its blocks in the story viewer.
+
+    Section count per business is tier-gated (``banners`` entitlement: free 0 /
+    oddiy 3 / pro 10); each section holds at most ``MAX_BLOCKS_PER_SECTION``
+    blocks."""
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='media_sections')
+    name = models.CharField(max_length=100)
+    cover = models.ImageField(upload_to='sections/', blank=True, null=True)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = "Media bo'lim"
+        verbose_name_plural = "Media bo'limlar"
+
+    def __str__(self):
+        return f"{self.name} — {self.business.name}"
+
+
+class ContentBlock(models.Model):
+    """A media / content block inside a ``MediaSection`` (image, uploaded or
+    embedded video, or text). Video access is tier-gated (``banner_video``).
+    Ordered like ``Link``; ``section`` is nullable only for legacy rows created
+    before sections existed (the data migration groups those into a default
+    section)."""
     BLOCK_TYPES = [('image', 'Rasm'), ('video', 'Video'), ('text', 'Matn')]
 
     business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='content_blocks')
+    section = models.ForeignKey(MediaSection, on_delete=models.CASCADE, null=True, blank=True, related_name='blocks')
     block_type = models.CharField(max_length=10, choices=BLOCK_TYPES)
     order = models.PositiveIntegerField(default=0)
     title = models.CharField(max_length=200, blank=True)

@@ -37,7 +37,9 @@ PERIOD_DAYS = {
 }
 
 # Feature matrix. analytics/qr use string levels: 'none' | 'partial' | 'full'
-# (qr: 'none' | 'png' | 'full'). banners = max number of content blocks.
+# (qr: 'none' | 'png' | 'full'). banners = max number of media SECTIONS per
+# business (each section holds up to businesses.models.MAX_BLOCKS_PER_SECTION
+# blocks).
 FEATURES = {
     FREE: {
         'profile_limit': 1,

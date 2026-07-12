@@ -20,10 +20,15 @@ from .access import (
     ROLE_ADMIN, ROLE_EDITOR, ROLE_VIEWER,
     accessible_businesses, claim_pending_invites, get_business_or_404, require_role,
 )
-from .models import Business, Link, ContentBlock, BusinessMembership, Event, SiteSettings, ContactMessage, NfcOrder, StaticPage, BlogPost
+from .models import (
+    MAX_BLOCKS_PER_SECTION,
+    Business, Link, ContentBlock, MediaSection, BusinessMembership, Event,
+    SiteSettings, ContactMessage, NfcOrder, StaticPage, BlogPost,
+)
 from .serializers import (
     BusinessSerializer,
     ContentBlockSerializer,
+    MediaSectionSerializer,
     MembershipSerializer,
     MembershipInviteSerializer,
     MembershipRoleSerializer,
@@ -267,9 +272,53 @@ class BusinessAssetView(APIView):
         return resp
 
 
+class MediaSectionListCreateView(generics.ListCreateAPIView):
+    """List/create media sections for a business. Section count is gated by the
+    ``banners`` entitlement (the page owner's tier)."""
+    serializer_class = MediaSectionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        business, _ = get_business_or_404(self.request.user, self.kwargs['path'], ROLE_VIEWER)
+        return MediaSection.objects.filter(business=business).prefetch_related('blocks')
+
+    def perform_create(self, serializer):
+        business, _ = get_business_or_404(self.request.user, self.kwargs['path'], ROLE_EDITOR)
+        # Tier limits follow the page owner's plan, not the editing member's.
+        feats = get_entitlements(business.owner)['features']
+        if MediaSection.objects.filter(business=business).count() >= feats['banners']:
+            raise PermissionDenied({'reason': 'section_limit', 'limit': feats['banners']})
+        last = MediaSection.objects.filter(business=business).aggregate(m=Max('order'))['m'] or 0
+        serializer.save(business=business, order=last + 1)
+
+
+class MediaSectionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Rename / re-cover / delete a section (editor+). Deleting cascades to its
+    blocks."""
+    serializer_class = MediaSectionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        section = get_object_or_404(MediaSection, pk=self.kwargs['pk'])
+        require_role(self.request.user, section.business, ROLE_EDITOR)
+        return section
+
+
+class MediaSectionReorderView(APIView):
+    """Persist a new section order: body ``{"order": [id, id, ...]}``."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, path):
+        business, _ = get_business_or_404(request.user, path, ROLE_EDITOR)
+        for index, section_id in enumerate(request.data.get('order', [])):
+            MediaSection.objects.filter(id=section_id, business=business).update(order=index)
+        return Response({'ok': True})
+
+
 class ContentBlockListCreateView(generics.ListCreateAPIView):
-    """List/create content blocks for the owner's business. Creation is gated by
-    the ``banners`` count limit and, for video blocks, ``banner_video``."""
+    """List/create content blocks. A block must target one of the business's own
+    sections; each section holds at most ``MAX_BLOCKS_PER_SECTION`` blocks and
+    video blocks additionally need ``banner_video``."""
     serializer_class = ContentBlockSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -281,8 +330,11 @@ class ContentBlockListCreateView(generics.ListCreateAPIView):
         business, _ = get_business_or_404(self.request.user, self.kwargs['path'], ROLE_EDITOR)
         # Tier limits follow the page owner's plan, not the editing member's.
         feats = get_entitlements(business.owner)['features']
-        if ContentBlock.objects.filter(business=business).count() >= feats['banners']:
-            raise PermissionDenied({'reason': 'banner_limit', 'limit': feats['banners']})
+        section = serializer.validated_data.get('section')
+        if section is None or section.business_id != business.id:
+            raise ValidationError({'reason': 'invalid_section'})
+        if section.blocks.count() >= MAX_BLOCKS_PER_SECTION:
+            raise PermissionDenied({'reason': 'section_block_limit', 'limit': MAX_BLOCKS_PER_SECTION})
         if serializer.validated_data.get('block_type') == 'video' and not feats['banner_video']:
             raise PermissionDenied({'reason': 'banner_video'})
         last = ContentBlock.objects.filter(business=business).aggregate(m=Max('order'))['m'] or 0

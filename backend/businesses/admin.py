@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.db.models import Count
 from django.utils.html import format_html
-from .models import Business, Link, ContentBlock, BusinessMembership, Event, MenuItem, SiteSettings, ContactMessage, NfcOrder, StaticPage, BlogPost
+from .models import Business, Link, ContentBlock, MediaSection, BusinessMembership, Event, MenuItem, SiteSettings, ContactMessage, NfcOrder, StaticPage, BlogPost
 
 
 @admin.register(BusinessMembership)
@@ -23,7 +23,16 @@ class LinkInline(admin.TabularInline):
 class ContentBlockInline(admin.TabularInline):
     model = ContentBlock
     extra = 0
-    fields = ['block_type', 'title', 'text', 'image', 'video', 'embed_url', 'order']
+    fields = ['section', 'block_type', 'title', 'text', 'image', 'video', 'embed_url', 'order']
+
+
+@admin.register(MediaSection)
+class MediaSectionAdmin(admin.ModelAdmin):
+    list_display = ['name', 'business', 'order', 'created_at']
+    list_filter = ['created_at']
+    list_editable = ['order']
+    search_fields = ['name', 'business__name', 'business__path']
+    autocomplete_fields = ['business']
 
 
 @admin.register(Business)

@@ -1,7 +1,10 @@
 import re
 
 from rest_framework import serializers
-from .models import Business, Link, ContentBlock, BusinessMembership, ContactMessage, NfcOrder, StaticPage, BlogPost
+from .models import (
+    Business, Link, ContentBlock, MediaSection, BusinessMembership,
+    ContactMessage, NfcOrder, StaticPage, BlogPost,
+)
 
 
 def user_display(user):
@@ -22,9 +25,15 @@ class LinkSerializer(serializers.ModelSerializer):
 class ContentBlockSerializer(serializers.ModelSerializer):
     MAX_VIDEO_BYTES = 50 * 1024 * 1024  # 50 MB
 
+    # Ownership of the section (it must belong to the same business) is
+    # validated in the create view, which also enforces the per-section cap.
+    section = serializers.PrimaryKeyRelatedField(
+        queryset=MediaSection.objects.all(), required=False, allow_null=True,
+    )
+
     class Meta:
         model = ContentBlock
-        fields = ['id', 'block_type', 'order', 'title', 'text', 'image', 'video', 'embed_url']
+        fields = ['id', 'block_type', 'section', 'order', 'title', 'text', 'image', 'video', 'embed_url']
         read_only_fields = ['order']
 
     def validate(self, attrs):
@@ -33,6 +42,23 @@ class ContentBlockSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'reason': 'video_too_large'})
         return attrs
 
+
+class MediaSectionSerializer(serializers.ModelSerializer):
+    cover = serializers.SerializerMethodField()
+    cover_upload = serializers.ImageField(write_only=True, required=False, source='cover')
+    blocks = ContentBlockSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = MediaSection
+        fields = ['id', 'name', 'cover', 'cover_upload', 'order', 'blocks']
+        read_only_fields = ['order']
+
+    def get_cover(self, obj):
+        if obj.cover:
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.cover.url) if request else obj.cover.url
+        return None
+
 class BusinessSerializer(serializers.ModelSerializer):
     links = LinkSerializer(many=True, required=False)
     logo = serializers.SerializerMethodField()
@@ -40,7 +66,7 @@ class BusinessSerializer(serializers.ModelSerializer):
     logo_remove = serializers.BooleanField(write_only=True, required=False, default=False)
     branding_removed = serializers.SerializerMethodField()
     verified = serializers.SerializerMethodField()
-    content_blocks = serializers.SerializerMethodField()
+    media_sections = serializers.SerializerMethodField()
     # Requesting user's role on this page ('owner' | admin | editor | viewer).
     role = serializers.SerializerMethodField()
     # Owner label, shown on the dashboard for pages shared *with* you.
@@ -50,7 +76,7 @@ class BusinessSerializer(serializers.ModelSerializer):
         model = Business
         fields = ['id', 'path', 'name', 'description', 'logo', 'logo_upload', 'logo_remove',
                   'template', 'theme', 'is_locked', 'is_pinned', 'branding_removed', 'verified',
-                  'role', 'owner_name', 'created_at', 'links', 'content_blocks']
+                  'role', 'owner_name', 'created_at', 'links', 'media_sections']
         read_only_fields = ['is_locked', 'is_pinned']
 
     def get_role(self, obj):
@@ -71,8 +97,12 @@ class BusinessSerializer(serializers.ModelSerializer):
         from .access import role_for
         return user_display(obj.owner) if role_for(user, obj) else None
 
-    def get_content_blocks(self, obj):
-        return ContentBlockSerializer(obj.content_blocks.all(), many=True, context=self.context).data
+    def get_media_sections(self, obj):
+        # Sections with at least one block — empty sections only matter in the
+        # editor, which uses the dedicated /sections/ endpoint.
+        qs = obj.media_sections.prefetch_related('blocks')
+        data = MediaSectionSerializer(qs, many=True, context=self.context).data
+        return [s for s in data if s['blocks']]
 
     def _owner_features(self, obj):
         """Owner tier features, cached per-request so a dashboard list doesn't

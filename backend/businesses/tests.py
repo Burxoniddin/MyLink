@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 from billing import entitlements as ent
 from billing.models import Subscription
 from billing.services import sync_locks
-from businesses.models import Business, BusinessMembership, ContentBlock, Event, NfcOrder
+from businesses.models import MAX_BLOCKS_PER_SECTION, Business, BusinessMembership, ContentBlock, Event, MediaSection, NfcOrder
 from businesses.access import claim_pending_invites
 
 User = get_user_model()
@@ -275,7 +275,10 @@ class AssetTests(TestCase):
 
 
 @override_settings(CACHES=LOCMEM)
-class ContentBlockTests(TestCase):
+class MediaSectionTests(TestCase):
+    """Media sections (grouped blocks): section count is tier-gated (``banners``),
+    each section holds at most MAX_BLOCKS_PER_SECTION blocks."""
+
     def setUp(self):
         self.user = User.objects.create_user(phone_number='+998901114400')
         self.client = APIClient()
@@ -286,61 +289,104 @@ class ContentBlockTests(TestCase):
     def grant(self, tier):
         Subscription.objects.create(user=self.user, tier=tier, expires_at=None)
 
-    def _add(self, **data):
-        return self.client.post('/api/businesses/brand/blocks/', data, format='json')
+    def _add_section(self, name='Filiallar'):
+        return self.client.post('/api/businesses/brand/sections/', {'name': name}, format='json')
 
-    def test_free_cannot_create(self):
-        res = self._add(block_type='text', text='hi')
+    def _add_block(self, section_id, **data):
+        return self.client.post('/api/businesses/brand/blocks/', {'section': section_id, **data}, format='json')
+
+    def test_free_cannot_create_section(self):
+        res = self._add_section()
         self.assertEqual(res.status_code, 403)
-        self.assertEqual(res.data['reason'], 'banner_limit')
+        self.assertEqual(res.data['reason'], 'section_limit')
 
-    def test_oddiy_limit_three(self):
+    def test_oddiy_section_limit_three(self):
         self.grant(ent.ODDIY)
         for i in range(3):
-            self.assertEqual(self._add(block_type='text', text=f't{i}').status_code, 201)
-        over = self._add(block_type='text', text='x')
+            self.assertEqual(self._add_section(f's{i}').status_code, 201)
+        over = self._add_section('x')
         self.assertEqual(over.status_code, 403)
-        self.assertEqual(over.data['reason'], 'banner_limit')
+        self.assertEqual(over.data['reason'], 'section_limit')
+
+    def test_section_block_hard_limit_ten(self):
+        self.grant(ent.PRO)
+        sid = self._add_section().data['id']
+        for i in range(MAX_BLOCKS_PER_SECTION):
+            self.assertEqual(self._add_block(sid, block_type='text', text=f't{i}').status_code, 201)
+        over = self._add_block(sid, block_type='text', text='x')
+        self.assertEqual(over.status_code, 403)
+        self.assertEqual(over.data['reason'], 'section_block_limit')
+
+    def test_block_requires_own_section(self):
+        self.grant(ent.PRO)
+        # No section at all → rejected.
+        res = self.client.post('/api/businesses/brand/blocks/', {'block_type': 'text', 'text': 'x'}, format='json')
+        self.assertEqual(res.status_code, 400)
+        # A section belonging to another business → rejected.
+        other = User.objects.create_user(phone_number='+998909994433')
+        Subscription.objects.create(user=other, tier=ent.PRO, expires_at=None)
+        other_biz = make_business(other, 'theirs', 'Theirs')
+        foreign = MediaSection.objects.create(business=other_biz, name='X')
+        res = self._add_block(foreign.id, block_type='text', text='x')
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.data['reason'], 'invalid_section')
 
     def test_oddiy_video_forbidden(self):
         self.grant(ent.ODDIY)
-        res = self._add(block_type='video', embed_url='https://youtu.be/x')
+        sid = self._add_section().data['id']
+        res = self._add_block(sid, block_type='video', embed_url='https://youtu.be/x')
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.data['reason'], 'banner_video')
 
     def test_pro_video_ok_and_order(self):
         self.grant(ent.PRO)
-        a = self._add(block_type='video', embed_url='https://youtu.be/x')
-        b = self._add(block_type='text', text='hello')
+        sid = self._add_section().data['id']
+        a = self._add_block(sid, block_type='video', embed_url='https://youtu.be/x')
+        b = self._add_block(sid, block_type='text', text='hello')
         self.assertEqual(a.status_code, 201)
         self.assertEqual(b.status_code, 201)
         self.assertLess(a.data['order'], b.data['order'])
 
-    def test_reorder(self):
+    def test_section_reorder(self):
         self.grant(ent.PRO)
-        ids = [self._add(block_type='text', text=f't{i}').data['id'] for i in range(3)]
-        self.client.post('/api/businesses/brand/blocks/reorder/', {'order': list(reversed(ids))}, format='json')
-        res = self.client.get('/api/businesses/brand/blocks/')
-        self.assertEqual([b['id'] for b in res.data], list(reversed(ids)))
+        ids = [self._add_section(f's{i}').data['id'] for i in range(3)]
+        self.client.post('/api/businesses/brand/sections/reorder/', {'order': list(reversed(ids))}, format='json')
+        res = self.client.get('/api/businesses/brand/sections/')
+        self.assertEqual([s['id'] for s in res.data], list(reversed(ids)))
 
-    def test_delete(self):
+    def test_section_rename_and_delete_cascades(self):
         self.grant(ent.PRO)
-        bid = self._add(block_type='text', text='x').data['id']
+        sid = self._add_section('Old').data['id']
+        self._add_block(sid, block_type='text', text='x')
+        res = self.client.patch(f'/api/sections/{sid}/', {'name': 'New'}, format='json')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['name'], 'New')
+        self.assertEqual(self.client.delete(f'/api/sections/{sid}/').status_code, 204)
+        self.assertEqual(ContentBlock.objects.filter(business=self.biz).count(), 0)
+
+    def test_block_delete(self):
+        self.grant(ent.PRO)
+        sid = self._add_section().data['id']
+        bid = self._add_block(sid, block_type='text', text='x').data['id']
         self.assertEqual(self.client.delete(f'/api/blocks/{bid}/').status_code, 204)
         self.assertEqual(ContentBlock.objects.filter(business=self.biz).count(), 0)
 
-    def test_blocks_in_public_payload(self):
+    def test_sections_in_public_payload(self):
         self.grant(ent.PRO)
-        self._add(block_type='text', title='Promo', text='Sale')
+        sid = self._add_section('Promo bo\'lim').data['id']
+        self._add_block(sid, block_type='text', title='Promo', text='Sale')
+        self._add_section('Empty')  # blocksiz bo'lim publicda ko'rinmaydi
         res = self.client.get('/api/public/brand/')
-        self.assertEqual(len(res.data['content_blocks']), 1)
-        self.assertEqual(res.data['content_blocks'][0]['title'], 'Promo')
+        self.assertEqual(len(res.data['media_sections']), 1)
+        section = res.data['media_sections'][0]
+        self.assertEqual(section['name'], "Promo bo'lim")
+        self.assertEqual(section['blocks'][0]['title'], 'Promo')
 
     def test_cannot_create_on_others(self):
-        other = User.objects.create_user(phone_number='+998909994433')
+        other = User.objects.create_user(phone_number='+998909994434')
         Subscription.objects.create(user=other, tier=ent.PRO, expires_at=None)
-        make_business(other, 'theirs', 'Theirs')
-        res = self.client.post('/api/businesses/theirs/blocks/', {'block_type': 'text', 'text': 'x'}, format='json')
+        make_business(other, 'theirs2', 'Theirs2')
+        res = self.client.post('/api/businesses/theirs2/sections/', {'name': 'x'}, format='json')
         self.assertEqual(res.status_code, 404)
 
 

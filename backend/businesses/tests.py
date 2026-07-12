@@ -273,6 +273,26 @@ class AssetTests(TestCase):
         res = self.client.get('/api/businesses/theirs/qr.png')
         self.assertEqual(res.status_code, 404)
 
+    def test_card_designs(self):
+        from businesses.qr import CARD_DESIGNS
+        Subscription.objects.create(user=self.user, tier=ent.PRO, expires_at=None)
+        for design in CARD_DESIGNS:
+            res = self.client.get(f'/api/businesses/brand/card.pdf?design={design}')
+            self.assertEqual(res.status_code, 200, design)
+            self.assertTrue(res.content.startswith(b'%PDF'), design)
+            self.assertIn(f'card-{design}.pdf', res['Content-Disposition'], design)
+
+    def test_card_unknown_design_falls_back_to_classic(self):
+        Subscription.objects.create(user=self.user, tier=ent.PRO, expires_at=None)
+        res = self.client.get('/api/businesses/brand/card.pdf?design=nope')
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('card-classic.pdf', res['Content-Disposition'])
+
+    def test_card_design_still_pro_gated(self):
+        Subscription.objects.create(user=self.user, tier=ent.ODDIY, expires_at=None)
+        res = self.client.get('/api/businesses/brand/card.pdf?design=moda')
+        self.assertEqual(res.status_code, 403)
+
 
 @override_settings(CACHES=LOCMEM)
 class MediaSectionTests(TestCase):

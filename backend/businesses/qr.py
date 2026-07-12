@@ -232,7 +232,7 @@ def qr_pdf_bytes(business, url):
     return buf.getvalue()
 
 
-def _draw_logo_circle(c, business, cx, cy, r):
+def _draw_logo_circle(c, business, cx, cy, r, accent='#4f46e5'):
     """White circle + the logo (or initial) centred at (cx, cy)."""
     c.setFillColor(colors.white)
     c.circle(cx, cy, r, stroke=0, fill=1)
@@ -246,35 +246,59 @@ def _draw_logo_circle(c, business, cx, cy, r):
             return
         except Exception:
             pass
-    c.setFillColor(colors.HexColor('#4f46e5'))
+    c.setFillColor(colors.HexColor(accent))
     c.setFont('Helvetica-Bold', r * 1.1)
     c.drawCentredString(cx, cy - r * 0.38, (business.name or 'M').strip()[:1].upper())
 
 
-def card_pdf_bytes(business, url):
-    """Double-sided 85x55 mm business card.
+# Vizitka colour designs, one per page-template family — the picker in the
+# editor's Promomaterial tab shows the same palette swatches. 'light' means a
+# light front, so front text flips to dark ink.
+CARD_DESIGNS = {
+    'classic':  {'front1': '#4f46e5', 'front2': '#7c3aad', 'accent': '#4f46e5', 'light': False},
+    'restoran': {'front1': '#2e2017', 'front2': '#160f0b', 'accent': '#f0a23c', 'light': False},
+    'moda':     {'front1': '#faf8f3', 'front2': '#efe9dd', 'accent': '#9c8466', 'light': True},
+    'klinika':  {'front1': '#2aa79f', 'front2': '#17615c', 'accent': '#2aa79f', 'light': False},
+    'avto':     {'front1': '#1c2028', 'front2': '#0a0b0e', 'accent': '#e11d2a', 'light': False},
+    'fitnes':   {'front1': '#1c1f18', 'front2': '#0b0c0a', 'accent': '#b6f23a', 'light': False},
+}
 
-    Front: indigo gradient, logo, name + (short) description, path, MyLink mark.
+
+def _with_alpha(hex_color, alpha):
+    r, g, b = colors.HexColor(hex_color).rgb()
+    return colors.Color(r, g, b, alpha=alpha)
+
+
+def card_pdf_bytes(business, url, design='classic'):
+    """Double-sided 85x55 mm business card in one of the ``CARD_DESIGNS``
+    palettes (unknown slugs fall back to classic).
+
+    Front: brand gradient, logo, name + (short) description, path, MyLink mark.
     Back: white, a QR in a rounded panel, scan label + path, MyLink mark."""
+    d = CARD_DESIGNS.get(design) or CARD_DESIGNS['classic']
+    ink = colors.HexColor('#1c1813') if d['light'] else colors.white
+    ink_soft = _with_alpha('#1c1813', 0.75) if d['light'] else colors.Color(1, 1, 1, alpha=0.85)
+    corner = _with_alpha(d['accent'], 0.14) if d['light'] else colors.Color(1, 1, 1, alpha=0.10)
+
     buf = BytesIO()
     card_w, card_h = 85 * mm, 55 * mm
     c = canvas.Canvas(buf, pagesize=(card_w, card_h))
 
     # ---- FRONT ----
     c.linearGradient(0, card_h, card_w, 0,
-                     (colors.HexColor('#4f46e5'), colors.HexColor('#7c3aad')), extend=True)
+                     (colors.HexColor(d['front1']), colors.HexColor(d['front2'])), extend=True)
     # faint corner accents
-    c.setFillColor(colors.Color(1, 1, 1, alpha=0.10))
+    c.setFillColor(corner)
     c.circle(card_w - 6 * mm, card_h - 4 * mm, 16 * mm, stroke=0, fill=1)
     c.circle(8 * mm, 4 * mm, 12 * mm, stroke=0, fill=1)
 
-    _draw_logo_circle(c, business, 16 * mm, card_h - 18 * mm, 9 * mm)
+    _draw_logo_circle(c, business, 16 * mm, card_h - 18 * mm, 9 * mm, accent=d['accent'])
 
-    c.setFillColor(colors.white)
+    c.setFillColor(ink)
     c.setFont('Helvetica-Bold', 15)
     c.drawString(30 * mm, card_h - 17 * mm, business.name[:22])
     if business.description:
-        c.setFillColor(colors.Color(1, 1, 1, alpha=0.85))
+        c.setFillColor(ink_soft)
         c.setFont('Helvetica', 8)
         c.drawString(30 * mm, card_h - 21.5 * mm, business.description[:36])
 
@@ -293,16 +317,16 @@ def card_pdf_bytes(business, url):
     for dot, label in rows:
         c.setFillColor(dot)
         c.circle(9 * mm, cy + 1 * mm, 1.4 * mm, stroke=0, fill=1)
-        c.setFillColor(colors.white)
+        c.setFillColor(ink)
         c.setFont('Helvetica-Bold', 8.5)
         c.drawString(12.5 * mm, cy, label)
         cy -= 6 * mm
 
-    c.setFillColor(colors.white)
+    c.setFillColor(ink)
     c.setFont('Helvetica-Bold', 9.5)
     c.drawString(7 * mm, 7 * mm, url.replace('https://', '').replace('http://', ''))
     c.setFont('Helvetica', 7.5)
-    c.setFillColor(colors.Color(1, 1, 1, alpha=0.8))
+    c.setFillColor(ink_soft)
     c.drawRightString(card_w - 7 * mm, 7 * mm, 'MyLink.asia')
     c.showPage()
 
@@ -326,7 +350,7 @@ def card_pdf_bytes(business, url):
     c.setFillColor(colors.HexColor('#1f1b4f'))
     c.setFont('Helvetica-Bold', 9)
     c.drawCentredString(card_w / 2, pjy - 5 * mm, 'Skanerlang va kuzating')
-    c.setFillColor(colors.HexColor('#4f46e5'))
+    c.setFillColor(colors.HexColor(d['accent']))
     c.setFont('Helvetica', 8)
     c.drawCentredString(card_w / 2, 5 * mm, url.replace('https://', '').replace('http://', '') + '  ·  MyLink.asia')
 

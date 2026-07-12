@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api';
-import { FaLink, FaArrowLeft, FaEye, FaEdit, FaPalette, FaCog, FaStar, FaRegStar, FaCopy, FaShareAlt, FaQrcode, FaLock, FaFilePdf, FaIdCard, FaLayerGroup, FaUsers, FaPlus, FaTimes, FaSave, FaBars, FaTelegram, FaInstagram, FaFacebook, FaWhatsapp, FaPhone, FaGlobe, FaLinkedin, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaYoutube, FaEnvelope, FaGripLines, FaTiktok, FaYandex, FaMapMarkedAlt, FaDownload } from 'react-icons/fa';
-import { FaXTwitter } from "react-icons/fa6";
-import LinkButton from '../components/LinkButton';
-import ContentBlocks from '../components/ContentBlocks';
+import { FaArrowLeft, FaEye, FaEdit, FaPalette, FaStar, FaRegStar, FaCopy, FaShareAlt, FaQrcode, FaLayerGroup, FaUsers, FaPlus, FaTimes, FaSave, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaGripLines, FaBars } from 'react-icons/fa';
+import { getLinkIcon } from '../lib/linkIcons';
+import { detectPlatform, normalizeUrl } from '../lib/linkUtils';
+import PreviewPane from '../components/PreviewPane';
+import MediaSections from '../components/MediaSections';
+import PromoMaterials from '../components/PromoMaterials';
 import TeamManager from '../components/TeamManager';
 import LogoCropper from '../components/LogoCropper';
 import TemplatePicker from '../components/templates/TemplatePicker';
@@ -57,61 +59,8 @@ const SortableLinkItem = ({ id, link, index, updateLink, removeLink, getPlatform
     );
 };
 
-// Auto-detect platform from URL
-const detectPlatform = (url) => {
-    if (!url) return 'website';
-    const lower = url.toLowerCase();
-    if (lower.includes('t.me') || lower.includes('telegram')) return 'telegram';
-    if (lower.includes('instagram.com') || lower.includes('instagr.am')) return 'instagram';
-    if (lower.includes('facebook.com') || lower.includes('fb.com') || lower.includes('fb.me')) return 'facebook';
-    if (lower.includes('twitter.com') || lower.includes('x.com')) return 'x';
-    if (lower.includes('wa.me') || lower.includes('whatsapp')) return 'whatsapp';
-    if (lower.includes('linkedin.com')) return 'linkedin';
-    if (lower.includes('youtube.com') || lower.includes('youtu.be')) return 'youtube';
-    if (lower.includes('gmail.com') || lower.includes('mail.google.com')) return 'gmail';
-    if (lower.includes('tel:') || /^\+?\d{9,}$/.test(url.replace(/\s/g, ''))) return 'phone';
-    // TikTok detection
-    if (lower.includes('tiktok.com') || lower.includes('vm.tiktok.com')) return 'tiktok';
-    // Yandex Maps detection
-    if (lower.includes('yandex.') && (lower.includes('/maps') || lower.includes('maps.'))) return 'yandex_map';
-    // Google Maps detection
-    if (lower.includes('google.') && lower.includes('maps')) return 'google_map';
-    if (lower.includes('goo.gl/maps') || lower.includes('maps.app.goo.gl')) return 'google_map';
-    return 'website';
-};
-
-// Normalize URL - add https:// if missing
-const normalizeUrl = (url) => {
-    if (!url) return url;
-    const trimmed = url.trim();
-    // Skip if it's a phone number or tel: link
-    if (trimmed.startsWith('tel:') || /^\+?\d{9,}$/.test(trimmed.replace(/\s/g, ''))) {
-        return trimmed.startsWith('tel:') ? trimmed : `tel:${trimmed}`;
-    }
-    // Add https:// if no protocol
-    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
-        return `https://${trimmed}`;
-    }
-    return trimmed;
-};
-
-const getPlatformIcon = (type) => {
-    switch (type) {
-        case 'telegram': return <FaTelegram />;
-        case 'instagram': return <FaInstagram />;
-        case 'facebook': return <FaFacebook />;
-        case 'x': return <FaXTwitter />;
-        case 'whatsapp': return <FaWhatsapp />;
-        case 'linkedin': return <FaLinkedin />;
-        case 'youtube': return <FaYoutube />;
-        case 'gmail': return <FaEnvelope />;
-        case 'phone': return <FaPhone />;
-        case 'tiktok': return <FaTiktok />;
-        case 'yandex_map': return <FaYandex />;
-        case 'google_map': return <FaMapMarkedAlt />;
-        default: return <FaGlobe />;
-    }
-};
+// Editor row icon — same lookup the public templates use.
+const getPlatformIcon = (type) => getLinkIcon(type);
 
 // Sample data for new business preview
 const SAMPLE_DATA = {
@@ -143,10 +92,14 @@ const BusinessDetail = ({ isNew = false }) => {
     const [pinned, setPinned] = useState(false);
     const [role, setRole] = useState(null); // null while new; 'owner'|'admin'|'editor'|'viewer'
     const [copied, setCopied] = useState(false);
-    const [showQr, setShowQr] = useState(false);
-    const [qrPreview, setQrPreview] = useState(null);
-    const [shareOpen, setShareOpen] = useState(false);
-    const [story, setStory] = useState({ open: false, src: null, file: null, busy: false });
+    // Sidebar: open by default, collapsible to an icon-only rail (persisted).
+    const [collapsed, setCollapsed] = useState(() => localStorage.getItem('mylink-sidebar-collapsed') === '1');
+    const toggleCollapsed = () => {
+        setCollapsed((c) => {
+            localStorage.setItem('mylink-sidebar-collapsed', c ? '0' : '1');
+            return !c;
+        });
+    };
 
     // Path availability check
     const [pathStatus, setPathStatus] = useState(null); // null, 'available', 'taken', 'checking'
@@ -241,7 +194,6 @@ const BusinessDetail = ({ isNew = false }) => {
     };
 
     const handleShare = async () => {
-        setShareOpen(false);
         if (navigator.share) {
             try {
                 await navigator.share({ title: business.name, url: publicUrl });
@@ -253,39 +205,6 @@ const BusinessDetail = ({ isNew = false }) => {
         }
     };
 
-    // Build the ready-made Instagram-story image and preview it. From the
-    // preview the user shares it to IG (mobile share sheet) or downloads it.
-    const openStory = async () => {
-        setShareOpen(false);
-        setStory({ open: true, src: null, file: null, busy: true });
-        try {
-            const res = await api.get(`businesses/${business.path}/story.png`, { responseType: 'blob' });
-            const file = new File([res.data], `${business.path}-story.png`, { type: 'image/png' });
-            setStory({ open: true, src: URL.createObjectURL(res.data), file, busy: false });
-        } catch {
-            setStory({ open: false, src: null, file: null, busy: false });
-            toast.error(t('common.error'));
-        }
-    };
-
-    const shareStory = async () => {
-        if (story.file && navigator.canShare && navigator.canShare({ files: [story.file] })) {
-            try {
-                await navigator.share({ files: [story.file], title: business.name });
-                return;
-            } catch {
-                /* dismissed — fall through to download */
-            }
-        }
-        const a = document.createElement('a');
-        a.href = story.src;
-        a.download = `${business.path}-story.png`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        toast.info(t('detail.story_hint'));
-    };
-
     const handlePin = async () => {
         const next = !pinned;
         setPinned(next); // optimistic
@@ -293,38 +212,6 @@ const BusinessDetail = ({ isNew = false }) => {
             await api.post(`businesses/${business.path}/pin/`, { is_pinned: next });
         } catch {
             setPinned(!next); // revert on failure
-        }
-    };
-
-    const qrLevel = entitlements?.features?.qr || 'none';
-    const canQrPng = qrLevel === 'png' || qrLevel === 'full';
-    const canQrFull = qrLevel === 'full';
-
-    const openQr = async () => {
-        setShowQr(true);
-        if (!canQrPng) return;
-        setQrPreview(null); // show loading, then fetch a fresh preview
-        try {
-            const res = await api.get(`businesses/${business.path}/qr.png`, { responseType: 'blob' });
-            setQrPreview(URL.createObjectURL(res.data));
-        } catch {
-            /* preview unavailable — downloads still work */
-        }
-    };
-
-    const downloadAsset = async (seg) => {
-        try {
-            const res = await api.get(`businesses/${business.path}/${seg}`, { responseType: 'blob' });
-            const url = URL.createObjectURL(res.data);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${business.path}-${seg}`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-        } catch {
-            /* ignore download failure */
         }
     };
 
@@ -460,14 +347,31 @@ const BusinessDetail = ({ isNew = false }) => {
         ...(!isNew ? [{ id: 'blocks', label: t('detail.tab_blocks'), icon: <FaLayerGroup /> }] : []),
         { id: 'customize', label: t('detail.tab_customize'), icon: <FaPalette /> },
         ...(canManageTeam ? [{ id: 'team', label: t('detail.tab_team'), icon: <FaUsers /> }] : []),
-        { id: 'advanced', label: t('detail.tab_advanced'), icon: <FaCog />, disabled: true },
-        { id: 'upgrade', label: t('detail.tab_upgrade'), icon: <FaStar />, disabled: true },
+        ...(!isNew ? [{ id: 'promo', label: t('detail.tab_promo'), icon: <FaQrcode /> }] : []),
     ];
 
     // Preview data
     const previewName = formData.name || (isNew ? SAMPLE_DATA.name : t('detail.business_name'));
     const previewDesc = formData.description || (isNew ? SAMPLE_DATA.description : '');
     const previewLinks = links.length > 0 ? links : (isNew ? SAMPLE_DATA.links : []);
+    const previewLogoUrl = useMemo(() => {
+        if (logoFile) return URL.createObjectURL(logoFile);
+        if (logoRemoved) return null;
+        return logoPreview;
+    }, [logoFile, logoRemoved, logoPreview]);
+    useEffect(() => () => {
+        if (previewLogoUrl?.startsWith('blob:')) URL.revokeObjectURL(previewLogoUrl);
+    }, [previewLogoUrl]);
+    const previewPane = (
+        <PreviewPane
+            formData={{ ...formData, name: previewName, description: previewDesc }}
+            links={previewLinks}
+            logoUrl={previewLogoUrl}
+            sections={business?.media_sections || []}
+            verified={!!business?.verified}
+            brandingRemoved={!!business?.branding_removed}
+        />
+    );
 
     if (loading) {
         return <div className="detail-loading"><div className="spinner"></div><p>{t('common.loading')}</p></div>;
@@ -477,7 +381,7 @@ const BusinessDetail = ({ isNew = false }) => {
         <div className="business-detail">
             <div className="detail-layout">
                 {/* Left Sidebar */}
-                <aside className="detail-sidebar">
+                <aside className={`detail-sidebar ${collapsed ? 'collapsed' : ''}`}>
                     <div className="sidebar-header">
                         <Link to="/dashboard" className="back-btn-sidebar">
                             <div className="back-icon-box">
@@ -485,21 +389,29 @@ const BusinessDetail = ({ isNew = false }) => {
                             </div>
                             <span className="back-text">{t('common.back')}</span>
                         </Link>
+                        <button
+                            type="button"
+                            className="sidebar-collapse-btn"
+                            onClick={toggleCollapsed}
+                            title={t('detail.collapse')}
+                            aria-label={t('detail.collapse')}
+                        >
+                            <FaBars />
+                        </button>
                     </div>
 
                     <nav className="sidebar-tabs">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
-                                className={`tab-item ${activeTab === tab.id ? 'active' : ''} ${tab.disabled ? 'disabled' : ''}`}
-                                onClick={() => !tab.disabled && setActiveTab(tab.id)}
-                                disabled={tab.disabled}
+                                className={`tab-item ${activeTab === tab.id ? 'active' : ''}`}
+                                onClick={() => setActiveTab(tab.id)}
+                                title={tab.label}
                             >
                                 <span className={`tab-icon-box ${activeTab === tab.id ? 'active' : ''}`}>
                                     {tab.icon}
                                 </span>
                                 <span className="tab-label">{tab.label}</span>
-                                {tab.disabled && <span className="soon-badge">{t('detail.soon')}</span>}
                             </button>
                         ))}
                     </nav>
@@ -518,77 +430,33 @@ const BusinessDetail = ({ isNew = false }) => {
                 <main className="detail-content">
                     {!isNew && business && (
                         <div className="detail-toolbar">
-                            <button type="button" className="toolbar-btn" onClick={handleCopy}>
-                                {copied ? <FaCheck /> : <FaCopy />}
-                                <span>{copied ? t('detail.copied') : t('detail.copy_link')}</span>
-                            </button>
-                            <div className="share-wrap">
-                                <button type="button" className="toolbar-btn" onClick={() => setShareOpen((s) => !s)}>
-                                    <FaShareAlt /> <span>{t('detail.share')}</span>
-                                </button>
-                                {shareOpen && (
-                                    <>
-                                        <div className="share-backdrop" onClick={() => setShareOpen(false)} />
-                                        <div className="share-menu">
-                                            <button type="button" onClick={openStory}>
-                                                <FaInstagram style={{ color: '#e1306c' }} /> {t('detail.share_story')}
-                                            </button>
-                                            <button type="button" onClick={handleCopy}>
-                                                <FaCopy /> {t('detail.copy_link')}
-                                            </button>
-                                            <button type="button" onClick={handleShare}>
-                                                <FaShareAlt /> {t('detail.share_other')}
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                            <a className="toolbar-btn" href={`/${business.path}`} target="_blank" rel="noreferrer">
-                                <FaExternalLinkAlt /> <span>{t('detail.tab_preview')}</span>
-                            </a>
+                            {/* Pin/"qadash" — starred pages float to the top of the dashboard. */}
                             <button type="button" className={`toolbar-btn ${pinned ? 'pinned' : ''}`} onClick={handlePin}>
                                 {pinned ? <FaStar /> : <FaRegStar />}
                                 <span>{pinned ? t('detail.pinned') : t('detail.pin')}</span>
                             </button>
-                            <button type="button" className="toolbar-btn" onClick={openQr}>
-                                <FaQrcode /> <span>{t('detail.qr_button')}</span>
-                            </button>
                         </div>
                     )}
                     {activeTab === 'preview' && (
-                        <div className="preview-section">
-                            <div className="preview-phone">
-                                {(logoPreview || logoFile) ? (
-                                    <img src={logoFile ? URL.createObjectURL(logoFile) : logoPreview} className="preview-logo" alt="" />
-                                ) : (
-                                    <div className="preview-logo-placeholder">
-                                        {previewName.charAt(0)}
-                                    </div>
-                                )}
-                                <h2 className="preview-name">{previewName}</h2>
-                                {previewDesc && <p className="preview-desc">{previewDesc}</p>}
-                                <div className="preview-links">
-                                    {previewLinks.map((link, i) => (
-                                        <LinkButton key={i} link={{ ...link, icon_type: detectPlatform(link.url) }} index={i} />
-                                    ))}
-                                </div>
-                                <div className="preview-footer">
-                                    <span className="powered-text">Powered by</span>
-                                    <img src="/logo.png" alt="MyLink" className="footer-brand-logo" />
-                                    <strong>MyLink</strong>
-                                </div>
-                            </div>
-
-                            {/* View Site Button */}
+                        <div className="preview-section pv-layout">
+                            {previewPane}
                             {!isNew && business && (
-                                <a
-                                    href={`/${business.path}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="view-site-btn"
-                                >
-                                    <FaExternalLinkAlt /> {t('detail.view_site')}
-                                </a>
+                                <div className="pv-actions">
+                                    <a
+                                        href={`/${business.path}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="pv-action-btn primary"
+                                    >
+                                        <FaExternalLinkAlt /> {t('detail.view_site')}
+                                    </a>
+                                    <button type="button" className="pv-action-btn" onClick={handleShare}>
+                                        <FaShareAlt /> {t('detail.share')}
+                                    </button>
+                                    <button type="button" className="pv-action-btn" onClick={handleCopy}>
+                                        {copied ? <FaCheck /> : <FaCopy />} {copied ? t('detail.copied') : t('detail.copy_link')}
+                                    </button>
+                                </div>
                             )}
                         </div>
                     )}
@@ -749,29 +617,39 @@ const BusinessDetail = ({ isNew = false }) => {
 
                     {activeTab === 'blocks' && !isNew && business && (
                         <div className="edit-section">
-                            <ContentBlocks path={business.path} />
+                            <MediaSections
+                                path={business.path}
+                                onChanged={(sections) => setBusiness((b) => (b ? { ...b, media_sections: sections } : b))}
+                            />
                         </div>
                     )}
 
                     {activeTab === 'customize' && (
                         <div className="edit-section">
-                            <TemplatePicker
-                                value={formData.template}
-                                onChange={(tpl) => setFormData({ ...formData, template: tpl })}
-                            />
-                            {formData.template === 'classic' && (
-                                <ThemePicker
-                                    value={formData.theme}
-                                    onChange={(id) => setFormData({ ...formData, theme: id })}
-                                    locked={!entitlements?.features?.color_edit}
-                                />
-                            )}
-                            {canEdit && (
-                                <button className="save-btn" style={{ marginTop: 24 }} onClick={handleSave}
-                                    disabled={saving || (isNew && pathStatus === 'taken')}>
-                                    {saving ? t('detail.saving') : t('common.save')}
-                                </button>
-                            )}
+                            <div className="customize-layout">
+                                <div className="customize-controls">
+                                    <TemplatePicker
+                                        value={formData.template}
+                                        onChange={(tpl) => setFormData({ ...formData, template: tpl })}
+                                    />
+                                    {formData.template === 'classic' && (
+                                        <ThemePicker
+                                            value={formData.theme}
+                                            onChange={(id) => setFormData({ ...formData, theme: id })}
+                                            locked={!entitlements?.features?.color_edit}
+                                        />
+                                    )}
+                                    {canEdit && (
+                                        <button className="save-btn" style={{ marginTop: 24 }} onClick={handleSave}
+                                            disabled={saving || (isNew && pathStatus === 'taken')}>
+                                            {saving ? t('detail.saving') : t('common.save')}
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="customize-preview">
+                                    {previewPane}
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -781,66 +659,13 @@ const BusinessDetail = ({ isNew = false }) => {
                         </div>
                     )}
 
-                    {(activeTab === 'advanced' || activeTab === 'upgrade') && (
-                        <div className="coming-soon-section">
-                            <div className="coming-icon">🚀</div>
-                            <h2>{t('detail.soon')}</h2>
-                            <p>{t('detail.soon_section', { section: tabs.find(t2 => t2.id === activeTab)?.label })}</p>
+                    {activeTab === 'promo' && !isNew && business && (
+                        <div className="edit-section">
+                            <PromoMaterials path={business.path} name={business.name} />
                         </div>
                     )}
                 </main>
             </div>
-
-            {showQr && (
-                <div className="qr-modal-overlay" onClick={() => setShowQr(false)}>
-                    <div className="qr-modal" onClick={(e) => e.stopPropagation()}>
-                        <button type="button" className="qr-modal-close" onClick={() => setShowQr(false)} aria-label="close">
-                            <FaTimes />
-                        </button>
-                        <h2>{t('detail.qr_title')}</h2>
-
-                        {canQrPng ? (
-                            <>
-                                <div className="qr-preview">
-                                    {qrPreview
-                                        ? <img src={qrPreview} alt="QR" />
-                                        : <div className="spinner" />}
-                                </div>
-                                <div className="qr-actions">
-                                    <button type="button" className="qr-dl" onClick={() => downloadAsset('qr.png')}>
-                                        <FaQrcode /> {t('detail.qr_png')}
-                                    </button>
-                                    {canQrFull ? (
-                                        <>
-                                            <button type="button" className="qr-dl" onClick={() => downloadAsset('qr.pdf')}>
-                                                <FaFilePdf /> {t('detail.qr_pdf')}
-                                            </button>
-                                            <button type="button" className="qr-dl" onClick={() => downloadAsset('card.pdf')}>
-                                                <FaIdCard /> {t('detail.qr_card')}
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Link to="/pricing" className="qr-dl locked">
-                                                <FaLock /> {t('detail.qr_pdf')} · {t('detail.qr_pro')}
-                                            </Link>
-                                            <Link to="/pricing" className="qr-dl locked">
-                                                <FaLock /> {t('detail.qr_card')} · {t('detail.qr_pro')}
-                                            </Link>
-                                        </>
-                                    )}
-                                </div>
-                            </>
-                        ) : (
-                            <div className="qr-upsell">
-                                <FaLock className="qr-upsell-icon" />
-                                <p>{t('detail.qr_free')}</p>
-                                <Link to="/pricing" className="qr-dl">{t('limit.see_plans')}</Link>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
 
             {cropSrc && (
                 <LogoCropper
@@ -852,24 +677,6 @@ const BusinessDetail = ({ isNew = false }) => {
                         setCropSrc(null);
                     }}
                 />
-            )}
-
-            {story.open && (
-                <div className="qr-modal-overlay" onClick={() => setStory({ open: false, src: null, file: null, busy: false })}>
-                    <div className="story-modal" onClick={(e) => e.stopPropagation()}>
-                        <button type="button" className="qr-modal-close" onClick={() => setStory({ open: false, src: null, file: null, busy: false })} aria-label="close">
-                            <FaTimes />
-                        </button>
-                        <h2><FaInstagram style={{ color: '#e1306c' }} /> {t('detail.story_title')}</h2>
-                        <p className="story-sub">{t('detail.story_desc')}</p>
-                        <div className="story-frame">
-                            {story.busy || !story.src ? <div className="spinner" /> : <img src={story.src} alt="Instagram story" />}
-                        </div>
-                        <button type="button" className="qr-dl" disabled={story.busy || !story.src} onClick={shareStory}>
-                            <FaDownload /> {t('detail.story_share')}
-                        </button>
-                    </div>
-                </div>
             )}
         </div>
     );

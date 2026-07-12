@@ -15,24 +15,6 @@
 }
 .tpl a { color: inherit; text-decoration: none; }
 
-.tpl-toggle {
-    position: fixed; top: 18px; right: 18px; z-index: 20;
-    width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--t-surface-line);
-    background: var(--t-surface); color: var(--t-text); display: grid; place-items: center;
-    cursor: pointer; transition: transform .2s, background .3s, color .3s, border-color .3s;
-}
-.tpl-toggle:hover { transform: rotate(18deg) scale(1.06); }
-.tpl-toggle svg { width: 20px; height: 20px; }
-
-.tpl-share {
-    position: fixed; top: 18px; right: 70px; z-index: 20;
-    width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--t-surface-line);
-    background: var(--t-surface); color: var(--t-text); display: grid; place-items: center;
-    cursor: pointer; transition: transform .2s, background .3s, color .3s;
-}
-.tpl-share:hover { transform: translateY(-2px) scale(1.06); }
-.tpl-share svg { width: 18px; height: 18px; }
-
 .tpl-card {
     position: relative; z-index: 2; width: 100%; max-width: 430px;
     display: flex; flex-direction: column; align-items: center;
@@ -45,7 +27,6 @@
 .tpl-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; position: relative; z-index: 1; }
 
 .tpl-name { font-size: 28px; line-height: 1.15; letter-spacing: -.02em; margin-top: 16px; text-align: center; color: var(--t-text); }
-.tpl-verified { color: #3b82f6; margin-left: 7px; vertical-align: middle; font-size: .62em; }
 .tpl-bio { color: var(--t-muted); font-size: 14.5px; margin-top: 6px; text-align: center; max-width: 32ch; }
 
 .tpl-links { width: 100%; margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
@@ -189,7 +170,6 @@
     --t-text: #10131a; --t-muted: #5d6675; --t-accent: #d61423; --glow: rgba(214,20,35,.18);
 }
 .tpl[data-tpl="avto"] { background: radial-gradient(520px 360px at 50% 112%, var(--glow), transparent 70%), linear-gradient(180deg, var(--t-bg2), var(--t-bg) 60%); background-attachment: fixed; }
-.tpl[data-tpl="avto"] .tpl-toggle { border-radius: 12px; }
 .tpl[data-tpl="avto"] .tpl-card { background: var(--t-card); border: 1px solid var(--t-line); border-radius: 26px; padding: 36px 22px 22px; box-shadow: var(--t-shadow); backdrop-filter: blur(20px); }
 .tpl[data-tpl="avto"] .tpl-card::before { content: ""; position: absolute; top: 0; left: 28px; right: 28px; height: 2px; background: linear-gradient(90deg, transparent, var(--t-accent), transparent); border-radius: 2px; opacity: .8; }
 .tpl[data-tpl="avto"] .tpl-avatar { width: 112px; height: 112px; border-radius: 26px; overflow: hidden; font-family: var(--t-display); font-weight: 800; font-size: 40px; background: linear-gradient(150deg, #2a2f38, #14161b); box-shadow: 0 0 0 1px var(--t-surface-line), inset 0 1px 0 rgba(255,255,255,.08), 0 16px 36px -16px #000; }

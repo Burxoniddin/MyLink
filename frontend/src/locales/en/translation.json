@@ -347,6 +347,9 @@
     "err_generic": "Could not send the invite."
   },
   "theme": {
+    "mode": "Display mode",
+    "mode_dark": "Dark",
+    "mode_light": "Light",
     "title": "Colour palette",
     "locked": "Colour customization is available on the Oddiy and Pro plans.",
     "default": "Default",

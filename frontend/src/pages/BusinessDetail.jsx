@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api';
-import { FaArrowLeft, FaEye, FaEdit, FaPalette, FaStar, FaRegStar, FaCopy, FaShareAlt, FaQrcode, FaLayerGroup, FaUsers, FaPlus, FaTimes, FaSave, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaGripLines, FaBars } from 'react-icons/fa';
+import { FaArrowLeft, FaEye, FaEdit, FaPalette, FaCopy, FaShareAlt, FaQrcode, FaLayerGroup, FaUsers, FaPlus, FaTimes, FaSave, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaGripLines, FaBars, FaSun, FaMoon } from 'react-icons/fa';
 import { getLinkIcon } from '../lib/linkIcons';
 import { detectPlatform, normalizeUrl } from '../lib/linkUtils';
 import PreviewPane from '../components/PreviewPane';
@@ -10,6 +10,7 @@ import PromoMaterials from '../components/PromoMaterials';
 import TeamManager from '../components/TeamManager';
 import LogoCropper from '../components/LogoCropper';
 import TemplatePicker from '../components/templates/TemplatePicker';
+import { TEMPLATE_META } from '../components/templates/templateMeta';
 import ThemePicker from '../components/ThemePicker';
 import { useTranslation } from 'react-i18next';
 import { useEntitlements } from '../context/EntitlementContext';
@@ -80,7 +81,7 @@ const BusinessDetail = ({ isNew = false }) => {
     const { entitlements } = useEntitlements();
     const [activeTab, setActiveTab] = useState('edit');
     const [business, setBusiness] = useState(null);
-    const [formData, setFormData] = useState({ path: '', name: '', description: '', template: 'classic', theme: 'default' });
+    const [formData, setFormData] = useState({ path: '', name: '', description: '', template: 'classic', theme: 'default', theme_mode: '' });
     const [links, setLinks] = useState([]);
     const [logoFile, setLogoFile] = useState(null);
     const [logoPreview, setLogoPreview] = useState(null);
@@ -89,7 +90,6 @@ const BusinessDetail = ({ isNew = false }) => {
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
-    const [pinned, setPinned] = useState(false);
     const [role, setRole] = useState(null); // null while new; 'owner'|'admin'|'editor'|'viewer'
     const [copied, setCopied] = useState(false);
     // Sidebar: open by default, collapsible to an icon-only rail (persisted).
@@ -161,9 +161,8 @@ const BusinessDetail = ({ isNew = false }) => {
         try {
             const res = await api.get(`businesses/${path}/`);
             setBusiness(res.data);
-            setPinned(!!res.data.is_pinned);
             setRole(res.data.role || null);
-            setFormData({ path: res.data.path, name: res.data.name, description: res.data.description || '', template: res.data.template || 'classic', theme: res.data.theme || 'default' });
+            setFormData({ path: res.data.path, name: res.data.name, description: res.data.description || '', template: res.data.template || 'classic', theme: res.data.theme || 'default', theme_mode: res.data.theme_mode || '' });
 
             // Generate IDs for existing links to make them sortable
             const linksWithIds = (res.data.links || []).map((link, idx) => ({
@@ -202,16 +201,6 @@ const BusinessDetail = ({ isNew = false }) => {
             }
         } else {
             handleCopy();
-        }
-    };
-
-    const handlePin = async () => {
-        const next = !pinned;
-        setPinned(next); // optimistic
-        try {
-            await api.post(`businesses/${business.path}/pin/`, { is_pinned: next });
-        } catch {
-            setPinned(!next); // revert on failure
         }
     };
 
@@ -428,15 +417,6 @@ const BusinessDetail = ({ isNew = false }) => {
 
                 {/* Main Content */}
                 <main className="detail-content">
-                    {!isNew && business && (
-                        <div className="detail-toolbar">
-                            {/* Pin/"qadash" — starred pages float to the top of the dashboard. */}
-                            <button type="button" className={`toolbar-btn ${pinned ? 'pinned' : ''}`} onClick={handlePin}>
-                                {pinned ? <FaStar /> : <FaRegStar />}
-                                <span>{pinned ? t('detail.pinned') : t('detail.pin')}</span>
-                            </button>
-                        </div>
-                    )}
                     {activeTab === 'preview' && (
                         <div className="preview-section pv-layout">
                             {previewPane}
@@ -448,13 +428,13 @@ const BusinessDetail = ({ isNew = false }) => {
                                         rel="noreferrer"
                                         className="pv-action-btn primary"
                                     >
-                                        <FaExternalLinkAlt /> {t('detail.view_site')}
+                                        <FaExternalLinkAlt /> <span className="pv-btn-label">{t('detail.view_site')}</span>
                                     </a>
-                                    <button type="button" className="pv-action-btn" onClick={handleShare}>
-                                        <FaShareAlt /> {t('detail.share')}
+                                    <button type="button" className="pv-action-btn icon-btn" onClick={handleShare} title={t('detail.share')}>
+                                        <FaShareAlt /> <span className="pv-btn-label">{t('detail.share')}</span>
                                     </button>
-                                    <button type="button" className="pv-action-btn" onClick={handleCopy}>
-                                        {copied ? <FaCheck /> : <FaCopy />} {copied ? t('detail.copied') : t('detail.copy_link')}
+                                    <button type="button" className="pv-action-btn icon-btn" onClick={handleCopy} title={t('detail.copy_link')}>
+                                        {copied ? <FaCheck /> : <FaCopy />} <span className="pv-btn-label">{copied ? t('detail.copied') : t('detail.copy_link')}</span>
                                     </button>
                                 </div>
                             )}
@@ -632,6 +612,26 @@ const BusinessDetail = ({ isNew = false }) => {
                                         value={formData.template}
                                         onChange={(tpl) => setFormData({ ...formData, template: tpl })}
                                     />
+                                    {/* Owner-chosen dark/light mode — the public page renders in this mode. */}
+                                    <div className="mode-picker">
+                                        <h3>{t('theme.mode')}</h3>
+                                        <div className="mode-btns">
+                                            {['dark', 'light'].map((m) => {
+                                                const effective = formData.theme_mode
+                                                    || (formData.template === 'classic' ? 'dark' : (TEMPLATE_META[formData.template]?.defaultTheme || 'dark'));
+                                                return (
+                                                    <button
+                                                        key={m}
+                                                        type="button"
+                                                        className={`mode-btn ${effective === m ? 'sel' : ''}`}
+                                                        onClick={() => setFormData({ ...formData, theme_mode: m })}
+                                                    >
+                                                        {m === 'dark' ? <FaMoon /> : <FaSun />} {t(`theme.mode_${m}`)}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                     {formData.template === 'classic' && (
                                         <ThemePicker
                                             value={formData.theme}

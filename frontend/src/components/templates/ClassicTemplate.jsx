@@ -10,6 +10,9 @@ import { getPalette } from '../../lib/palettes';
 // and clicks aren't tracked.
 const ClassicTemplate = ({ data, onLinkClick = () => {}, getLogoUrl, toEmbed, t, previewMode = false }) => {
     const palette = getPalette(data.theme);
+    // Owner-chosen mode; classic defaults to dark. In light mode the palette's
+    // dark page background is skipped (accent still colours the buttons).
+    const light = data.theme_mode === 'light';
 
     const linkClick = (link) => (e) => {
         if (previewMode) {
@@ -20,9 +23,12 @@ const ClassicTemplate = ({ data, onLinkClick = () => {}, getLogoUrl, toEmbed, t,
     };
 
     return (
-        <div className="landing-page" style={palette.bg ? { background: palette.bg } : undefined}>
+        <div
+            className={`landing-page ${light ? 'light-theme' : ''}`}
+            style={!light && palette.bg ? { background: palette.bg } : undefined}
+        >
             {/* Animated background — only for the default palette (others set their own bg) */}
-            {!palette.bg && <div className="landing-bg-gradient"></div>}
+            {(light || !palette.bg) && <div className="landing-bg-gradient"></div>}
 
             {/* Main content card */}
             <div className="landing-card fade-in-up">

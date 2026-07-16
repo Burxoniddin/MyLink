@@ -20,6 +20,7 @@ const PreviewPane = ({ formData, links = [], logoUrl = null, sections = [], veri
         logo: logoUrl,
         template: tpl,
         theme: formData.theme,
+        theme_mode: formData.theme_mode || '',
         links: links
             .filter((l) => l.url && l.url.trim() !== '')
             .map((l) => ({ ...l, icon_type: detectPlatform(l.url) })),
@@ -45,7 +46,7 @@ const PreviewPane = ({ formData, links = [], logoUrl = null, sections = [], veri
                         <ProfileTemplate
                             data={data}
                             tpl={tpl}
-                            theme={TEMPLATE_META[tpl]?.defaultTheme || 'dark'}
+                            theme={data.theme_mode || TEMPLATE_META[tpl]?.defaultTheme || 'dark'}
                             previewMode
                             getLogoUrl={getMediaUrl}
                             toEmbed={toEmbed}

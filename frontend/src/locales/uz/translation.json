@@ -347,6 +347,9 @@
     "err_generic": "Taklif qilib bo'lmadi."
   },
   "theme": {
+    "mode": "Ko'rinish rejimi",
+    "mode_dark": "Tungi",
+    "mode_light": "Kunduzgi",
     "title": "Rang palitrasi",
     "locked": "Rang sozlash Oddiy va Pro tarifda mavjud.",
     "default": "Standart",

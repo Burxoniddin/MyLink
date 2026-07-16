@@ -69,7 +69,7 @@ const LandingPage = () => {
             <ProfileTemplate
                 data={data}
                 tpl={tpl}
-                theme={TEMPLATE_META[tpl]?.defaultTheme || 'dark'}
+                theme={data.theme_mode || TEMPLATE_META[tpl]?.defaultTheme || 'dark'}
                 onLinkClick={(title) => track('click', title)}
                 getLogoUrl={getMediaUrl}
                 toEmbed={toEmbed}

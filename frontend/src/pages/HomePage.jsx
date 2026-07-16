@@ -7,8 +7,14 @@ import { useToast } from '../components/Toast';
 import SiteHeader from '../components/site/SiteHeader';
 import SiteFooter from '../components/site/SiteFooter';
 import ClassicTemplate from '../components/templates/ClassicTemplate';
-import { getMediaUrl } from '../lib/media';
+import ProfileTemplate from '../components/templates/ProfileTemplate';
+import { TEMPLATE_META } from '../components/templates/templateMeta';
+import { getMediaUrl, toEmbed } from '../lib/media';
 import './HomePage.css';
+
+// The hero phone shows this REAL public page (live data). If it doesn't
+// exist in this environment, the static sample below is shown instead.
+const DEMO_PATH = 'mybrand';
 
 // Fallback contact details (used until admin fills SiteSettings).
 const FALLBACK = {
@@ -38,13 +44,16 @@ const HomePage = () => {
     const [counts, setCounts] = useState({ businesses: 0, links: 0, users: 0 });
     const [settings, setSettings] = useState(null);
     const [featured, setFeatured] = useState([]);
+    const [demoBiz, setDemoBiz] = useState(null);
     const [sending, setSending] = useState(false);
 
-    // Fetch real stats + admin-editable contact settings + featured clients.
+    // Fetch real stats + admin-editable contact settings + featured clients
+    // + the real showcase page for the hero phone.
     useEffect(() => {
         api.get('public/stats/').then((r) => setCounts(r.data)).catch(() => {});
         api.get('public/settings/').then((r) => setSettings(r.data)).catch(() => {});
         api.get('public/featured/').then((r) => setFeatured(r.data || [])).catch(() => {});
+        api.get(`public/${DEMO_PATH}/`).then((r) => setDemoBiz(r.data)).catch(() => {});
     }, []);
 
     // Arriving from another page with /#section — scroll to it once rendered.
@@ -145,8 +154,8 @@ const HomePage = () => {
     // Seamless marquee needs the list at least twice.
     const marquee = featured.length > 0 ? [...featured, ...featured] : [];
 
-    // Hero demo: a fully-filled REAL page rendered with the actual public
-    // template (verified badge, media section, brand-coloured links).
+    // Static fallback for the hero demo (used until/unless the real
+    // DEMO_PATH page loads).
     const demoData = {
         name: 'Shirin Cakes',
         description: t('home.phone_bio'),
@@ -204,13 +213,29 @@ const HomePage = () => {
                                     <div className="notch"></div>
                                     <div className="screen">
                                         <div className="pf-scale">
-                                            <ClassicTemplate
-                                                data={demoData}
-                                                previewMode
-                                                getLogoUrl={getMediaUrl}
-                                                toEmbed={(x) => x}
-                                                t={t}
-                                            />
+                                            {(() => {
+                                                const heroData = demoBiz || demoData;
+                                                const heroTpl = heroData.template || 'classic';
+                                                return heroTpl === 'classic' ? (
+                                                    <ClassicTemplate
+                                                        data={heroData}
+                                                        previewMode
+                                                        getLogoUrl={getMediaUrl}
+                                                        toEmbed={toEmbed}
+                                                        t={t}
+                                                    />
+                                                ) : (
+                                                    <ProfileTemplate
+                                                        data={heroData}
+                                                        tpl={heroTpl}
+                                                        theme={heroData.theme_mode || TEMPLATE_META[heroTpl]?.defaultTheme || 'dark'}
+                                                        previewMode
+                                                        getLogoUrl={getMediaUrl}
+                                                        toEmbed={toEmbed}
+                                                        t={t}
+                                                    />
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 </div>

@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { FaEnvelope, FaPhoneAlt, FaTelegramPlane } from 'react-icons/fa';
 import api from '../api';
 import { useToast } from '../components/Toast';
 import SiteHeader from '../components/site/SiteHeader';
 import SiteFooter from '../components/site/SiteFooter';
+import ClassicTemplate from '../components/templates/ClassicTemplate';
+import { getMediaUrl } from '../lib/media';
 import './HomePage.css';
 
 // Fallback contact details (used until admin fills SiteSettings).
@@ -14,6 +17,15 @@ const FALLBACK = {
     contact_telegram: '@mylink_asia',
     support_telegram_url: 'https://t.me/mylink_asia',
 };
+
+// Self-contained artwork for the hero demo page (no uploads needed).
+const svgUri = (svg) => `data:image/svg+xml,${encodeURIComponent(svg)}`;
+const DEMO_LOGO = svgUri(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f58529"/><stop offset="0.55" stop-color="#dd2a7b"/><stop offset="1" stop-color="#8134af"/></linearGradient></defs><rect width="96" height="96" fill="url(#g)"/><text x="48" y="63" font-family="Arial, sans-serif" font-size="44" font-weight="bold" text-anchor="middle" fill="#fff">S</text></svg>'
+);
+const DEMO_COVER = svgUri(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" fill="#312e81"/><text x="48" y="64" font-size="44" text-anchor="middle">&#127874;</text></svg>'
+);
 
 const HomePage = () => {
     const { t } = useTranslation();
@@ -133,6 +145,33 @@ const HomePage = () => {
     // Seamless marquee needs the list at least twice.
     const marquee = featured.length > 0 ? [...featured, ...featured] : [];
 
+    // Hero demo: a fully-filled REAL page rendered with the actual public
+    // template (verified badge, media section, brand-coloured links).
+    const demoData = {
+        name: 'Shirin Cakes',
+        description: t('home.phone_bio'),
+        logo: DEMO_LOGO,
+        template: 'classic',
+        theme: 'default',
+        theme_mode: '',
+        verified: true,
+        branding_removed: false,
+        links: [
+            { id: 1, title: 'Instagram', url: 'https://instagram.com/mylink.asia', icon_type: 'instagram' },
+            { id: 2, title: 'Telegram', url: 'https://t.me/mylink_asia', icon_type: 'telegram' },
+            { id: 3, title: t('home.phone_call'), url: 'tel:+998901234567', icon_type: 'phone' },
+            { id: 4, title: t('home.pill_shop'), url: 'https://mylink.asia', icon_type: 'website' },
+        ],
+        media_sections: [
+            {
+                id: 1,
+                name: 'Menyu',
+                cover: DEMO_COVER,
+                blocks: [{ id: 1, block_type: 'text', title: 'Aksiya', text: '-20%' }],
+            },
+        ],
+    };
+
     return (
         <div className="lpc" ref={rootRef}>
             <SiteHeader />
@@ -164,14 +203,14 @@ const HomePage = () => {
                                 <div className="phone">
                                     <div className="notch"></div>
                                     <div className="screen">
-                                        <div className="pf-avatar">D</div>
-                                        <div className="pf-name">@dilnoza.shop</div>
-                                        <div className="pf-bio">{t('home.phone_bio')}</div>
-                                        <div className="pf-links">
-                                            <span className="pf-link"><span className="pf-ico" style={{ background: '#e1306c' }}>In</span> Instagram <span className="chev">›</span></span>
-                                            <span className="pf-link"><span className="pf-ico" style={{ background: '#229ed9' }}>Tg</span> Telegram <span className="chev">›</span></span>
-                                            <span className="pf-link"><span className="pf-ico" style={{ background: '#4f46e5' }}>Sh</span> {t('home.pill_shop')} <span className="chev">›</span></span>
-                                            <span className="pf-link"><span className="pf-ico" style={{ background: '#16a34a' }}>Te</span> {t('home.phone_call')} <span className="chev">›</span></span>
+                                        <div className="pf-scale">
+                                            <ClassicTemplate
+                                                data={demoData}
+                                                previewMode
+                                                getLogoUrl={getMediaUrl}
+                                                toEmbed={(x) => x}
+                                                t={t}
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -297,9 +336,9 @@ const HomePage = () => {
                             <div className="contact-info">
                                 <h2>{t('home.contact_q')}</h2>
                                 <p>{t('home.contact_q_text')}</p>
-                                <a className="ci" href={`mailto:${c.email}`}><span className="ic">@</span><div><b>{c.email}</b><span>{t('home.ci_email')}</span></div></a>
-                                <a className="ci" href={`tel:${c.phone.replace(/\s/g, '')}`}><span className="ic">✆</span><div><b>{c.phone}</b><span>{t('home.ci_phone')}</span></div></a>
-                                <a className="ci" href={c.tgUrl} target="_blank" rel="noreferrer"><span className="ic">◈</span><div><b>{c.telegram}</b><span>{t('home.ci_tg')}</span></div></a>
+                                <a className="ci" href={`mailto:${c.email}`}><span className="ic"><FaEnvelope /></span><div><b>{c.email}</b><span>{t('home.ci_email')}</span></div></a>
+                                <a className="ci" href={`tel:${c.phone.replace(/\s/g, '')}`}><span className="ic"><FaPhoneAlt /></span><div><b>{c.phone}</b><span>{t('home.ci_phone')}</span></div></a>
+                                <a className="ci" href={c.tgUrl} target="_blank" rel="noreferrer"><span className="ic"><FaTelegramPlane /></span><div><b>{c.telegram}</b><span>{t('home.ci_tg')}</span></div></a>
                             </div>
                             <form className="lp-form" onSubmit={onContactSubmit}>
                                 <div className="field"><label>{t('home.form_name')}</label><input name="name" required placeholder={t('home.form_name_ph')} /></div>

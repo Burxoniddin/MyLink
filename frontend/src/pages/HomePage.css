@@ -94,15 +94,11 @@
 .lpc .phone { width: 296px; height: 596px; border-radius: 46px; background: #fff; padding: 12px; box-shadow: 0 40px 80px -28px rgba(79,70,229,.45), 0 0 0 1px var(--line); position: relative; animation: lpc-drift1 8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .lpc .phone { animation: none; } }
 .lpc .phone .notch { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 104px; height: 25px; background: #1a1830; border-radius: 0 0 15px 15px; z-index: 2; }
-.lpc .phone .screen { width: 100%; height: 100%; border-radius: 35px; overflow: hidden; background: linear-gradient(170deg, #f3f2ff, #fff 45%); display: flex; flex-direction: column; align-items: center; padding: 32px 18px 18px; }
-.lpc .pf-avatar { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, var(--indigo), var(--coral)); display: grid; place-items: center; color: #fff; font-family: var(--display); font-weight: 700; font-size: 27px; box-shadow: 0 12px 24px -8px var(--indigo); }
-.lpc .pf-name { margin-top: 12px; font-family: var(--display); font-weight: 700; font-size: 17px; }
-.lpc .pf-bio { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
-.lpc .pf-links { width: 100%; margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
-.lpc .pf-link { display: flex; align-items: center; gap: 11px; background: #fff; border: 1px solid var(--line); border-radius: 15px; padding: 11px 13px; font-weight: 600; font-size: 13.5px; box-shadow: 0 5px 14px -10px rgba(26,24,48,.4); transition: transform .2s; }
-.lpc .pf-link:hover { transform: scale(1.03); }
-.lpc .pf-ico { width: 28px; height: 28px; border-radius: 9px; flex: none; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 12px; font-family: var(--display); }
-.lpc .pf-link .chev { margin-left: auto; color: var(--muted); }
+.lpc .phone .screen { width: 100%; height: 100%; border-radius: 35px; overflow: hidden; background: #0f0f23; display: block; padding: 0; }
+/* The screen shows the REAL public template at design width 400px, scaled to
+   the 272px inner screen (296 - 2*12 padding). 272/400 = 0.68. */
+.lpc .pf-scale { width: 400px; height: 147.06%; transform: scale(0.68); transform-origin: top left; overflow: hidden; pointer-events: none; }
+.lpc .pf-scale .landing-page { min-height: 100%; }
 
 /* sections */
 .lpc section.block { padding: 92px 0; position: relative; }
@@ -193,6 +189,34 @@
     .lpc .stats { grid-template-columns: repeat(2,1fr); gap: 36px 20px; }
     .lpc .contact-card { grid-template-columns: 1fr; }
     .lpc .foot-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Phone breakpoint — the navbar previously overflowed (nowrap CTA + lang
+   switcher inside overflow-x: clip) and there was no sub-760px tuning at all. */
+@media (max-width: 640px) {
+    .lpc .wrap { padding: 0 16px; }
+    .lpc .nav { gap: 10px; height: 62px; }
+    .lpc .brand { font-size: 17px; gap: 8px; }
+    .lpc .brand .glyph { width: 28px; height: 28px; }
+    .lpc .nav-right { gap: 8px; }
+    .lpc .lang button { padding: 8px 8px; font-size: 12px; }
+    .lpc .btn { padding: 10px 13px; font-size: 13.5px; border-radius: 12px; }
+    .lpc .hero { padding: 40px 0 44px; }
+    .lpc .hero .lead { font-size: 16.5px; }
+    .lpc section.block { padding: 56px 0; }
+    .lpc .sec-head p { font-size: 16px; }
+    .lpc .stats-wrap { padding: 36px 22px; border-radius: 26px; }
+    .lpc .contact-info { padding: 24px 20px; }
+    .lpc form.lp-form { padding: 24px 16px; }
+    .lpc .feature { padding: 24px 20px; }
+    .lpc .step { padding: 26px 20px; }
+    .lpc .price { padding: 28px 22px; }
+    .lpc footer { padding: 40px 0 24px; }
+}
+
+/* Ultra-narrow devices: shrink the whole hero phone proportionally. */
+@media (max-width: 350px) {
+    .lpc .phone { transform: scale(0.86); transform-origin: top center; animation: none; }
 }
 
 /* stats — two big live counters */

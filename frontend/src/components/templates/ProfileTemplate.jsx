@@ -41,10 +41,6 @@ const ProfileTemplate = ({ data, tpl, theme, onLinkClick = () => {}, getLogoUrl,
                     {logo ? <img className="tpl-avatar-img" src={logo} alt={data.name} /> : initials(data.name)}
                 </div>
 
-                {meta.statusBadge && (
-                    <div className="tpl-badge"><span className="dot" />{t('tpl.open_today')}</div>
-                )}
-
                 <h1 className="tpl-name">
                     {data.name}
                     {data.verified && <VerifiedBadge size="0.62em" />}

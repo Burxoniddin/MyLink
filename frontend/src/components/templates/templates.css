@@ -50,8 +50,6 @@
 .tpl-chev svg { width: 18px; height: 18px; }
 .tpl-lnk:hover .tpl-chev { transform: translateX(4px); color: var(--bc); }
 
-.tpl-badge { margin-top: 16px; display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 5px 13px; }
-.tpl-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
 .tpl-rule { width: 34px; height: 1px; margin: 22px 0 4px; background: var(--t-accent); }
 
 .tpl-blocks { width: 100%; margin-top: 22px; display: flex; flex-direction: column; gap: 14px; }
@@ -98,7 +96,6 @@
 .tpl[data-tpl="restoran"]::after { width: 460px; height: 460px; background: var(--glow2); bottom: -180px; right: -120px; }
 .tpl[data-tpl="restoran"] .tpl-card { background: var(--t-card); border: 1px solid var(--t-line); border-radius: 32px; padding: 38px 24px 22px; box-shadow: var(--t-shadow); backdrop-filter: blur(22px); }
 .tpl[data-tpl="restoran"] .tpl-avatar { width: 116px; height: 116px; font-family: var(--t-display); font-weight: 800; background: linear-gradient(145deg, var(--t-accent), #d4582a); box-shadow: 0 18px 40px -16px #d4582a, inset 0 0 0 5px rgba(255,255,255,.16); }
-.tpl[data-tpl="restoran"] .tpl-avatar::after { content: "🔥"; position: absolute; bottom: -6px; right: -2px; font-size: 26px; z-index: 2; filter: drop-shadow(0 4px 8px rgba(0,0,0,.4)); }
 .tpl[data-tpl="restoran"] .tpl-name { font-family: var(--t-display); font-weight: 800; font-size: 27px; }
 .tpl[data-tpl="restoran"] .tpl-lnk { border-radius: 17px; }
 .tpl[data-tpl="restoran"] .tpl-ico { border-radius: 11px; }
@@ -149,9 +146,6 @@
 .tpl[data-tpl="klinika"] .tpl-card { background: var(--t-card); border: 1px solid var(--t-line); border-radius: 30px; padding: 36px 22px 22px; box-shadow: var(--t-shadow); }
 .tpl[data-tpl="klinika"][data-theme="dark"] .tpl-card { backdrop-filter: blur(20px); }
 .tpl[data-tpl="klinika"] .tpl-avatar { width: 110px; height: 110px; border-radius: 32px; font-weight: 700; background: linear-gradient(150deg, var(--t-accent), #4aa6c8); box-shadow: 0 16px 34px -14px var(--t-accent); }
-.tpl[data-tpl="klinika"] .tpl-avatar::after { content: ""; position: absolute; top: 12px; right: 12px; width: 16px; height: 16px; z-index: 2; background: linear-gradient(#fff,#fff) center/16px 5px no-repeat, linear-gradient(#fff,#fff) center/5px 16px no-repeat; opacity: .9; }
-.tpl[data-tpl="klinika"] .tpl-badge { color: var(--t-accent); background: var(--teal-soft); }
-.tpl[data-tpl="klinika"] .tpl-badge .dot { background: var(--t-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--t-accent) 25%, transparent); }
 .tpl[data-tpl="klinika"] .tpl-name { font-weight: 700; font-size: 28px; margin-top: 10px; }
 .tpl[data-tpl="klinika"] .tpl-lnk { background: var(--t-card); border-radius: 18px; padding: 12px 15px; font-weight: 600; box-shadow: 0 8px 20px -16px rgba(17,64,62,.5); }
 .tpl[data-tpl="klinika"] .tpl-ico { border-radius: 13px; }

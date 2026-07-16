@@ -2,7 +2,7 @@
 export const TEMPLATE_META = {
     restoran: { defaultTheme: 'dark', perLinkColor: true },
     moda: { defaultTheme: 'light', rule: true },
-    klinika: { defaultTheme: 'light', statusBadge: true },
+    klinika: { defaultTheme: 'light' },
     avto: { defaultTheme: 'dark', chev: true },
     fitnes: { defaultTheme: 'dark', chev: true },
 };

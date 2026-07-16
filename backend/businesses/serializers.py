@@ -75,7 +75,7 @@ class BusinessSerializer(serializers.ModelSerializer):
     class Meta:
         model = Business
         fields = ['id', 'path', 'name', 'description', 'logo', 'logo_upload', 'logo_remove',
-                  'template', 'theme', 'is_locked', 'is_pinned', 'branding_removed', 'verified',
+                  'template', 'theme', 'theme_mode', 'is_locked', 'is_pinned', 'branding_removed', 'verified',
                   'role', 'owner_name', 'created_at', 'links', 'media_sections']
         read_only_fields = ['is_locked', 'is_pinned']
 
@@ -149,6 +149,8 @@ class BusinessSerializer(serializers.ModelSerializer):
         instance.name = validated_data.get('name', instance.name)
         instance.description = validated_data.get('description', instance.description)
         instance.template = validated_data.get('template', instance.template)
+        # Dark/light mode is part of the template choice — ungated like template.
+        instance.theme_mode = validated_data.get('theme_mode', instance.theme_mode)
 
         # Colour palette change is gated by the color_edit feature (Oddiy/Pro).
         new_theme = validated_data.get('theme')

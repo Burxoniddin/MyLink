@@ -34,6 +34,10 @@ class Business(models.Model):
         ('sunset', 'Sunset'),
     ]
     theme = models.CharField(max_length=20, choices=THEME_CHOICES, default='default')
+    # Owner-chosen dark/light mode for the public page. Blank = the template's
+    # own default (classic → dark, sector templates → their defaultTheme).
+    THEME_MODE_CHOICES = [('dark', 'Dark'), ('light', 'Light')]
+    theme_mode = models.CharField(max_length=5, choices=THEME_MODE_CHOICES, blank=True, default='')
     # Locked when the owner is over their tier's profile_limit (e.g. after a
     # downgrade). Locked pages are hidden publicly; the owner picks which to keep
     # active. See billing.services.sync_locks / businesses toggle endpoint.

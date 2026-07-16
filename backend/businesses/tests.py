@@ -516,6 +516,19 @@ class ThemeGateTests(TestCase):
         res = self.client.get('/api/public/brand/')
         self.assertEqual(res.data['theme'], 'default')
 
+    def test_theme_mode_ungated_and_public(self):
+        # Dark/light mode is part of the template choice — even free can set it.
+        res = self.client.patch('/api/businesses/brand/', {'theme_mode': 'light'}, format='json')
+        self.assertEqual(res.status_code, 200)
+        self.biz.refresh_from_db()
+        self.assertEqual(self.biz.theme_mode, 'light')
+        pub = self.client.get('/api/public/brand/')
+        self.assertEqual(pub.data['theme_mode'], 'light')
+
+    def test_theme_mode_invalid_rejected(self):
+        res = self.client.patch('/api/businesses/brand/', {'theme_mode': 'neon'}, format='json')
+        self.assertEqual(res.status_code, 400)
+
 
 @override_settings(CACHES=LOCMEM)
 class NfcOrderTests(TestCase):

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaExternalLinkAlt, FaEdit, FaLock, FaStar, FaSearch, FaUsers } from 'react-icons/fa';
+import { FaPlus, FaExternalLinkAlt, FaEdit, FaLock, FaStar, FaRegStar, FaSearch, FaUsers } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useEntitlements } from '../context/EntitlementContext';
 import { useToast } from '../components/Toast';
@@ -65,6 +65,21 @@ const Dashboard = () => {
             } else {
                 toast.error(t('common.error'));
             }
+        }
+    };
+
+    // Pin/"qadash": optimistic star toggle, then refetch so pinned pages
+    // float to the top (backend orders by -is_pinned).
+    const togglePin = async (e, biz) => {
+        e.stopPropagation();
+        const next = !biz.is_pinned;
+        setBusinesses((bs) => bs.map((b) => (b.id === biz.id ? { ...b, is_pinned: next } : b)));
+        try {
+            await api.post(`businesses/${biz.path}/pin/`, { is_pinned: next });
+            await fetchBusinesses();
+        } catch {
+            setBusinesses((bs) => bs.map((b) => (b.id === biz.id ? { ...b, is_pinned: !next } : b)));
+            toast.error(t('common.error'));
         }
     };
 
@@ -146,27 +161,29 @@ const Dashboard = () => {
                                                     <FaLock size={11} /> {t('limit.locked_badge')}
                                                 </span>
                                             )}
-                                            {biz.role === 'owner' && biz.is_pinned && !biz.is_locked && (
-                                                <span style={{
-                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                                                    background: '#fef3c7', color: '#92400e', fontSize: 12, fontWeight: 600,
-                                                    padding: '3px 10px', borderRadius: 999,
-                                                }}>
-                                                    <FaStar size={11} /> {t('detail.pinned')}
-                                                </span>
-                                            )}
                                         </div>
                                         {biz.role === 'owner' && (
-                                            <span
-                                                className={`biz-switch ${biz.is_locked ? '' : 'on'}`}
-                                                onClick={(e) => toggleLock(e, biz)}
-                                                title={biz.is_locked ? t('limit.activate') : t('limit.deactivate')}
-                                                role="switch"
-                                                aria-checked={!biz.is_locked}
-                                            >
-                                                <span className="sw-label">{biz.is_locked ? t('limit.inactive') : t('limit.active')}</span>
-                                                <span className="track"></span>
-                                            </span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                <button
+                                                    type="button"
+                                                    className={`pin-star ${biz.is_pinned ? 'on' : ''}`}
+                                                    onClick={(e) => togglePin(e, biz)}
+                                                    title={biz.is_pinned ? t('detail.pinned') : t('detail.pin')}
+                                                    aria-label={biz.is_pinned ? t('detail.pinned') : t('detail.pin')}
+                                                >
+                                                    {biz.is_pinned ? <FaStar /> : <FaRegStar />}
+                                                </button>
+                                                <span
+                                                    className={`biz-switch ${biz.is_locked ? '' : 'on'}`}
+                                                    onClick={(e) => toggleLock(e, biz)}
+                                                    title={biz.is_locked ? t('limit.activate') : t('limit.deactivate')}
+                                                    role="switch"
+                                                    aria-checked={!biz.is_locked}
+                                                >
+                                                    <span className="sw-label">{biz.is_locked ? t('limit.inactive') : t('limit.active')}</span>
+                                                    <span className="track"></span>
+                                                </span>
+                                            </div>
                                         )}
                                     </div>
                                     <div className="card-header">

@@ -59,12 +59,14 @@ const Highlights = ({ sections, getMediaUrl, toEmbed }) => {
 
     return (
         <>
-            <div className="hl-sections">
+            <div className="hl-row">
                 {groups.map((s, si) => (
-                    <button key={s.id} type="button" className="hl-card" onClick={() => setPos({ s: si, b: 0 })}>
-                        <span className="hl-cover">{sectionCover(s)}</span>
-                        <span className="hl-card-name">{s.name}</span>
-                        <span className="hl-card-count">{s.items.length}</span>
+                    <button key={s.id} type="button" className="hl-item" onClick={() => setPos({ s: si, b: 0 })}>
+                        <span className="hl-ring">
+                            <span className="hl-thumb">{sectionCover(s)}</span>
+                            <span className="hl-count">{s.items.length}</span>
+                        </span>
+                        <span className="hl-label">{s.name}</span>
                     </button>
                 ))}
             </div>

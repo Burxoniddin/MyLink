@@ -16,7 +16,7 @@ const MAX_BLOCKS_PER_SECTION = 10;
 
 const TYPE_ICON = { image: <FaImage />, video: <FaVideo />, text: <FaAlignLeft /> };
 
-const SortableBlock = ({ block, onField, onSave, onDelete, t }) => {
+const SortableBlock = ({ block, onField, onDelete, t }) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: block.id });
     const style = { transform: CSS.Transform.toString(transform), transition };
 
@@ -77,10 +77,6 @@ const SortableBlock = ({ block, onField, onSave, onDelete, t }) => {
                     </label>
                 </div>
             )}
-
-            <button type="button" className="block-save" onClick={() => onSave(block)}>
-                <FaSave /> {t('common.save')}
-            </button>
         </div>
     );
 };
@@ -133,6 +129,7 @@ const MediaSections = ({ path, onChanged }) => {
     const [expanded, setExpanded] = useState(null);
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState('');
+    const [savingId, setSavingId] = useState(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -230,39 +227,47 @@ const MediaSections = ({ path, onChanged }) => {
         } catch (err) { showErr(err); }
     };
 
+    // Field edits only mark the block dirty — persisting happens once per
+    // section via the single save button.
     const onField = (sid) => (id, patch) =>
-        patchSectionBlocks(sid, (bs) => bs.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+        patchSectionBlocks(sid, (bs) => bs.map((b) => (b.id === id ? { ...b, ...patch, _dirty: true } : b)));
 
-    const saveBlock = (sid) => async (block) => {
+    const saveSection = (sid) => async () => {
         setMsg('');
-        if (block._videoFile && block._videoFile.size > MAX_VIDEO_BYTES) {
+        const section = sections.find((s) => s.id === sid);
+        const dirty = (section?.blocks || []).filter((b) => b._dirty);
+        if (dirty.length === 0) return;
+        if (dirty.some((b) => b._videoFile && b._videoFile.size > MAX_VIDEO_BYTES)) {
             setMsg(t('blocks.err_video_too_large'));
             return;
         }
+        setSavingId(sid);
         try {
-            let payload, config;
-            if (block._imageFile || block._videoFile) {
-                payload = new FormData();
-                payload.append('block_type', block.block_type);
-                payload.append('title', block.title || '');
-                payload.append('text', block.text || '');
-                payload.append('embed_url', block.embed_url || '');
-                if (block._imageFile) payload.append('image', block._imageFile);
-                if (block._videoFile) payload.append('video', block._videoFile);
-                config = { headers: { 'Content-Type': 'multipart/form-data' } };
-            } else {
-                payload = {
-                    block_type: block.block_type,
-                    title: block.title || '',
-                    text: block.text || '',
-                    embed_url: block.embed_url || '',
-                };
-                config = {};
+            for (const block of dirty) {
+                let payload, config;
+                if (block._imageFile || block._videoFile) {
+                    payload = new FormData();
+                    payload.append('block_type', block.block_type);
+                    payload.append('title', block.title || '');
+                    payload.append('text', block.text || '');
+                    payload.append('embed_url', block.embed_url || '');
+                    if (block._imageFile) payload.append('image', block._imageFile);
+                    if (block._videoFile) payload.append('video', block._videoFile);
+                    config = { headers: { 'Content-Type': 'multipart/form-data' } };
+                } else {
+                    payload = {
+                        block_type: block.block_type,
+                        title: block.title || '',
+                        text: block.text || '',
+                        embed_url: block.embed_url || '',
+                    };
+                    config = {};
+                }
+                const res = await api.patch(`blocks/${block.id}/`, payload, config);
+                patchSectionBlocks(sid, (bs) => bs.map((b) => (b.id === block.id ? res.data : b)));
             }
-            const res = await api.patch(`blocks/${block.id}/`, payload, config);
-            patchSectionBlocks(sid, (bs) => bs.map((b) => (b.id === block.id ? res.data : b)));
             setMsg(t('blocks.saved'));
-        } catch (err) { showErr(err); }
+        } catch (err) { showErr(err); } finally { setSavingId(null); }
     };
 
     const deleteBlock = (sid) => async (id) => {
@@ -338,20 +343,30 @@ const MediaSections = ({ path, onChanged }) => {
                                     {blocks.length === 0 ? (
                                         <p className="blocks-empty">{t('blocks.empty')}</p>
                                     ) : (
-                                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onBlockDragEnd(s.id)}>
-                                            <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-                                                {blocks.map((b) => (
-                                                    <SortableBlock
-                                                        key={b.id}
-                                                        block={b}
-                                                        onField={onField(s.id)}
-                                                        onSave={saveBlock(s.id)}
-                                                        onDelete={deleteBlock(s.id)}
-                                                        t={t}
-                                                    />
-                                                ))}
-                                            </SortableContext>
-                                        </DndContext>
+                                        <>
+                                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onBlockDragEnd(s.id)}>
+                                                <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+                                                    {blocks.map((b) => (
+                                                        <SortableBlock
+                                                            key={b.id}
+                                                            block={b}
+                                                            onField={onField(s.id)}
+                                                            onDelete={deleteBlock(s.id)}
+                                                            t={t}
+                                                        />
+                                                    ))}
+                                                </SortableContext>
+                                            </DndContext>
+                                            {/* One save for the whole section — persists every edited block. */}
+                                            <button
+                                                type="button"
+                                                className="block-save section-save"
+                                                disabled={savingId === s.id || !blocks.some((b) => b._dirty)}
+                                                onClick={saveSection(s.id)}
+                                            >
+                                                <FaSave /> {savingId === s.id ? t('detail.saving') : t('common.save')}
+                                            </button>
+                                        </>
                                     )}
                                 </SortableSection>
                             );

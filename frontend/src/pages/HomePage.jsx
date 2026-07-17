@@ -6,14 +6,11 @@ import api from '../api';
 import { useToast } from '../components/Toast';
 import SiteHeader from '../components/site/SiteHeader';
 import SiteFooter from '../components/site/SiteFooter';
-import ClassicTemplate from '../components/templates/ClassicTemplate';
-import ProfileTemplate from '../components/templates/ProfileTemplate';
-import { TEMPLATE_META } from '../components/templates/templateMeta';
-import { getMediaUrl, toEmbed } from '../lib/media';
 import './HomePage.css';
 
-// The hero phone shows this REAL public page (live data). If it doesn't
-// exist in this environment, the static sample below is shown instead.
+// The hero phone embeds this REAL public page in an iframe — the iframe's own
+// 400px viewport makes the page render exactly like on a phone (its mobile
+// media queries apply), unlike inline rendering inside a desktop viewport.
 const DEMO_PATH = 'mybrand';
 
 // Fallback contact details (used until admin fills SiteSettings).
@@ -23,15 +20,6 @@ const FALLBACK = {
     contact_telegram: '@mylink_asia',
     support_telegram_url: 'https://t.me/mylink_asia',
 };
-
-// Self-contained artwork for the hero demo page (no uploads needed).
-const svgUri = (svg) => `data:image/svg+xml,${encodeURIComponent(svg)}`;
-const DEMO_LOGO = svgUri(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f58529"/><stop offset="0.55" stop-color="#dd2a7b"/><stop offset="1" stop-color="#8134af"/></linearGradient></defs><rect width="96" height="96" fill="url(#g)"/><text x="48" y="63" font-family="Arial, sans-serif" font-size="44" font-weight="bold" text-anchor="middle" fill="#fff">S</text></svg>'
-);
-const DEMO_COVER = svgUri(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" fill="#312e81"/><text x="48" y="64" font-size="44" text-anchor="middle">&#127874;</text></svg>'
-);
 
 const HomePage = () => {
     const { t } = useTranslation();
@@ -44,16 +32,13 @@ const HomePage = () => {
     const [counts, setCounts] = useState({ businesses: 0, links: 0, users: 0 });
     const [settings, setSettings] = useState(null);
     const [featured, setFeatured] = useState([]);
-    const [demoBiz, setDemoBiz] = useState(null);
     const [sending, setSending] = useState(false);
 
-    // Fetch real stats + admin-editable contact settings + featured clients
-    // + the real showcase page for the hero phone.
+    // Fetch real stats + admin-editable contact settings + featured clients.
     useEffect(() => {
         api.get('public/stats/').then((r) => setCounts(r.data)).catch(() => {});
         api.get('public/settings/').then((r) => setSettings(r.data)).catch(() => {});
         api.get('public/featured/').then((r) => setFeatured(r.data || [])).catch(() => {});
-        api.get(`public/${DEMO_PATH}/`).then((r) => setDemoBiz(r.data)).catch(() => {});
     }, []);
 
     // Arriving from another page with /#section — scroll to it once rendered.
@@ -154,33 +139,6 @@ const HomePage = () => {
     // Seamless marquee needs the list at least twice.
     const marquee = featured.length > 0 ? [...featured, ...featured] : [];
 
-    // Static fallback for the hero demo (used until/unless the real
-    // DEMO_PATH page loads).
-    const demoData = {
-        name: 'Shirin Cakes',
-        description: t('home.phone_bio'),
-        logo: DEMO_LOGO,
-        template: 'classic',
-        theme: 'default',
-        theme_mode: '',
-        verified: true,
-        branding_removed: false,
-        links: [
-            { id: 1, title: 'Instagram', url: 'https://instagram.com/mylink.asia', icon_type: 'instagram' },
-            { id: 2, title: 'Telegram', url: 'https://t.me/mylink_asia', icon_type: 'telegram' },
-            { id: 3, title: t('home.phone_call'), url: 'tel:+998901234567', icon_type: 'phone' },
-            { id: 4, title: t('home.pill_shop'), url: 'https://mylink.asia', icon_type: 'website' },
-        ],
-        media_sections: [
-            {
-                id: 1,
-                name: 'Menyu',
-                cover: DEMO_COVER,
-                blocks: [{ id: 1, block_type: 'text', title: 'Aksiya', text: '-20%' }],
-            },
-        ],
-    };
-
     return (
         <div className="lpc" ref={rootRef}>
             <SiteHeader />
@@ -212,31 +170,17 @@ const HomePage = () => {
                                 <div className="phone">
                                     <div className="notch"></div>
                                     <div className="screen">
-                                        <div className="pf-scale">
-                                            {(() => {
-                                                const heroData = demoBiz || demoData;
-                                                const heroTpl = heroData.template || 'classic';
-                                                return heroTpl === 'classic' ? (
-                                                    <ClassicTemplate
-                                                        data={heroData}
-                                                        previewMode
-                                                        getLogoUrl={getMediaUrl}
-                                                        toEmbed={toEmbed}
-                                                        t={t}
-                                                    />
-                                                ) : (
-                                                    <ProfileTemplate
-                                                        data={heroData}
-                                                        tpl={heroTpl}
-                                                        theme={heroData.theme_mode || TEMPLATE_META[heroTpl]?.defaultTheme || 'dark'}
-                                                        previewMode
-                                                        getLogoUrl={getMediaUrl}
-                                                        toEmbed={toEmbed}
-                                                        t={t}
-                                                    />
-                                                );
-                                            })()}
-                                        </div>
+                                        {/* The real page in its own 400px viewport — renders
+                                            pixel-identical to a phone. Decorative only. */}
+                                        <iframe
+                                            className="pf-frame"
+                                            src={`/${DEMO_PATH}`}
+                                            title="MyLink demo"
+                                            scrolling="no"
+                                            loading="lazy"
+                                            tabIndex={-1}
+                                            aria-hidden="true"
+                                        />
                                     </div>
                                 </div>
                             </div>

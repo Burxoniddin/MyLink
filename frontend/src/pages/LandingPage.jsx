@@ -16,7 +16,11 @@ const LandingPage = () => {
     const viewTracked = useRef('');
 
     // Fire-and-forget analytics beacon; never breaks the visitor's page.
+    // Inside an iframe (homepage hero demo) nothing is tracked — those are
+    // landing visitors, not real page views/clicks.
+    const embedded = window.self !== window.top;
     const track = (event_type, label = '') => {
+        if (embedded) return;
         api.post('track/', { path, event_type, label }).catch(() => {});
     };
 

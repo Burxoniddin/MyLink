@@ -28,20 +28,22 @@ const SortableBlock = ({ block, onField, onDelete, t }) => {
                 <button type="button" className="block-del" onClick={() => onDelete(block.id)}><FaTrash /></button>
             </div>
 
-            <input
-                className="block-input"
-                placeholder={t('blocks.title_ph')}
-                value={block.title || ''}
-                onChange={(e) => onField(block.id, { title: e.target.value })}
-            />
-
+            {/* Title exists only on text blocks — media goes caption-less. */}
             {block.block_type === 'text' && (
-                <textarea
-                    className="block-input block-textarea"
-                    placeholder={t('blocks.text_ph')}
-                    value={block.text || ''}
-                    onChange={(e) => onField(block.id, { text: e.target.value })}
-                />
+                <>
+                    <input
+                        className="block-input"
+                        placeholder={t('blocks.title_ph')}
+                        value={block.title || ''}
+                        onChange={(e) => onField(block.id, { title: e.target.value })}
+                    />
+                    <textarea
+                        className="block-input block-textarea"
+                        placeholder={t('blocks.text_ph')}
+                        value={block.text || ''}
+                        onChange={(e) => onField(block.id, { text: e.target.value })}
+                    />
+                </>
             )}
 
             {block.block_type === 'image' && (
@@ -258,7 +260,7 @@ const MediaSections = ({ path, onChanged }) => {
     // Multi-file flow: ONE "Media" button opens the device picker (gallery or
     // camera on mobile) for images and videos together; every chosen file
     // becomes its own block — type auto-detected per file — uploaded and placed
-    // in order. Titles are then edited per block.
+    // in order. Media blocks are caption-less; only text blocks carry titles.
     const addMediaFiles = async (sid, files) => {
         if (!sid || files.length === 0) return;
         setMsg('');
@@ -315,10 +317,13 @@ const MediaSections = ({ path, onChanged }) => {
         try {
             for (const block of dirty) {
                 let payload, config;
+                // Media blocks are caption-less — saving one also clears any
+                // legacy title it may still carry.
+                const title = block.block_type === 'text' ? (block.title || '') : '';
                 if (block._imageFile || block._videoFile) {
                     payload = new FormData();
                     payload.append('block_type', block.block_type);
-                    payload.append('title', block.title || '');
+                    payload.append('title', title);
                     payload.append('text', block.text || '');
                     payload.append('embed_url', block.embed_url || '');
                     if (block._imageFile) payload.append('image', block._imageFile);
@@ -327,7 +332,7 @@ const MediaSections = ({ path, onChanged }) => {
                 } else {
                     payload = {
                         block_type: block.block_type,
-                        title: block.title || '',
+                        title,
                         text: block.text || '',
                         embed_url: block.embed_url || '',
                     };

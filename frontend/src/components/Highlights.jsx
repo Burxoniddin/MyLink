@@ -150,7 +150,8 @@ const Highlights = ({ sections, getMediaUrl, toEmbed }) => {
                     {/* Stage has no stopPropagation: tapping any empty side closes.
                         Only the interactive video stops it so its controls work. */}
                     <div className="hl-stage">
-                        {b.title && <div className="hl-stage-title">{b.title}</div>}
+                        {/* Only text blocks have titles — media shows clean. */}
+                        {b.block_type === 'text' && b.title && <div className="hl-stage-title">{b.title}</div>}
                         {b.block_type === 'text' && b.text && (
                             <div className="hl-stage-text" onClick={(e) => e.stopPropagation()}>{b.text}</div>
                         )}

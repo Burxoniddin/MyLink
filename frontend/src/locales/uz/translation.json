@@ -302,7 +302,8 @@
     "sending": "Yuborilmoqda...",
     "sent": "Buyurtmangiz qabul qilindi! Tez orada bog'lanamiz.",
     "no_payment": "Onlayn to'lov yo'q — jamoamiz siz bilan bog'lanadi.",
-    "history": "Buyurtmalarim"
+    "history": "Buyurtmalarim",
+    "orders_note": "Yangi buyurtmalar shu yerda ko'rinadi. Holati o'zgarganda sizga xabar beramiz."
   },
   "referral": {
     "title": "Do'stlarni taklif qiling",

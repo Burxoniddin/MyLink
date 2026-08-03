@@ -302,7 +302,8 @@
     "sending": "Sending...",
     "sent": "Order received! We'll contact you soon.",
     "no_payment": "No online payment — our team will contact you.",
-    "history": "My orders"
+    "history": "My orders",
+    "orders_note": "New orders will appear here. We'll let you know when the status changes."
   },
   "referral": {
     "title": "Invite friends",

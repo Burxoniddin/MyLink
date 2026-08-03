@@ -164,8 +164,9 @@ const Dashboard = () => {
                                 <div key={biz.id} className="business-card"
                                     style={biz.is_locked && biz.role === 'owner' ? { opacity: 0.65 } : undefined}
                                     onClick={() => navigate(`/business/${biz.path}`)}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, minHeight: 24 }}>
-                                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                    {/* Badge row only when there is a badge to show */}
+                                    {(biz.role !== 'owner' || biz.is_locked) && (
+                                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
                                             {biz.role !== 'owner' && (
                                                 <span style={{
                                                     display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -185,8 +186,22 @@ const Dashboard = () => {
                                                 </span>
                                             )}
                                         </div>
+                                    )}
+                                    {/* Name row carries the pin star + active switch on the right */}
+                                    <div className="card-header">
+                                        {biz.logo ? (
+                                            <img src={biz.logo} alt={biz.name} className="card-logo" />
+                                        ) : (
+                                            <div className="card-logo-placeholder">
+                                                {biz.name.charAt(0)}
+                                            </div>
+                                        )}
+                                        <div className="card-info">
+                                            <h3>{biz.name}</h3>
+                                            <span className="card-path">mylink.asia/{biz.path}</span>
+                                        </div>
                                         {biz.role === 'owner' && (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                            <div className="card-controls">
                                                 <button
                                                     type="button"
                                                     className={`pin-star ${biz.is_pinned ? 'on' : ''}`}
@@ -208,19 +223,6 @@ const Dashboard = () => {
                                                 </span>
                                             </div>
                                         )}
-                                    </div>
-                                    <div className="card-header">
-                                        {biz.logo ? (
-                                            <img src={biz.logo} alt={biz.name} className="card-logo" />
-                                        ) : (
-                                            <div className="card-logo-placeholder">
-                                                {biz.name.charAt(0)}
-                                            </div>
-                                        )}
-                                        <div className="card-info">
-                                            <h3>{biz.name}</h3>
-                                            <span className="card-path">mylink.asia/{biz.path}</span>
-                                        </div>
                                     </div>
                                     {biz.description && (
                                         <p className="card-description">{biz.description}</p>

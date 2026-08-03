@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { useEntitlements } from '../context/EntitlementContext';
 import {
     FaPlus, FaTrash, FaGripLines, FaImage, FaVideo, FaAlignLeft, FaLock,
-    FaSave, FaChevronDown, FaChevronUp, FaImages, FaCheck,
+    FaSave, FaChevronDown, FaChevronUp, FaImages, FaCheck, FaPlay, FaYoutube,
 } from 'react-icons/fa';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
@@ -16,6 +16,7 @@ const MAX_BLOCKS_PER_SECTION = 10;
 
 const TYPE_ICON = { image: <FaImage />, video: <FaVideo />, text: <FaAlignLeft /> };
 
+// Text blocks keep the card editor (title + body). Media lives in the grid.
 const SortableBlock = ({ block, onField, onDelete, t }) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: block.id });
     const style = { transform: CSS.Transform.toString(transform), transition };
@@ -27,58 +28,60 @@ const SortableBlock = ({ block, onField, onDelete, t }) => {
                 <span className="block-type">{TYPE_ICON[block.block_type]} {t(`blocks.${block.block_type}`)}</span>
                 <button type="button" className="block-del" onClick={() => onDelete(block.id)}><FaTrash /></button>
             </div>
+            <input
+                className="block-input"
+                placeholder={t('blocks.title_ph')}
+                value={block.title || ''}
+                onChange={(e) => onField(block.id, { title: e.target.value })}
+            />
+            <textarea
+                className="block-input block-textarea"
+                placeholder={t('blocks.text_ph')}
+                value={block.text || ''}
+                onChange={(e) => onField(block.id, { text: e.target.value })}
+            />
+        </div>
+    );
+};
 
-            {/* Title exists only on text blocks — media goes caption-less. */}
-            {block.block_type === 'text' && (
-                <>
-                    <input
-                        className="block-input"
-                        placeholder={t('blocks.title_ph')}
-                        value={block.title || ''}
-                        onChange={(e) => onField(block.id, { title: e.target.value })}
-                    />
-                    <textarea
-                        className="block-input block-textarea"
-                        placeholder={t('blocks.text_ph')}
-                        value={block.text || ''}
-                        onChange={(e) => onField(block.id, { text: e.target.value })}
-                    />
-                </>
-            )}
+// YouTube thumbnail for embed-only video blocks in the grid.
+const ytThumb = (url) => {
+    const m = (url || '').match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/);
+    return m ? `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg` : null;
+};
 
-            {block.block_type === 'image' && (
-                <div className="block-media">
-                    {(block._imagePreview || block.image) && (
-                        <img src={block._imagePreview || block.image} alt="" className="block-thumb" />
-                    )}
-                    <label className="block-file">
-                        <FaImage /> {t('blocks.upload_image')}
-                        <input type="file" accept="image/*" hidden onChange={(e) => {
-                            const f = e.target.files[0];
-                            if (f) onField(block.id, { _imageFile: f, _imagePreview: URL.createObjectURL(f) });
-                        }} />
-                    </label>
-                </div>
-            )}
+// One square media cell in the Yandex-style grid: thumbnail + trash overlay;
+// the whole cell drags (delete stops the drag sensor on pointer-down).
+const MediaThumb = ({ block, onDelete }) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
+    const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
 
-            {block.block_type === 'video' && (
-                <div className="block-media">
-                    <input
-                        className="block-input"
-                        placeholder={t('blocks.embed_ph')}
-                        value={block.embed_url || ''}
-                        onChange={(e) => onField(block.id, { embed_url: e.target.value })}
-                    />
-                    <div className="block-or">{t('blocks.or')}</div>
-                    <label className="block-file">
-                        <FaVideo /> {block._videoFile ? block._videoFile.name : t('blocks.upload_video')}
-                        <input type="file" accept="video/*" hidden onChange={(e) => {
-                            const f = e.target.files[0];
-                            if (f) onField(block.id, { _videoFile: f });
-                        }} />
-                    </label>
-                </div>
-            )}
+    let thumb;
+    if (block.block_type === 'image' && block.image) {
+        thumb = <img src={block.image} alt="" />;
+    } else if (block.block_type === 'video' && block.video) {
+        thumb = <video src={block.video} muted preload="metadata" />;
+    } else if (block.block_type === 'video' && ytThumb(block.embed_url)) {
+        thumb = <img src={ytThumb(block.embed_url)} alt="" />;
+    } else if (block.block_type === 'video') {
+        thumb = <FaPlay />;
+    } else {
+        thumb = <FaImage />;
+    }
+
+    return (
+        <div ref={setNodeRef} style={style} className="media-cell" {...attributes} {...listeners}>
+            {thumb}
+            {block.block_type === 'video' && <span className="media-cell-badge"><FaVideo /></span>}
+            <button
+                type="button"
+                className="media-cell-del"
+                aria-label="delete"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); onDelete(block.id); }}
+            >
+                <FaTrash />
+            </button>
         </div>
     );
 };
@@ -299,6 +302,20 @@ const MediaSections = ({ path, onChanged }) => {
         mediaInput.current?.click();
     };
 
+    // Embed-only video (YouTube link) — asked via a simple prompt since the
+    // grid cells have no inline inputs.
+    const addEmbed = async (sid) => {
+        const url = window.prompt(t('blocks.embed_ph'));
+        if (!url || !url.trim()) return;
+        setMsg('');
+        try {
+            const res = await api.post(`businesses/${path}/blocks/`, {
+                block_type: 'video', section: sid, embed_url: url.trim(),
+            });
+            patchSectionBlocks(sid, (bs) => [...bs, res.data]);
+        } catch (err) { showErr(err); }
+    };
+
     // Field edits only mark the block dirty — persisting happens once per
     // section via the single save button.
     const onField = (sid) => (id, patch) =>
@@ -356,17 +373,32 @@ const MediaSections = ({ path, onChanged }) => {
         } catch (err) { showErr(err); }
     };
 
-    const onBlockDragEnd = (sid) => async ({ active, over }) => {
-        if (!over || active.id === over.id) return;
-        const section = sections.find((s) => s.id === sid);
-        const bs = section?.blocks || [];
-        const oldIndex = bs.findIndex((b) => b.id === active.id);
-        const newIndex = bs.findIndex((b) => b.id === over.id);
-        const next = arrayMove(bs, oldIndex, newIndex);
+    // Media grid and text list reorder independently; the persisted order is
+    // always [media..., texts...].
+    const persistOrder = async (sid, next) => {
         patchSectionBlocks(sid, () => next);
         try {
             await api.post(`businesses/${path}/blocks/reorder/`, { order: next.map((b) => b.id) });
         } catch (err) { showErr(err); }
+    };
+
+    const splitBlocks = (sid) => {
+        const bs = sections.find((s) => s.id === sid)?.blocks || [];
+        return [bs.filter((b) => b.block_type !== 'text'), bs.filter((b) => b.block_type === 'text')];
+    };
+
+    const onMediaDragEnd = (sid) => async ({ active, over }) => {
+        if (!over || active.id === over.id) return;
+        const [media, texts] = splitBlocks(sid);
+        const next = arrayMove(media, media.findIndex((b) => b.id === active.id), media.findIndex((b) => b.id === over.id));
+        await persistOrder(sid, [...next, ...texts]);
+    };
+
+    const onTextDragEnd = (sid) => async ({ active, over }) => {
+        if (!over || active.id === over.id) return;
+        const [media, texts] = splitBlocks(sid);
+        const next = arrayMove(texts, texts.findIndex((b) => b.id === active.id), texts.findIndex((b) => b.id === over.id));
+        await persistOrder(sid, [...media, ...next]);
     };
 
     if (loading) return <div className="dashboard-loading"><div className="spinner" /></div>;
@@ -413,6 +445,8 @@ const MediaSections = ({ path, onChanged }) => {
                     <SortableContext items={sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
                         {sections.map((s) => {
                             const blocks = s.blocks || [];
+                            const media = blocks.filter((b) => b.block_type !== 'text');
+                            const texts = blocks.filter((b) => b.block_type === 'text');
                             const blocksFull = blocks.length >= MAX_BLOCKS_PER_SECTION;
                             return (
                                 <SortableSection
@@ -425,19 +459,41 @@ const MediaSections = ({ path, onChanged }) => {
                                     onDelete={deleteSection}
                                     t={t}
                                 >
-                                    <div className="blocks-add">
-                                        <button type="button" disabled={blocksFull || uploadingId === s.id} onClick={() => openPicker(s.id)}><FaPlus /> {t('blocks.media')}</button>
-                                        <button type="button" disabled={blocksFull || uploadingId === s.id} onClick={() => addBlock(s.id, 'text')}><FaPlus /> {t('blocks.text')}</button>
-                                        {uploadingId === s.id && <span className="blocks-uploading">{t('blocks.uploading')}</span>}
+                                    {/* Yandex-style media strip: "+" cell, then draggable thumbnails
+                                        with a trash overlay. Uploads go straight in — no save needed. */}
+                                    <div className="media-grid">
+                                        <button
+                                            type="button"
+                                            className="media-add-cell"
+                                            disabled={blocksFull || uploadingId === s.id}
+                                            onClick={() => openPicker(s.id)}
+                                            title={t('blocks.media')}
+                                        >
+                                            {uploadingId === s.id ? <span className="spinner spinner-sm" /> : <FaPlus />}
+                                        </button>
+                                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onMediaDragEnd(s.id)}>
+                                            <SortableContext items={media.map((b) => b.id)} strategy={rectSortingStrategy}>
+                                                {media.map((b) => (
+                                                    <MediaThumb key={b.id} block={b} onDelete={deleteBlock(s.id)} />
+                                                ))}
+                                            </SortableContext>
+                                        </DndContext>
                                     </div>
 
-                                    {blocks.length === 0 ? (
-                                        <p className="blocks-empty">{t('blocks.empty')}</p>
-                                    ) : (
+                                    <div className="blocks-add">
+                                        <button type="button" disabled={blocksFull} onClick={() => addBlock(s.id, 'text')}><FaPlus /> {t('blocks.text')}</button>
+                                        {canVideo && (
+                                            <button type="button" disabled={blocksFull} onClick={() => addEmbed(s.id)}><FaYoutube /> YouTube</button>
+                                        )}
+                                    </div>
+
+                                    {blocks.length === 0 && <p className="blocks-empty">{t('blocks.empty')}</p>}
+
+                                    {texts.length > 0 && (
                                         <>
-                                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onBlockDragEnd(s.id)}>
-                                                <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-                                                    {blocks.map((b) => (
+                                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onTextDragEnd(s.id)}>
+                                                <SortableContext items={texts.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+                                                    {texts.map((b) => (
                                                         <SortableBlock
                                                             key={b.id}
                                                             block={b}
@@ -448,11 +504,11 @@ const MediaSections = ({ path, onChanged }) => {
                                                     ))}
                                                 </SortableContext>
                                             </DndContext>
-                                            {/* One save for the whole section — persists every edited block. */}
+                                            {/* One save for the whole section — persists every edited text block. */}
                                             <button
                                                 type="button"
                                                 className="block-save section-save"
-                                                disabled={savingId === s.id || !blocks.some((b) => b._dirty)}
+                                                disabled={savingId === s.id || !texts.some((b) => b._dirty)}
                                                 onClick={saveSection(s.id)}
                                             >
                                                 <FaSave /> {savingId === s.id ? t('detail.saving') : t('common.save')}

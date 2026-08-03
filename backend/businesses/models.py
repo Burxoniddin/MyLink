@@ -73,6 +73,7 @@ class Link(models.Model):
         ('dribbble', 'Dribbble'),
         ('twitch', 'Twitch'),
         ('discord', 'Discord'),
+        ('pinterest', 'Pinterest'),
         ('website', 'Website'),
         ('other', 'Other'),
     ]

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { useTranslation } from 'react-i18next';
@@ -87,7 +87,13 @@ const SortableSection = ({ section, expanded, onToggle, children, onRename, onCo
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: section.id });
     const style = { transform: CSS.Transform.toString(transform), transition };
     const [name, setName] = useState(section.name);
-    useEffect(() => setName(section.name), [section.name]);
+    // Sync the editable name when the prop changes — render-phase adjustment
+    // (per React docs) instead of an effect, so no cascading re-render.
+    const [prevSectionName, setPrevSectionName] = useState(section.name);
+    if (prevSectionName !== section.name) {
+        setPrevSectionName(section.name);
+        setName(section.name);
+    }
 
     return (
         <div ref={setNodeRef} style={style} className="section-item">
@@ -117,7 +123,24 @@ const SortableSection = ({ section, expanded, onToggle, children, onRename, onCo
                     {expanded ? <FaChevronUp /> : <FaChevronDown />}
                 </button>
             </div>
-            {expanded && <div className="section-body">{children}</div>}
+            {expanded && (
+                <div className="section-body">
+                    {/* Explicit cover row — the tiny header thumbnail alone was easy to miss. */}
+                    <div className="scr-row">
+                        <label className="scr-btn">
+                            {section.cover ? <img src={section.cover} alt="" /> : <FaImages />}
+                            <span>{section.cover ? t('sections.cover_change') : t('sections.cover_set')}</span>
+                            <input type="file" accept="image/*" hidden onChange={(e) => {
+                                const f = e.target.files[0];
+                                if (f) onCover(section.id, f);
+                                e.target.value = '';
+                            }} />
+                        </label>
+                        <span className="scr-hint">{t('sections.cover_hint')}</span>
+                    </div>
+                    {children}
+                </div>
+            )}
         </div>
     );
 };
@@ -130,6 +153,11 @@ const MediaSections = ({ path, onChanged }) => {
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState('');
     const [savingId, setSavingId] = useState(null);
+    const [uploadingId, setUploadingId] = useState(null);
+    // Shared hidden pickers for the "tap → gallery/camera" multi-file flow.
+    const imgInput = useRef(null);
+    const vidInput = useRef(null);
+    const pickSid = useRef(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -227,6 +255,40 @@ const MediaSections = ({ path, onChanged }) => {
         } catch (err) { showErr(err); }
     };
 
+    // Multi-file flow: the Rasm/Video buttons open the device picker (gallery or
+    // camera on mobile) straight away; every chosen file becomes its own block,
+    // uploaded and placed in order. Titles are then edited per block.
+    const addMediaFiles = async (sid, type, files) => {
+        if (!sid || files.length === 0) return;
+        setMsg('');
+        const section = sections.find((x) => x.id === sid);
+        const room = MAX_BLOCKS_PER_SECTION - (section?.blocks || []).length;
+        let picked = files.slice(0, Math.max(0, room));
+        if (type === 'video') {
+            if (picked.some((f) => f.size > MAX_VIDEO_BYTES)) setMsg(t('blocks.err_video_too_large'));
+            picked = picked.filter((f) => f.size <= MAX_VIDEO_BYTES);
+        }
+        if (picked.length === 0) return;
+        setUploadingId(sid);
+        try {
+            for (const file of picked) {
+                const created = await api.post(`businesses/${path}/blocks/`, { block_type: type, section: sid });
+                const fd = new FormData();
+                fd.append('block_type', type);
+                fd.append(type, file); // serializer field: image | video
+                const res = await api.patch(`blocks/${created.data.id}/`, fd, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+                patchSectionBlocks(sid, (bs) => [...bs, res.data]);
+            }
+        } catch (err) { showErr(err); } finally { setUploadingId(null); }
+    };
+
+    const openPicker = (sid, type) => {
+        pickSid.current = sid;
+        (type === 'image' ? imgInput : vidInput).current?.click();
+    };
+
     // Field edits only mark the block dirty — persisting happens once per
     // section via the single save button.
     const onField = (sid) => (id, patch) =>
@@ -306,6 +368,15 @@ const MediaSections = ({ path, onChanged }) => {
 
     return (
         <div className="blocks-tab">
+            {/* Hidden pickers for the tap→gallery multi-file image/video flow */}
+            <input
+                ref={imgInput} type="file" accept="image/*" multiple hidden
+                onChange={(e) => { addMediaFiles(pickSid.current, 'image', Array.from(e.target.files)); e.target.value = ''; }}
+            />
+            <input
+                ref={vidInput} type="file" accept="video/*" multiple hidden
+                onChange={(e) => { addMediaFiles(pickSid.current, 'video', Array.from(e.target.files)); e.target.value = ''; }}
+            />
             <div className="blocks-head">
                 <h3>{t('sections.title')} <span className="blocks-count">{sections.length}/{limit}</span></h3>
                 <button type="button" className="add-btn" disabled={atLimit} onClick={addSection}>
@@ -335,9 +406,10 @@ const MediaSections = ({ path, onChanged }) => {
                                     t={t}
                                 >
                                     <div className="blocks-add">
-                                        <button type="button" disabled={blocksFull} onClick={() => addBlock(s.id, 'image')}><FaPlus /> {t('blocks.image')}</button>
-                                        {canVideo && <button type="button" disabled={blocksFull} onClick={() => addBlock(s.id, 'video')}><FaPlus /> {t('blocks.video')}</button>}
-                                        <button type="button" disabled={blocksFull} onClick={() => addBlock(s.id, 'text')}><FaPlus /> {t('blocks.text')}</button>
+                                        <button type="button" disabled={blocksFull || uploadingId === s.id} onClick={() => openPicker(s.id, 'image')}><FaPlus /> {t('blocks.image')}</button>
+                                        {canVideo && <button type="button" disabled={blocksFull || uploadingId === s.id} onClick={() => openPicker(s.id, 'video')}><FaPlus /> {t('blocks.video')}</button>}
+                                        <button type="button" disabled={blocksFull || uploadingId === s.id} onClick={() => addBlock(s.id, 'text')}><FaPlus /> {t('blocks.text')}</button>
+                                        {uploadingId === s.id && <span className="blocks-uploading">{t('blocks.uploading')}</span>}
                                     </div>
 
                                     {blocks.length === 0 ? (

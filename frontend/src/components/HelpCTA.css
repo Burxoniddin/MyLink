@@ -82,6 +82,7 @@
     .help-cta, .help-cta::before { animation: none; }
 }
 @media (max-width: 640px) {
-    .help-cta { width: 54px; height: 54px; right: 16px; bottom: 16px; }
+    /* Raised on mobile so it doesn't sit on top of bottom menus/tab bars. */
+    .help-cta { width: 54px; height: 54px; right: 14px; bottom: 88px; }
     .help-cta-label { display: none; }
 }

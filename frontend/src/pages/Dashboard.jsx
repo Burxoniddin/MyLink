@@ -14,6 +14,8 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [showUpgrade, setShowUpgrade] = useState(false);
     const [query, setQuery] = useState('');
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -50,6 +52,26 @@ const Dashboard = () => {
     const filtered = q
         ? businesses.filter((b) => b.name.toLowerCase().includes(q) || b.path.toLowerCase().includes(q))
         : businesses;
+
+    // Client-side pagination (default 10 per page, selectable 10/25/50/100).
+    const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+    const curPage = Math.min(page, totalPages);
+    const pageItems = filtered.slice((curPage - 1) * perPage, curPage * perPage);
+
+    // Page numbers with ellipsis for long lists (1 … 4 5 6 … 20).
+    const pageList = () => {
+        if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+        const wanted = new Set([1, 2, totalPages - 1, totalPages, curPage - 1, curPage, curPage + 1]);
+        const nums = [...wanted].filter((n) => n >= 1 && n <= totalPages).sort((a, b) => a - b);
+        const out = [];
+        let prev = 0;
+        for (const n of nums) {
+            if (n - prev > 1) out.push('…');
+            out.push(n);
+            prev = n;
+        }
+        return out;
+    };
 
     const handleAdd = () => navigate('/business/new');
 
@@ -118,7 +140,7 @@ const Dashboard = () => {
                                 type="text"
                                 placeholder={t('dashboard.search_ph')}
                                 value={query}
-                                onChange={(e) => setQuery(e.target.value)}
+                                onChange={(e) => { setQuery(e.target.value); setPage(1); }}
                             />
                         </div>
                     )}
@@ -136,8 +158,9 @@ const Dashboard = () => {
                     ) : filtered.length === 0 ? (
                         <p className="blocks-empty">{t('dashboard.no_results')}</p>
                     ) : (
+                        <>
                         <div className="business-grid">
-                            {filtered.map((biz) => (
+                            {pageItems.map((biz) => (
                                 <div key={biz.id} className="business-card"
                                     style={biz.is_locked && biz.role === 'owner' ? { opacity: 0.65 } : undefined}
                                     onClick={() => navigate(`/business/${biz.path}`)}>
@@ -223,6 +246,35 @@ const Dashboard = () => {
                                 </div>
                             ))}
                         </div>
+
+                        {(totalPages > 1 || filtered.length > 10) && (
+                            <div className="pagination">
+                                <button
+                                    type="button" className="page-btn" disabled={curPage === 1}
+                                    onClick={() => setPage(curPage - 1)} aria-label="prev"
+                                >‹</button>
+                                {pageList().map((p, i) => (
+                                    p === '…'
+                                        ? <span key={`d${i}`} className="page-dots">…</span>
+                                        : <button
+                                            key={p} type="button"
+                                            className={`page-btn ${p === curPage ? 'active' : ''}`}
+                                            onClick={() => setPage(p)}
+                                        >{p}</button>
+                                ))}
+                                <button
+                                    type="button" className="page-btn" disabled={curPage === totalPages}
+                                    onClick={() => setPage(curPage + 1)} aria-label="next"
+                                >›</button>
+                                <label className="page-size">
+                                    {t('dashboard.per_page')}
+                                    <select value={perPage} onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}>
+                                        {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+                                    </select>
+                                </label>
+                            </div>
+                        )}
+                        </>
                     )}
                 </div>
             </main>

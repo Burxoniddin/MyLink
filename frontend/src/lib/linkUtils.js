@@ -27,6 +27,7 @@ export const detectPlatform = (url) => {
     if (lower.includes('dribbble.com')) return 'dribbble';
     if (lower.includes('twitch.tv')) return 'twitch';
     if (lower.includes('discord.gg') || lower.includes('discord.com') || lower.includes('discordapp.com')) return 'discord';
+    if (lower.includes('pinterest.') || lower.includes('pin.it')) return 'pinterest';
     return 'website';
 };
 

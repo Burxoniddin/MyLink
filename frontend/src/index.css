@@ -1172,23 +1172,6 @@ select {
   font-size: 20px;
 }
 .hl-thumb img, .hl-thumb video { width: 100%; height: 100%; object-fit: cover; }
-.hl-count {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: #111827;
-  border: 2px solid #fff;
-  color: #fff;
-  font-size: 10.5px;
-  font-weight: 700;
-  display: grid;
-  place-items: center;
-  z-index: 2;
-}
 .hl-label {
   max-width: 78px;
   font-size: 12px;
@@ -1199,9 +1182,35 @@ select {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Classic page doesn't set a root text colour — pick per theme mode so labels
+   never end up dark-on-dark (sector templates inherit their own --t-text). */
+.landing-page .hl-label { color: #f1f5f9; }
+.landing-page.light-theme .hl-label { color: #1f2937; }
+/* IG-style story progress segments (top of the viewer modal) */
+.hl-progress {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+  z-index: 3;
+}
+.hl-seg {
+  flex: 1;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  overflow: hidden;
+}
+.hl-seg-fill { display: block; height: 100%; width: 0; background: #fff; border-radius: inherit; }
+.hl-seg-fill.done { width: 100%; }
+.hl-seg-fill.anim { animation-name: hl-fill; animation-timing-function: linear; animation-fill-mode: forwards; }
+.hl-seg-fill.hold { width: 100%; opacity: 0.5; }
+@keyframes hl-fill { from { width: 0; } to { width: 100%; } }
 .hl-counter {
   position: absolute;
-  top: 20px;
+  top: 26px;
   left: 50%;
   transform: translateX(-50%);
   color: rgba(255, 255, 255, 0.85);
@@ -3939,3 +3948,23 @@ select {
   margin-top: 4px;
 }
 .section-save:disabled { opacity: 0.5; cursor: default; }
+
+/* Dashboard pagination (bottom-centered) */
+.pagination { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 28px 0 8px; flex-wrap: wrap; }
+.page-btn { min-width: 36px; height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid #e5e7eb; background: #fff; color: #374151; font-weight: 600; font-size: 14px; cursor: pointer; transition: border-color .15s, background .15s; }
+.page-btn:hover:not(:disabled):not(.active) { border-color: #c7d2fe; }
+.page-btn.active { background: var(--primary, #4f46e5); border-color: var(--primary, #4f46e5); color: #fff; cursor: default; }
+.page-btn:disabled { opacity: .4; cursor: not-allowed; }
+.page-dots { padding: 0 2px; color: #9ca3af; }
+.page-size { display: inline-flex; align-items: center; gap: 8px; margin-left: 14px; color: #6b7280; font-size: 13.5px; }
+.page-size select { padding: 7px 10px; border-radius: 10px; border: 1px solid #e5e7eb; background: #fff; font-size: 14px; cursor: pointer; }
+
+/* Media section: explicit cover row (discoverable cover picking) */
+.scr-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 12px; margin-bottom: 12px; background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 12px; }
+.scr-btn { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; font-size: 14px; color: #4f46e5; }
+.scr-btn img { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; }
+.scr-btn > svg { width: 40px; height: 40px; padding: 10px; box-sizing: border-box; border-radius: 10px; background: #eef2ff; color: #4f46e5; }
+.scr-btn:hover span { text-decoration: underline; }
+.scr-hint { color: #9ca3af; font-size: 12.5px; }
+.section-cover:hover { border-color: #4f46e5; color: #4f46e5; }
+.blocks-uploading { align-self: center; color: #6b7280; font-size: 13.5px; }

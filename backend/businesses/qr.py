@@ -88,15 +88,6 @@ def business_contacts(business):
 # PIL helpers (Instagram story)
 # --------------------------------------------------------------------------- #
 
-def _vgradient(w, h, top, bottom):
-    """Vertical 2-colour gradient (rendered 1px-wide then stretched)."""
-    col = Image.new('RGB', (1, h))
-    for y in range(h):
-        t = y / (h - 1)
-        col.putpixel((0, y), tuple(int(top[i] + (bottom[i] - top[i]) * t) for i in range(3)))
-    return col.resize((w, h))
-
-
 def _circle_logo(pil_img, size):
     """Crop ``pil_img`` to a centred circle of ``size`` px (RGBA)."""
     img = ImageOps.fit(pil_img.convert('RGB'), (size, size), Image.LANCZOS)
@@ -126,80 +117,85 @@ def _centred(draw, cx, y, text, font, fill):
     draw.text((cx - w / 2, y), text, font=font, fill=fill)
 
 
+_ASSETS_DIR = os.path.join(os.path.dirname(__file__), 'assets')
+
+
 def story_png_bytes(business, url):
-    """A ready-to-post 1080x1920 Instagram-story image: brand gradient, logo,
-    name, description, a white QR panel and the MyLink watermark. Open to all
-    tiers — it's watermarked marketing the user shares to their story."""
+    """A ready-to-post 1080x1920 Instagram-story image on the branded chain
+    background (assets/story_bg.jpg): a white rounded card carrying the logo
+    disc, business name, page QR and bio, with the page URL underneath.
+    Open to all tiers — it's branded marketing the user shares to their story."""
     W, H = 1080, 1920
-    img = _vgradient(W, H, INDIGO, DEEP)
+    img = Image.open(os.path.join(_ASSETS_DIR, 'story_bg.jpg')).convert('RGB')
+    if img.size != (W, H):
+        img = img.resize((W, H), Image.LANCZOS)
     draw = ImageDraw.Draw(img, 'RGBA')
     cx = W // 2
 
-    # Soft decorative blobs.
-    draw.ellipse((-160, -160, 220, 220), fill=(255, 255, 255, 22))
-    draw.ellipse((W - 240, 120, W + 160, 540), fill=(255, 255, 255, 16))
+    # White rounded card (shorter when there is no bio under the QR).
+    card_l, card_r, card_t = 190, 890, 521
+    card_b = 1393 if business.description else 1265
+    draw.rounded_rectangle((card_l, card_t, card_r, card_b), radius=56, fill=(255, 255, 255, 255))
 
-    # Logo (circle) or initial.
-    logo_size = 230
-    ly = 250
+    # Logo disc straddling the card's top edge: white ring + logo or initials.
+    ring_r, logo_r, ly = 68, 58, card_t - 3
+    draw.ellipse((cx - ring_r, ly - ring_r, cx + ring_r, ly + ring_r), fill=(255, 255, 255, 255))
     placed = False
     if business.logo:
         try:
             with Image.open(business.logo.path) as lg:
-                img.paste(_circle_logo(lg, logo_size), (cx - logo_size // 2, ly), _circle_logo(lg, logo_size))
+                circ = _circle_logo(lg, logo_r * 2)
+            img.paste(circ, (cx - logo_r, ly - logo_r), circ)
             placed = True
         except Exception:
             placed = False
     if not placed:
-        draw.ellipse((cx - logo_size // 2, ly, cx + logo_size // 2, ly + logo_size), fill=(255, 255, 255, 38))
-        initial = (business.name or 'M').strip()[:1].upper()
-        f = _font(120, bold=True)
-        bb = draw.textbbox((0, 0), initial, font=f)
-        draw.text((cx - (bb[2] - bb[0]) / 2, ly + logo_size / 2 - (bb[3] - bb[1]) / 2 - bb[1]), initial, font=f, fill=(255, 255, 255, 235))
+        draw.ellipse((cx - logo_r, ly - logo_r, cx + logo_r, ly + logo_r), fill=(59, 130, 246, 255))
+        initials = ''.join(w[0] for w in (business.name or 'M').split()[:2]).upper()
+        f = _font(50, bold=True)
+        bb = draw.textbbox((0, 0), initials, font=f)
+        draw.text((cx - (bb[2] - bb[0]) / 2 - bb[0], ly - (bb[3] - bb[1]) / 2 - bb[1]),
+                  initials, font=f, fill=(255, 255, 255, 255))
 
-    # Name (wrapped, up to 2 lines).
-    y = ly + logo_size + 60
-    name_font = _font(76, bold=True)
-    for line in _wrap(draw, business.name or '', name_font, W - 200)[:2]:
-        _centred(draw, cx, y, line, name_font, (255, 255, 255, 255))
-        y += 92
+    # Business name — shrinks to fit the card, hard-truncates as a last resort.
+    name = (business.name or 'MyLink').strip()
+    max_w = card_r - card_l - 70
+    size = 50
+    name_font = _font(size, bold=True)
+    while size > 28 and draw.textlength(name, font=name_font) > max_w:
+        size -= 2
+        name_font = _font(size, bold=True)
+    if draw.textlength(name, font=name_font) > max_w:
+        while name and draw.textlength(name + '...', font=name_font) > max_w:
+            name = name[:-1]
+        name += '...'
+    _centred(draw, cx, 612, name, name_font, (17, 17, 17))
 
-    # Description (wrapped, up to 2 lines).
-    if business.description:
-        y += 6
-        desc_font = _font(38)
-        for line in _wrap(draw, business.description, desc_font, W - 260)[:2]:
-            _centred(draw, cx, y, line, desc_font, (255, 255, 255, 205))
-            y += 52
-
-    # "Scan me" pill to fill the gap above the panel.
-    pill_font = _font(34, bold=True)
-    pill_txt = 'SAHIFAMNI OCHING'
-    pw = draw.textlength(pill_txt, font=pill_font)
-    pill_y = 940
-    draw.rounded_rectangle((cx - pw / 2 - 34, pill_y, cx + pw / 2 + 34, pill_y + 70), radius=35, fill=(255, 255, 255, 40))
-    _centred(draw, cx, pill_y + 14, pill_txt, pill_font, (255, 255, 255, 235))
-
-    # White QR panel.
-    panel_w, panel_h = 700, 640
-    px, py = cx - panel_w // 2, 1070
-    draw.rounded_rectangle((px, py, px + panel_w, py + panel_h), radius=48, fill=(255, 255, 255, 255))
-
-    qr_size = 480
+    # Page QR.
+    qr_size = 470
     qr_im = _qr_image(url, box_size=20, border=0).resize((qr_size, qr_size), Image.NEAREST)
-    img.paste(qr_im, (cx - qr_size // 2, py + 60))
+    img.paste(qr_im, (cx - qr_size // 2, 722))
 
-    path_font = _font(38, bold=True)
-    _centred(draw, cx, py + 60 + qr_size + 26, url.replace('https://', '').replace('http://', ''), path_font, (31, 27, 79))
+    # Bio: up to 2 centred lines under the QR ('...' when cut short).
+    if business.description:
+        bio_font = _font(32)
+        bio_w = card_r - card_l - 90
+        lines = _wrap(draw, business.description.strip(), bio_font, bio_w)
+        y = 1240
+        for i, line in enumerate(lines[:2]):
+            if i == 1 and len(lines) > 2:
+                while line and draw.textlength(line + '...', font=bio_font) > bio_w:
+                    line = line[:-1]
+                line += '...'
+            _centred(draw, cx, y, line, bio_font, (45, 45, 45))
+            y += 46
 
-    # Watermark (below the panel, on the gradient).
-    wm_font = _font(42, bold=True)
-    tag_font = _font(30)
-    _centred(draw, cx, H - 132, 'MyLink.asia', wm_font, (255, 255, 255, 240))
-    _centred(draw, cx, H - 82, 'Skanerlang va kuzating', tag_font, (255, 255, 255, 175))
+    # Page URL below the card.
+    plain = url.replace('https://', '').replace('http://', '')
+    _centred(draw, cx, card_b + 72, plain, _font(48), (255, 255, 255, 242))
 
     buf = BytesIO()
-    img.convert('RGB').save(buf, format='PNG')
+    img.save(buf, format='PNG')
     return buf.getvalue()
 
 

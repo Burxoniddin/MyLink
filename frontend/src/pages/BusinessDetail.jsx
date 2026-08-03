@@ -192,15 +192,27 @@ const BusinessDetail = ({ isNew = false }) => {
         }
     };
 
+    // Story-first share: build the ready IG-story image and hand it straight to
+    // the system share sheet — on the phone the user just picks Instagram →
+    // Stories → publish. Falls back to a URL share, then to copying the link.
     const handleShare = async () => {
-        if (navigator.share) {
-            try {
-                await navigator.share({ title: business.name, url: publicUrl });
-            } catch {
-                /* user dismissed the share sheet */
+        try {
+            if (navigator.canShare) {
+                const res = await api.get(`businesses/${business.path}/story.png`, { responseType: 'blob' });
+                const file = new File([res.data], `${business.path}-story.png`, { type: 'image/png' });
+                if (navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: business.name });
+                    return;
+                }
             }
-        } else {
+            if (navigator.share) {
+                await navigator.share({ title: business.name, url: publicUrl });
+                return;
+            }
             handleCopy();
+        } catch (err) {
+            if (err?.name === 'AbortError') return; // user closed the share sheet
+            handleCopy(); // image fetch/share failed — at least copy the link
         }
     };
 

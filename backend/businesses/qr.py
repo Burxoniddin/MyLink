@@ -17,6 +17,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfgen import canvas
 
 # Brand palette.
@@ -232,23 +233,50 @@ def qr_pdf_bytes(business, url):
     return buf.getvalue()
 
 
+def _logo_reader(business, size_px=320):
+    """Circular-cropped PNG ImageReader of the logo (None if absent/unreadable)
+    so PDFs never paste a rectangular logo over the round disc."""
+    if not business.logo:
+        return None
+    try:
+        with Image.open(business.logo.path) as lg:
+            circ = _circle_logo(lg, size_px)
+        buf = BytesIO()
+        circ.save(buf, format='PNG')
+        buf.seek(0)
+        return ImageReader(buf)
+    except Exception:
+        return None
+
+
 def _draw_logo_circle(c, business, cx, cy, r, accent='#4f46e5'):
-    """White circle + the logo (or initial) centred at (cx, cy)."""
+    """White disc filled by the circular-cropped logo (or the brand initial)."""
     c.setFillColor(colors.white)
     c.circle(cx, cy, r, stroke=0, fill=1)
-    if business.logo:
-        try:
-            d = r * 1.5
-            c.drawImage(
-                ImageReader(business.logo.path), cx - d / 2, cy - d / 2, d, d,
-                preserveAspectRatio=True, mask='auto',
-            )
-            return
-        except Exception:
-            pass
+    logo = _logo_reader(business)
+    if logo is not None:
+        c.drawImage(logo, cx - r, cy - r, r * 2, r * 2, mask='auto')
+        return
     c.setFillColor(colors.HexColor(accent))
     c.setFont('Helvetica-Bold', r * 1.1)
     c.drawCentredString(cx, cy - r * 0.38, (business.name or 'M').strip()[:1].upper())
+
+
+def _fit_size(text, font, max_size, min_size, max_width):
+    """Largest font size (stepping down) at which ``text`` fits ``max_width``."""
+    size = max_size
+    while size > min_size and stringWidth(text, font, size) > max_width:
+        size -= 0.5
+    return size
+
+
+def _truncated(text, font, size, max_width):
+    """``text`` cut with '...' so it never draws past ``max_width``."""
+    if stringWidth(text, font, size) <= max_width:
+        return text
+    while text and stringWidth(text + '...', font, size) > max_width:
+        text = text[:-1]
+    return (text + '...') if text else ''
 
 
 # Vizitka colour designs, one per page-template family — the picker in the
@@ -273,86 +301,125 @@ def card_pdf_bytes(business, url, design='classic'):
     """Double-sided 85x55 mm business card in one of the ``CARD_DESIGNS``
     palettes (unknown slugs fall back to classic).
 
-    Front: brand gradient, logo, name + (short) description, path, MyLink mark.
-    Back: white, a QR in a rounded panel, scan label + path, MyLink mark."""
+    Every text is measured: the name shrinks to fit, description/contacts/path
+    truncate with '...' — nothing can overlap or run off the card.
+
+    Front: brand gradient, round logo, fitted name + description, thin accent
+    divider, contact rows (phone / telegram / instagram), path + MyLink mark.
+    Back: accent top strip, white QR panel, scan label + path."""
     d = CARD_DESIGNS.get(design) or CARD_DESIGNS['classic']
     ink = colors.HexColor('#1c1813') if d['light'] else colors.white
-    ink_soft = _with_alpha('#1c1813', 0.75) if d['light'] else colors.Color(1, 1, 1, alpha=0.85)
-    corner = _with_alpha(d['accent'], 0.14) if d['light'] else colors.Color(1, 1, 1, alpha=0.10)
+    ink_soft = _with_alpha('#1c1813', 0.72) if d['light'] else colors.Color(1, 1, 1, alpha=0.82)
+    corner = _with_alpha(d['accent'], 0.12) if d['light'] else colors.Color(1, 1, 1, alpha=0.08)
 
     buf = BytesIO()
     card_w, card_h = 85 * mm, 55 * mm
     c = canvas.Canvas(buf, pagesize=(card_w, card_h))
+    margin = 8 * mm
+    plain_url = url.replace('https://', '').replace('http://', '')
 
     # ---- FRONT ----
     c.linearGradient(0, card_h, card_w, 0,
                      (colors.HexColor(d['front1']), colors.HexColor(d['front2'])), extend=True)
-    # faint corner accents
+    # Faint corner accents, kept away from the text zones.
     c.setFillColor(corner)
-    c.circle(card_w - 6 * mm, card_h - 4 * mm, 16 * mm, stroke=0, fill=1)
-    c.circle(8 * mm, 4 * mm, 12 * mm, stroke=0, fill=1)
+    c.circle(card_w + 2 * mm, card_h + 2 * mm, 18 * mm, stroke=0, fill=1)
+    c.circle(-2 * mm, -2 * mm, 14 * mm, stroke=0, fill=1)
 
-    _draw_logo_circle(c, business, 16 * mm, card_h - 18 * mm, 9 * mm, accent=d['accent'])
+    # Header band: round logo left, name (+ optional description) to the right.
+    logo_r = 8 * mm
+    logo_cx, logo_cy = margin + logo_r, card_h - 13 * mm
+    _draw_logo_circle(c, business, logo_cx, logo_cy, logo_r, accent=d['accent'])
+
+    text_x = logo_cx + logo_r + 3.5 * mm
+    text_w = card_w - margin - text_x
+    name = (business.name or '').strip() or 'MyLink'
+    name_size = _fit_size(name, 'Helvetica-Bold', 15, 9, text_w)
+    name = _truncated(name, 'Helvetica-Bold', name_size, text_w)
 
     c.setFillColor(ink)
-    c.setFont('Helvetica-Bold', 15)
-    c.drawString(30 * mm, card_h - 17 * mm, business.name[:22])
+    c.setFont('Helvetica-Bold', name_size)
     if business.description:
+        c.drawString(text_x, card_h - 12.5 * mm, name)
         c.setFillColor(ink_soft)
-        c.setFont('Helvetica', 8)
-        c.drawString(30 * mm, card_h - 21.5 * mm, business.description[:36])
+        c.setFont('Helvetica', 7.5)
+        c.drawString(text_x, card_h - 17.5 * mm,
+                     _truncated(business.description.strip(), 'Helvetica', 7.5, text_w))
+    else:
+        c.drawString(text_x, card_h - 14.5 * mm, name)  # optically centred with the logo
+
+    # Thin accent divider between the header and the contact rows.
+    c.setStrokeColor(_with_alpha(d['accent'], 0.55))
+    c.setLineWidth(0.8)
+    c.line(margin, card_h - 23 * mm, card_w - margin, card_h - 23 * mm)
 
     # Contact rows pulled from the page's links: phone, Telegram, Instagram.
-    # Each gets a small brand-coloured dot + label so the card mirrors the page.
     contacts = business_contacts(business)
     rows = []
     if contacts['phone']:
-        rows.append((colors.HexColor('#16a34a'), contacts['phone'][:24]))
+        rows.append((colors.HexColor('#16a34a'), contacts['phone']))
     if contacts['telegram']:
-        rows.append((colors.HexColor('#229ed9'), '@' + contacts['telegram'][:22]))
+        rows.append((colors.HexColor('#229ed9'), '@' + contacts['telegram']))
     if contacts['instagram']:
-        rows.append((colors.HexColor('#e1306c'), '@' + contacts['instagram'][:22]))
+        rows.append((colors.HexColor('#e1306c'), '@' + contacts['instagram']))
 
-    cy = card_h - 28 * mm
-    for dot, label in rows:
+    row_y = card_h - 29 * mm
+    label_x = margin + 5 * mm
+    label_w = card_w - margin - label_x
+    for dot, label in rows[:3]:
         c.setFillColor(dot)
-        c.circle(9 * mm, cy + 1 * mm, 1.4 * mm, stroke=0, fill=1)
+        c.circle(margin + 1.6 * mm, row_y + 1.1 * mm, 1.3 * mm, stroke=0, fill=1)
         c.setFillColor(ink)
         c.setFont('Helvetica-Bold', 8.5)
-        c.drawString(12.5 * mm, cy, label)
-        cy -= 6 * mm
+        c.drawString(label_x, row_y, _truncated(label, 'Helvetica-Bold', 8.5, label_w))
+        row_y -= 5.6 * mm
 
+    # Bottom line: page path left, MyLink mark right — measured so they never meet.
+    brand = 'MyLink.asia'
+    brand_w = stringWidth(brand, 'Helvetica', 7)
     c.setFillColor(ink)
-    c.setFont('Helvetica-Bold', 9.5)
-    c.drawString(7 * mm, 7 * mm, url.replace('https://', '').replace('http://', ''))
-    c.setFont('Helvetica', 7.5)
+    c.setFont('Helvetica-Bold', 9)
+    c.drawString(margin, 6.5 * mm,
+                 _truncated(plain_url, 'Helvetica-Bold', 9, card_w - 2 * margin - brand_w - 4 * mm))
     c.setFillColor(ink_soft)
-    c.drawRightString(card_w - 7 * mm, 7 * mm, 'MyLink.asia')
+    c.setFont('Helvetica', 7)
+    c.drawRightString(card_w - margin, 6.5 * mm, brand)
     c.showPage()
 
     # ---- BACK ----
-    c.setFillColor(colors.HexColor('#f7f7fb'))
+    c.setFillColor(colors.white)
     c.rect(0, 0, card_w, card_h, stroke=0, fill=1)
 
-    panel = 38 * mm
-    pjx, pjy = (card_w - panel) / 2, (card_h - panel) / 2 + 3 * mm
+    # Accent strip across the top with a small brand mark.
+    strip_h = 4.5 * mm
+    c.setFillColor(colors.HexColor(d['accent']))
+    c.rect(0, card_h - strip_h, card_w, strip_h, stroke=0, fill=1)
+    c.setFillColor(colors.white)
+    c.setFont('Helvetica-Bold', 6.5)
+    c.drawCentredString(card_w / 2, card_h - strip_h + 1.4 * mm, 'MyLink.asia')
+
+    # White QR panel, centred.
+    panel = 31 * mm
+    pjx = (card_w - panel) / 2
+    pjy = card_h - strip_h - 3 * mm - panel
     c.setFillColor(colors.white)
     c.setStrokeColor(colors.HexColor('#e5e7eb'))
-    c.setLineWidth(0.6)
+    c.setLineWidth(0.7)
     c.roundRect(pjx, pjy, panel, panel, 3 * mm, stroke=1, fill=1)
 
-    qr_size = 30 * mm
+    qr_size = 25 * mm
     c.drawImage(
         _image_reader(_qr_image(url, box_size=4, border=0)),
         (card_w - qr_size) / 2, pjy + (panel - qr_size) / 2, qr_size, qr_size,
     )
 
-    c.setFillColor(colors.HexColor('#1f1b4f'))
-    c.setFont('Helvetica-Bold', 9)
-    c.drawCentredString(card_w / 2, pjy - 5 * mm, 'Skanerlang va kuzating')
+    c.setFillColor(colors.HexColor('#1f2937'))
+    c.setFont('Helvetica-Bold', 8.5)
+    c.drawCentredString(card_w / 2, 10.5 * mm, 'Skanerlang va kuzating')
     c.setFillColor(colors.HexColor(d['accent']))
-    c.setFont('Helvetica', 8)
-    c.drawCentredString(card_w / 2, 5 * mm, url.replace('https://', '').replace('http://', '') + '  ·  MyLink.asia')
+    c.setFont('Helvetica-Bold', 9)
+    c.drawCentredString(card_w / 2, 5.5 * mm,
+                        _truncated(plain_url, 'Helvetica-Bold', 9, card_w - 2 * margin))
 
     c.showPage()
     c.save()

@@ -27,6 +27,12 @@ const ThemePicker = ({ value, onChange, locked }) => {
                         title={t(`theme.${id}`)}
                         aria-label={t(`theme.${id}`)}
                     >
+                        {/* Bottom-right half shows the link/accent colour so dark
+                            page backgrounds stay distinguishable at a glance. */}
+                        <span
+                            className="theme-sw-accent"
+                            style={{ background: PALETTES[id].accent || '#6366f1' }}
+                        />
                         {value === id && <FaCheck />}
                     </button>
                 ))}

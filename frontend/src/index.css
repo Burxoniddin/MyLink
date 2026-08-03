@@ -648,15 +648,15 @@ select {
 
 .card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
   margin-bottom: 12px;
 }
 .card-header .card-info { flex: 1; min-width: 0; }
 .card-header .card-info h3,
 .card-header .card-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
-/* Pin star + active switch sit on the name row, right-aligned */
-.card-controls { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: auto; }
+/* Pin star + active switch sit on the name row, top-right aligned */
+.card-controls { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: auto; margin-top: 2px; }
 
 .card-logo {
   width: 56px;
@@ -1246,15 +1246,32 @@ select {
 .hl-stage {
   width: 100%;
   max-width: 420px;
-  max-height: 86vh;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 14px;
 }
 .hl-stage-title { color: #fff; font-weight: 700; font-size: 17px; text-align: center; }
-/* Fill the stage width so small images open story-size, not thumbnail-size. */
-.hl-stage-media { width: 100%; max-width: 100%; max-height: 76vh; border-radius: 18px; object-fit: contain; }
+/* Media fills the stage: fixed viewport height + object-fit:contain means the
+   image/video stretches until its LONGEST side hits the screen edge. */
+.hl-stage-media {
+  width: 100%;
+  height: calc(100vh - 150px);
+  height: calc(100dvh - 150px);
+  max-height: none;
+  border-radius: 18px;
+  object-fit: contain;
+}
+@media (max-width: 640px) {
+  .hl-modal { padding: 0; }
+  .hl-stage { max-width: 100%; }
+  .hl-stage-media {
+    height: calc(100vh - 110px);
+    height: calc(100dvh - 110px);
+    border-radius: 0;
+  }
+}
 .hl-stage-text {
   color: #fff;
   font-size: 17px;
@@ -3992,10 +4009,16 @@ select {
 .saved-flash svg { width: 46px; height: 46px; padding: 12px; box-sizing: border-box; border-radius: 50%; background: #dcfce7; color: #16a34a; }
 @keyframes sf-in { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
 
-/* Yandex-style media grid in the section editor: "+" cell + square thumbs */
-.media-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+/* Yandex-style media grid in the section editor: "+" cell + square thumbs.
+   auto-fill grid → cells stretch to fill the row (3+ columns on phones). */
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
 .media-cell {
-  position: relative; width: 104px; height: 104px; border-radius: 14px; overflow: hidden;
+  position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 14px; overflow: hidden;
   border: 1px solid #e5e7eb; background: #f3f4f6; display: flex; align-items: center;
   justify-content: center; color: #9ca3af; font-size: 22px; cursor: grab; touch-action: none;
 }
@@ -4011,9 +4034,9 @@ select {
   border-radius: 8px; background: rgba(17, 24, 39, .55); color: #fff; font-size: 11px;
 }
 .media-add-cell {
-  width: 104px; height: 104px; border-radius: 14px; border: 2px dashed #c7d2fe;
+  width: 100%; aspect-ratio: 1 / 1; border-radius: 14px; border: 2px dashed #c7d2fe;
   background: #eef2ff; color: #4f46e5; display: flex; align-items: center;
-  justify-content: center; font-size: 22px; cursor: pointer; flex-shrink: 0;
+  justify-content: center; font-size: 22px; cursor: pointer;
   transition: background .15s, border-color .15s;
 }
 .media-add-cell:hover:not(:disabled) { background: #e0e7ff; border-color: #a5b4fc; }

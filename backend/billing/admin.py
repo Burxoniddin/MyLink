@@ -1,7 +1,17 @@
 from django import forms
 from django.contrib import admin
 
-from .models import Plan, PlanPrice, PromoCode, PromoRedemption, ReferralReward, Subscription
+from .models import PaymentOrder, Plan, PlanPrice, PromoCode, PromoRedemption, ReferralReward, Subscription
+
+
+@admin.register(PaymentOrder)
+class PaymentOrderAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'tier', 'period', 'amount', 'status', 'click_trans_id', 'created_at', 'paid_at')
+    list_filter = ('status', 'tier', 'period')
+    search_fields = ('user__phone_number', 'user__email', 'click_trans_id')
+    autocomplete_fields = ('user', 'subscription')
+    readonly_fields = ('created_at', 'paid_at')
+    date_hierarchy = 'created_at'
 
 
 class TierChoiceMixin:

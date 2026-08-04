@@ -125,6 +125,34 @@ class Subscription(models.Model):
         return f"{self.user} - {self.tier} ({self.status})"
 
 
+class PaymentOrder(models.Model):
+    """One Click checkout attempt for a (plan, period).
+
+    ``merchant_trans_id`` sent to Click is this row's pk. Click's Prepare call
+    marks it prepared (stores ``click_trans_id``); Complete marks it paid and
+    grants the subscription (see billing.views Click callback)."""
+    STATUS = [('pending', 'Pending'), ('paid', 'Paid'), ('canceled', 'Canceled')]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='payment_orders')
+    tier = models.CharField(max_length=20)   # Plan slug
+    period = models.CharField(max_length=10, choices=ent.PERIOD_CHOICES)
+    amount = models.PositiveIntegerField(help_text="Narx (UZS so'm)")
+    status = models.CharField(max_length=10, choices=STATUS, default='pending')
+    click_trans_id = models.CharField(max_length=40, blank=True)
+    subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.SET_NULL,
+                                     related_name='payment_orders')
+    created_at = models.DateTimeField(auto_now_add=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "To'lov (Click)"
+        verbose_name_plural = "To'lovlar (Click)"
+
+    def __str__(self):
+        return f"#{self.pk} {self.user} {self.tier}/{self.period} {self.amount} ({self.status})"
+
+
 class PromoCode(models.Model):
     """A redeemable code that grants a paid tier directly (no payment).
 

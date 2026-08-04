@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
 import { useEntitlements } from '../context/EntitlementContext';
+import { useToast } from '../components/Toast';
 import './HomePage.css';
+
+const PERIOD_ORDER = ['onetime', '1m', '6m', '1y'];
 
 // Build localized feature bullets from a plan's feature matrix (item 6 dynamic).
 const featureLines = (f, t) => {
@@ -34,13 +37,64 @@ const headlineAmount = (prices, t) => {
 
 const Pricing = () => {
     const { t } = useTranslation();
-    const { entitlements } = useEntitlements();
+    const toast = useToast();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { entitlements, refresh } = useEntitlements();
     const currentTier = entitlements?.tier || 'free';
     const [plans, setPlans] = useState(null);
+    const [periodSel, setPeriodSel] = useState({});   // slug -> chosen period
+    const [buying, setBuying] = useState('');
 
     useEffect(() => {
         api.get('plans/').then((r) => setPlans(r.data)).catch(() => setPlans([]));
     }, []);
+
+    // Back from Click checkout: ?paid=1 (+ Click appends payment_status=2 on success).
+    useEffect(() => {
+        const q = new URLSearchParams(location.search);
+        if (!q.get('paid')) return;
+        if (q.get('payment_status') === '2') {
+            toast.success(t('pricing.paid_ok'));
+        } else {
+            toast.info(t('pricing.paid_wait'));
+        }
+        refresh();
+        navigate('/pricing', { replace: true });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const buy = async (slug) => {
+        if (!localStorage.getItem('token')) { navigate('/login'); return; }
+        const period = periodSel[slug];
+        if (!period) return;
+        setBuying(slug);
+        try {
+            const res = await api.post('payments/click/create/', {
+                tier: slug,
+                period,
+                return_url: `${window.location.origin}/pricing?paid=1`,
+            });
+            window.location.href = res.data.pay_url;
+        } catch (err) {
+            if (err.response?.status === 503) toast.error(t('pricing.err_click_off'));
+            else toast.error(t('common.error'));
+            setBuying('');
+        }
+    };
+
+    // Default each paid plan's period selector to its cheapest/first option.
+    useEffect(() => {
+        if (!plans) return;
+        const init = {};
+        plans.forEach((p) => {
+            const av = PERIOD_ORDER.filter((k) => p.prices && p.prices[k] > 0);
+            if (av.length) init[p.slug] = av[0];
+        });
+        setPeriodSel((cur) => ({ ...init, ...cur }));
+    }, [plans]);
+
+    const fmtPrice = (n) => (n || 0).toLocaleString('en-US').replace(/,/g, ' ');
 
     // Render from the API; while loading or if it's empty, fall back gracefully.
     const list = (plans && plans.length > 0 ? plans : []).map((p) => ({
@@ -48,6 +102,7 @@ const Pricing = () => {
         name: p.name,
         pop: !p.is_default && p.rank > 0 && p.features?.team,  // highlight the top tier
         feats: featureLines(p.features, t),
+        prices: p.prices || {},
         ...headlineAmount(p.prices, t),
     }));
 
@@ -60,12 +115,6 @@ const Pricing = () => {
                         <h2>{t('home.pricing_title')}</h2>
                         <p style={{ marginInline: 'auto' }}>{t('home.pricing_text')}</p>
                     </div>
-
-                    <div style={{
-                        maxWidth: 720, margin: '28px auto 0', padding: '14px 18px',
-                        background: '#eef2ff', border: '1px solid #c7d2fe', borderRadius: 14,
-                        color: '#3730a3', fontSize: 15, textAlign: 'center',
-                    }}>💳 {t('pricing.payment_soon')}</div>
 
                     {plans === null ? (
                         <p className="cms-loading" style={{ textAlign: 'center', marginTop: 40 }}>{t('common.loading')}</p>
@@ -88,15 +137,50 @@ const Pricing = () => {
                                         <ul>
                                             {p.feats.map((f, j) => (<li key={j}><span className="ok">✓</span> <span>{f}</span></li>))}
                                         </ul>
-                                        {isCurrent ? (
-                                            <div className="btn btn-soft" style={{ cursor: 'default', opacity: 0.7, pointerEvents: 'none' }}>
-                                                {t('pricing.your_plan')}
-                                            </div>
-                                        ) : (
-                                            <Link to="/profile" className={`btn ${p.pop ? 'btn-primary' : 'btn-soft'}`}>
-                                                {t('pricing.activate_promo')}
-                                            </Link>
-                                        )}
+                                        {(() => {
+                                            const periods = PERIOD_ORDER.filter((k) => p.prices[k] > 0);
+                                            const sel = periodSel[p.slug] || periods[0];
+                                            if (isCurrent) {
+                                                return (
+                                                    <div className="btn btn-soft" style={{ cursor: 'default', opacity: 0.7, pointerEvents: 'none' }}>
+                                                        {t('pricing.your_plan')}
+                                                    </div>
+                                                );
+                                            }
+                                            if (periods.length === 0) {
+                                                return (
+                                                    <Link to="/profile" className={`btn ${p.pop ? 'btn-primary' : 'btn-soft'}`}>
+                                                        {t('pricing.activate_promo')}
+                                                    </Link>
+                                                );
+                                            }
+                                            return (
+                                                <div className="buy-box">
+                                                    {periods.length > 1 && (
+                                                        <div className="buy-periods">
+                                                            {periods.map((k) => (
+                                                                <button key={k} type="button"
+                                                                    className={sel === k ? 'on' : ''}
+                                                                    onClick={() => setPeriodSel((c) => ({ ...c, [p.slug]: k }))}>
+                                                                    {t(`pricing.per_${k}`)}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    <div className="buy-price">
+                                                        {fmtPrice(p.prices[sel])} <small>{t('pricing.feat.som')}{periods.length === 1 ? ` · ${t(`pricing.per_${sel}`)}` : ''}</small>
+                                                    </div>
+                                                    <button type="button"
+                                                        className={`btn ${p.pop ? 'btn-primary' : 'btn-soft'}`}
+                                                        style={{ width: '100%', justifyContent: 'center' }}
+                                                        disabled={buying === p.slug}
+                                                        onClick={() => buy(p.slug)}>
+                                                        {buying === p.slug ? t('pricing.buying') : t('pricing.buy')}
+                                                    </button>
+                                                    <Link to="/profile" className="buy-promo">{t('pricing.activate_promo')}</Link>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 );
                             })}

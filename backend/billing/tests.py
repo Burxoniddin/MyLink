@@ -271,3 +271,122 @@ class DynamicPlanTests(TestCase):
         self.assertEqual(slugs, {ent.FREE, ent.ODDIY, ent.PRO})
         pro = next(p for p in res.data if p['slug'] == ent.PRO)
         self.assertTrue(pro['features']['team'])
+
+
+CLICK_CFG = dict(CLICK_SERVICE_ID='12345', CLICK_MERCHANT_ID='777', CLICK_SECRET_KEY='testsecret')
+
+
+from django.test import override_settings  # noqa: E402
+from rest_framework.test import APIClient  # noqa: E402
+from rest_framework.authtoken.models import Token  # noqa: E402
+
+
+@override_settings(**CLICK_CFG)
+class ClickPaymentTests(TestCase):
+    """1a — Click SHOP API: checkout create + prepare/complete callback."""
+
+    def setUp(self):
+        from billing import click
+        self.click = click
+        self.user = User.objects.create_user(phone_number='+998907770001')
+        self.client_api = APIClient()
+        token = Token.objects.create(user=self.user)
+        self.client_api.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+
+    def _order(self, tier=ent.PRO, period=ent.P1M):
+        res = self.client_api.post('/api/payments/click/create/',
+                                   {'tier': tier, 'period': period, 'return_url': 'https://x/r'},
+                                   format='json')
+        self.assertEqual(res.status_code, 200, res.data)
+        return res.data
+
+    def _cb(self, order_id, action, amount, click_trans_id='9001', prepare_id='', error='0'):
+        data = {
+            'click_trans_id': click_trans_id, 'service_id': '12345',
+            'click_paydoc_id': '55', 'merchant_trans_id': str(order_id),
+            'amount': amount, 'action': action, 'error': error,
+            'error_note': '', 'sign_time': '2026-08-04 12:00:00',
+        }
+        if action == '1':
+            data['merchant_prepare_id'] = prepare_id
+        data['sign_string'] = self.click.make_sign(
+            data['click_trans_id'], data['service_id'], data['merchant_trans_id'],
+            data['amount'], action, data['sign_time'],
+            data.get('merchant_prepare_id', ''),
+        )
+        return self.client_api.post('/api/payments/click/callback/', data)
+
+    def test_create_returns_pay_url(self):
+        d = self._order()
+        self.assertIn('my.click.uz/services/pay', d['pay_url'])
+        self.assertIn('service_id=12345', d['pay_url'])
+        self.assertIn(f"transaction_param={d['order_id']}", d['pay_url'])
+
+    def test_create_unknown_price_rejected(self):
+        res = self.client_api.post('/api/payments/click/create/',
+                                   {'tier': 'pro', 'period': 'nope'}, format='json')
+        self.assertEqual(res.status_code, 400)
+
+    def test_prepare_ok_then_complete_grants_subscription(self):
+        d = self._order(ent.PRO, ent.P1M)  # 39000
+        r = self._cb(d['order_id'], '0', '39000.00')
+        self.assertEqual(r.data['error'], 0, r.data)
+        self.assertEqual(r.data['merchant_prepare_id'], d['order_id'])
+
+        r2 = self._cb(d['order_id'], '1', '39000.00', prepare_id=str(d['order_id']))
+        self.assertEqual(r2.data['error'], 0, r2.data)
+        self.assertEqual(effective_tier(self.user), ent.PRO)
+        _, expires = effective_plan(self.user)
+        self.assertIsNotNone(expires)  # 1m → expiring, not lifetime
+
+    def test_onetime_grants_lifetime(self):
+        d = self._order(ent.ODDIY, ent.ONETIME)  # 19000
+        self._cb(d['order_id'], '0', '19000')
+        r = self._cb(d['order_id'], '1', '19000', prepare_id=str(d['order_id']))
+        self.assertEqual(r.data['error'], 0)
+        tier, expires = effective_plan(self.user)
+        self.assertEqual(tier, ent.ODDIY)
+        self.assertIsNone(expires)  # lifetime
+
+    def test_bad_sign_rejected(self):
+        d = self._order()
+        data = {
+            'click_trans_id': '1', 'service_id': '12345', 'merchant_trans_id': str(d['order_id']),
+            'amount': '39000', 'action': '0', 'error': '0',
+            'sign_time': 'now', 'sign_string': 'wrong',
+        }
+        r = self.client_api.post('/api/payments/click/callback/', data)
+        self.assertEqual(r.data['error'], -1)
+
+    def test_wrong_amount_rejected(self):
+        d = self._order()
+        r = self._cb(d['order_id'], '0', '100.00')
+        self.assertEqual(r.data['error'], -2)
+
+    def test_unknown_order(self):
+        self._order()
+        r = self._cb(999999, '0', '39000')
+        self.assertEqual(r.data['error'], -5)
+
+    def test_double_complete_single_subscription(self):
+        d = self._order()
+        self._cb(d['order_id'], '0', '39000')
+        self._cb(d['order_id'], '1', '39000', prepare_id=str(d['order_id']))
+        r = self._cb(d['order_id'], '1', '39000', prepare_id=str(d['order_id']))
+        self.assertEqual(r.data['error'], -4)  # already paid
+        self.assertEqual(Subscription.objects.filter(user=self.user, source='payment').count(), 1)
+
+    def test_click_side_error_cancels(self):
+        from billing.models import PaymentOrder
+        d = self._order()
+        self._cb(d['order_id'], '0', '39000')
+        r = self._cb(d['order_id'], '1', '39000', prepare_id=str(d['order_id']), error='-5017')
+        self.assertEqual(r.data['error'], -9)
+        self.assertEqual(PaymentOrder.objects.get(pk=d['order_id']).status, 'canceled')
+        self.assertEqual(effective_tier(self.user), ent.FREE)
+
+    def test_not_configured_returns_503(self):
+        with override_settings(CLICK_SERVICE_ID=''):
+            res = self.client_api.post('/api/payments/click/create/',
+                                       {'tier': 'pro', 'period': '1m'}, format='json')
+            self.assertEqual(res.status_code, 503)

@@ -315,3 +315,13 @@
   .lpc .fr-vis { min-height: 220px; }
   .lpc .fr-tx h3 { font-size: 22px; }
 }
+
+/* ===== Pricing: Click checkout box ===== */
+.lpc .buy-box { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+.lpc .buy-periods { display: flex; gap: 6px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.lpc .buy-periods button { flex: 1; font: 600 13px var(--sans); color: var(--muted); background: none; border: 0; border-radius: 9px; padding: 8px 4px; cursor: pointer; }
+.lpc .buy-periods button.on { background: #fff; color: var(--indigo); box-shadow: 0 1px 4px rgba(26, 24, 48, .14); }
+.lpc .buy-price { font-family: var(--display); font-weight: 700; font-size: 22px; text-align: center; }
+.lpc .buy-price small { font-family: var(--sans); font-weight: 600; font-size: 13px; color: var(--muted); }
+.lpc .buy-promo { display: block; text-align: center; font-size: 13.5px; font-weight: 600; color: var(--indigo); }
+.lpc .buy-promo:hover { color: #3f38c9; }

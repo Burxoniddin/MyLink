@@ -301,6 +301,12 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'MyLink <no-reply@mylink.as
 # Frontend base URL (used for password-reset links, etc.)
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
+# Click (click.uz) SHOP API — plan checkout. Empty in dev → the buy endpoint
+# answers 503 click_not_configured and the UI hides the pay button.
+CLICK_SERVICE_ID = os.getenv('CLICK_SERVICE_ID', '')
+CLICK_MERCHANT_ID = os.getenv('CLICK_MERCHANT_ID', '')
+CLICK_SECRET_KEY = os.getenv('CLICK_SECRET_KEY', '')
+
 # Auth token sliding-expiry window (days)
 TOKEN_EXPIRE_DAYS = int(os.getenv('TOKEN_EXPIRE_DAYS', '7'))
 

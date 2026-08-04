@@ -246,3 +246,72 @@
 
 /* contact form hint */
 .lpc .form-hint { font-size: 12.5px; color: var(--muted); margin: -6px 0 4px; }
+
+/* ===== Features ("Imkoniyatlar") — blog-style alternating rows ===== */
+.lpc .featrows { display: flex; flex-direction: column; gap: 64px; margin-top: 56px; }
+.lpc .featrow { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+.lpc .featrow.rev .fr-vis { order: -1; }
+.lpc .fr-tx h3 { font-size: 26px; margin-bottom: 12px; }
+.lpc .fr-tx p { color: var(--muted); font-size: 16px; line-height: 1.7; max-width: 46ch; }
+.lpc .fr-more { display: inline-block; margin-top: 14px; font-weight: 700; color: var(--indigo); }
+.lpc .fr-more:hover { color: #3f38c9; }
+.lpc .fr-vis {
+  background: #fff; border: 1px solid var(--line); border-radius: 24px;
+  min-height: 280px; display: grid; place-items: center; padding: 30px;
+  box-shadow: 0 30px 60px -38px rgba(26, 24, 48, .35); overflow: hidden;
+}
+.lpc .fr-vis.fv-dark { background: #0b0d1a; border-color: #1c2033; }
+
+/* 1 — template mini-phones */
+.lpc .fv-phones { display: flex; gap: 18px; align-items: flex-end; }
+.lpc .fv-ph { width: 92px; height: 178px; border-radius: 18px; padding: 40px 12px 12px; position: relative;
+  box-shadow: 0 18px 34px -18px rgba(26, 24, 48, .5); }
+.lpc .fv-ph:nth-child(2) { height: 200px; }
+.lpc .fv-dot { position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  width: 26px; height: 26px; border-radius: 50%; }
+.lpc .fv-ph i { display: block; height: 9px; border-radius: 5px; background: rgba(255, 255, 255, .35); margin-bottom: 8px; }
+
+/* 2 — highlights + media grid */
+.lpc .fv-media { display: flex; flex-direction: column; gap: 20px; align-items: center; }
+.lpc .fv-rings { display: flex; gap: 14px; }
+.lpc .fv-rings span { width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(#fff, #fff) padding-box,
+              linear-gradient(45deg, #f59e0b, #ec4899, #8b5cf6) border-box;
+  border: 3px solid transparent; }
+.lpc .fv-grid { display: flex; gap: 12px; }
+.lpc .fv-grid b { width: 74px; height: 74px; border-radius: 14px; }
+
+/* 3 — QR + vizitka */
+.lpc .fv-promo { display: flex; gap: 26px; align-items: center; }
+.lpc .fv-qr { width: 120px; height: 120px; }
+.lpc .fv-card { width: 190px; height: 116px; border-radius: 14px; padding: 16px;
+  background: linear-gradient(120deg, #4f46e5, #8b5cf6); color: #fff;
+  display: flex; flex-direction: column; justify-content: space-between;
+  box-shadow: 0 18px 34px -16px rgba(79, 70, 229, .55); transform: rotate(-3deg); }
+.lpc .fv-card b { font-family: var(--display); font-size: 17px; }
+.lpc .fv-card span { font-size: 12.5px; opacity: .85; }
+
+/* 4 — chart */
+.lpc .fv-chart { width: min(300px, 100%); height: auto; }
+
+/* 5 — team */
+.lpc .fv-team { display: flex; flex-direction: column; gap: 20px; align-items: center; }
+.lpc .fv-avs { display: flex; }
+.lpc .fv-avs span { width: 58px; height: 58px; border-radius: 50%; border: 3px solid #fff;
+  display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 20px;
+  font-family: var(--display); margin-left: -14px; }
+.lpc .fv-avs span:first-child { margin-left: 0; }
+.lpc .fv-roles { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.lpc .fv-roles em { font-style: normal; font-size: 12.5px; font-weight: 700; padding: 6px 14px; border-radius: 999px; }
+
+/* 6 — NFC image */
+.lpc .fv-nfc { width: min(320px, 88%); border-radius: 18px; transform: rotate(-4deg);
+  box-shadow: 0 30px 60px rgba(5, 8, 30, .55); }
+
+@media (max-width: 860px) {
+  .lpc .featrows { gap: 44px; margin-top: 40px; }
+  .lpc .featrow { grid-template-columns: 1fr; gap: 22px; }
+  .lpc .featrow.rev .fr-vis { order: 0; }
+  .lpc .fr-vis { min-height: 220px; }
+  .lpc .fr-tx h3 { font-size: 22px; }
+}

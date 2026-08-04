@@ -37,6 +37,7 @@ const SiteHeader = () => {
                 <nav className="nav-links">
                     {anchor('about', t('home.nav_about'))}
                     {anchor('how', t('home.nav_how'))}
+                    {anchor('features', t('home.feats_eyebrow'))}
                     {anchor('pricing', t('home.nav_pricing'))}
                     <Link to="/blog">{t('home.footer_blog')}</Link>
                     {anchor('contact', t('home.nav_contact'))}

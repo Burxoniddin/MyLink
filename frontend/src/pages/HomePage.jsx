@@ -220,6 +220,144 @@ const HomePage = () => {
                     </div>
                 </section>
 
+                {/* FEATURES — "Imkoniyatlar": blog-style alternating rows */}
+                <section className="block" id="features">
+                    <div className="wrap">
+                        <div className="sec-head center reveal" style={{ maxWidth: 640 }}>
+                            <span className="eyebrow">{t('home.feats_eyebrow')}</span>
+                            <h2>{t('home.feats_title')}</h2>
+                            <p style={{ marginInline: 'auto' }}>{t('home.feats_text')}</p>
+                        </div>
+                        <div className="featrows">
+                            {/* 1 — Templates & colors */}
+                            <div className="featrow reveal">
+                                <div className="fr-tx">
+                                    <h3>{t('home.ft1_title')}</h3>
+                                    <p>{t('home.ft1_text')}</p>
+                                </div>
+                                <div className="fr-vis">
+                                    <div className="fv-phones">
+                                        <div className="fv-ph" style={{ background: 'linear-gradient(170deg,#2e2017,#160f0b)' }}>
+                                            <span className="fv-dot" style={{ background: '#f0a23c' }}></span>
+                                            <i></i><i></i><i style={{ width: '62%' }}></i>
+                                        </div>
+                                        <div className="fv-ph" style={{ background: 'linear-gradient(170deg,#2aa79f,#17615c)' }}>
+                                            <span className="fv-dot" style={{ background: '#d7fef9' }}></span>
+                                            <i></i><i></i><i style={{ width: '70%' }}></i>
+                                        </div>
+                                        <div className="fv-ph" style={{ background: 'linear-gradient(170deg,#4f46e5,#7c3aed)' }}>
+                                            <span className="fv-dot" style={{ background: '#c7d2fe' }}></span>
+                                            <i></i><i></i><i style={{ width: '55%' }}></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* 2 — Media & highlights */}
+                            <div className="featrow rev reveal">
+                                <div className="fr-tx">
+                                    <h3>{t('home.ft2_title')}</h3>
+                                    <p>{t('home.ft2_text')}</p>
+                                </div>
+                                <div className="fr-vis">
+                                    <div className="fv-media">
+                                        <div className="fv-rings">
+                                            <span></span><span></span><span></span><span></span>
+                                        </div>
+                                        <div className="fv-grid">
+                                            <b style={{ background: 'linear-gradient(135deg,#f59e0b,#ef4444)' }}></b>
+                                            <b style={{ background: 'linear-gradient(135deg,#06b6d4,#3b82f6)' }}></b>
+                                            <b style={{ background: 'linear-gradient(135deg,#8b5cf6,#ec4899)' }}></b>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* 3 — QR / vizitka / promo */}
+                            <div className="featrow reveal">
+                                <div className="fr-tx">
+                                    <h3>{t('home.ft3_title')}</h3>
+                                    <p>{t('home.ft3_text')}</p>
+                                </div>
+                                <div className="fr-vis">
+                                    <div className="fv-promo">
+                                        <svg className="fv-qr" viewBox="0 0 21 21" aria-hidden="true">
+                                            {[[0,0],[14,0],[0,14]].map(([x,y]) => (
+                                                <g key={`${x}${y}`}>
+                                                    <rect x={x} y={y} width="7" height="7" fill="none" stroke="#1a1830" strokeWidth="1.6" />
+                                                    <rect x={x+2} y={y+2} width="3" height="3" fill="#1a1830" />
+                                                </g>
+                                            ))}
+                                            {[[9,1],[11,3],[9,5],[13,9],[9,9],[11,11],[15,13],[9,15],[13,15],[17,17],[11,17],[15,9],[17,11],[19,9],[9,19],[19,15]].map(([x,y],i) => (
+                                                <rect key={i} x={x} y={y} width="2" height="2" fill="#1a1830" />
+                                            ))}
+                                        </svg>
+                                        <div className="fv-card">
+                                            <b>MyLink</b>
+                                            <span>mylink.asia/siz</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* 4 — Analytics */}
+                            <div className="featrow rev reveal">
+                                <div className="fr-tx">
+                                    <h3>{t('home.ft4_title')}</h3>
+                                    <p>{t('home.ft4_text')}</p>
+                                </div>
+                                <div className="fr-vis">
+                                    <svg className="fv-chart" viewBox="0 0 260 140" aria-hidden="true">
+                                        {[20, 60, 100, 140, 180, 220].map((x, i) => (
+                                            <rect key={x} x={x} y={120 - [34, 52, 40, 72, 60, 92][i]} width="22"
+                                                height={[34, 52, 40, 72, 60, 92][i]} rx="6"
+                                                fill={i === 5 ? 'url(#fvg)' : '#e9e7f5'} />
+                                        ))}
+                                        <defs>
+                                            <linearGradient id="fvg" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0" stopColor="#4f46e5" />
+                                                <stop offset="1" stopColor="#8b5cf6" />
+                                            </linearGradient>
+                                        </defs>
+                                        <polyline points="31,78 71,58 111,70 151,38 191,48 231,20"
+                                            fill="none" stroke="#4f46e5" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        <circle cx="231" cy="20" r="5" fill="#4f46e5" />
+                                    </svg>
+                                </div>
+                            </div>
+                            {/* 5 — Team */}
+                            <div className="featrow reveal">
+                                <div className="fr-tx">
+                                    <h3>{t('home.ft5_title')}</h3>
+                                    <p>{t('home.ft5_text')}</p>
+                                </div>
+                                <div className="fr-vis">
+                                    <div className="fv-team">
+                                        <div className="fv-avs">
+                                            <span style={{ background: 'linear-gradient(135deg,#4f46e5,#8b5cf6)' }}>B</span>
+                                            <span style={{ background: 'linear-gradient(135deg,#06b6d4,#3b82f6)' }}>D</span>
+                                            <span style={{ background: 'linear-gradient(135deg,#f59e0b,#ef4444)' }}>S</span>
+                                        </div>
+                                        <div className="fv-roles">
+                                            <em style={{ background: '#dbeafe', color: '#1e40af' }}>{t('team.role_admin')}</em>
+                                            <em style={{ background: '#dcfce7', color: '#166534' }}>{t('team.role_editor')}</em>
+                                            <em style={{ background: '#f3f4f6', color: '#374151' }}>{t('team.role_viewer')}</em>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* 6 — NFC (real card image) */}
+                            <div className="featrow rev reveal">
+                                <div className="fr-tx">
+                                    <h3>{t('home.ft6_title')}</h3>
+                                    <p>{t('home.ft6_text')}</p>
+                                    <Link to="/nfc" className="fr-more">{t('home.ft6_more')} →</Link>
+                                </div>
+                                <div className="fr-vis fv-dark">
+                                    <img src="/nfc/card-1.webp" alt="MyLink NFC card" className="fv-nfc" loading="lazy" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 {/* STATS — two big live counters */}
                 <section className="block">
                     <div className="wrap">

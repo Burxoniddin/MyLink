@@ -140,6 +140,8 @@
   },
   "auth": {
     "tab_otp": "OTP",
+    "tab_sms": "SMS code",
+    "sms_hint": "No password? Sign in with an SMS code — for accounts created earlier.",
     "tab_password": "Password",
     "tab_email": "Email",
     "tab_phone": "Phone",

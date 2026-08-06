@@ -140,6 +140,8 @@
   },
   "auth": {
     "tab_otp": "OTP",
+    "tab_sms": "SMS kod",
+    "sms_hint": "Parolingiz yo'qmi? SMS orqali kiring — avvaldan mavjud akkauntlar uchun.",
     "tab_password": "Parol",
     "tab_email": "Email",
     "tab_phone": "Telefon",

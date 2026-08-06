@@ -140,6 +140,8 @@
   },
   "auth": {
     "tab_otp": "OTP",
+    "tab_sms": "SMS код",
+    "sms_hint": "Нет пароля? Войдите по SMS — для ранее созданных аккаунтов.",
     "tab_password": "Пароль",
     "tab_email": "Email",
     "tab_phone": "Телефон",

@@ -127,6 +127,46 @@ class AuthTests(TestCase):
         r = self.client.post('/api/auth/login-password/', {'identifier': 'reset@b.com', 'password': 'newpass2'}, format='json')
         self.assertEqual(r.status_code, 200)
 
+    # --- stale-token regression (all 4 login paths) ---
+    # Logging in must hand back a token that actually works. get_or_create
+    # alone returns the old row, so a user whose token predates the expiry
+    # window would be "logged in" and then 401'd on the very next request.
+    def _stale(self, user, days=30):
+        token, _ = Token.objects.get_or_create(user=user)
+        Token.objects.filter(pk=token.pk).update(created=timezone.now() - timedelta(days=days))
+        return token
+
+    def _assert_token_works(self, token_key):
+        c = APIClient()
+        c.credentials(HTTP_AUTHORIZATION=f'Token {token_key}')
+        self.assertEqual(c.get('/api/me/').status_code, 200)
+
+    def test_password_login_refreshes_stale_token(self):
+        u = User.objects.create_user(email='old@b.com', password='pass1234')
+        self._stale(u)
+        r = self.client.post('/api/auth/login-password/', {'identifier': 'old@b.com', 'password': 'pass1234'}, format='json')
+        self.assertEqual(r.status_code, 200)
+        self._assert_token_works(r.data['token'])
+
+    def test_otp_login_refreshes_stale_token(self):
+        # Mirrors the 346 legacy accounts: phone + OTP only, no password.
+        u = User.objects.create_user(phone_number='+998901234567')
+        self._stale(u)
+        cache.set('otp_+998901234567', '11111', 300)
+        r = self.client.post('/api/auth/login/', {'phone_number': '+998901234567', 'code': '11111'}, format='json')
+        self.assertEqual(r.status_code, 200)
+        self._assert_token_works(r.data['token'])
+
+    def test_reset_by_code_refreshes_stale_token(self):
+        u = User.objects.create_user(email='stale2@b.com', password='oldpass1')
+        self._stale(u)
+        cache.set('otp_email_stale2@b.com', '222222', 300)
+        r = self.client.post('/api/auth/reset-password-code/',
+                             {'method': 'email', 'identifier': 'stale2@b.com', 'code': '222222', 'new_password': 'newpass3'},
+                             format='json')
+        self.assertEqual(r.status_code, 200)
+        self._assert_token_works(r.data['token'])
+
 
 @override_settings(CACHES=LOCMEM)
 class ReferralTests(TestCase):

@@ -17,6 +17,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
+from .auth import issue_token
 from .serializers import (
     AddEmailSerializer,
     ChangePasswordSerializer,
@@ -140,7 +141,7 @@ class LoginView(APIView):
                     from businesses.access import claim_pending_invites
                     claim_pending_invites(user)
 
-                token, _ = Token.objects.get_or_create(user=user)
+                token = issue_token(user)
                 cache.delete(f"otp_{phone}")
                 cache.delete(failed_key)  # Muvaffaqiyatli kirishda reset
                 return Response({"token": token.key, "phone_number": phone}, status=status.HTTP_200_OK)
@@ -260,7 +261,7 @@ class RegisterView(APIView):
         from businesses.access import claim_pending_invites
         claim_pending_invites(user)
 
-        token, _ = Token.objects.get_or_create(user=user)
+        token = issue_token(user)
         return Response(
             {"token": token.key, "email": user.email, "phone_number": user.phone_number},
             status=status.HTTP_201_CREATED,
@@ -330,7 +331,7 @@ class GoogleAuthView(APIView):
             user.first_name = name[:150]
             user.save(update_fields=['first_name'])
 
-        token, _ = Token.objects.get_or_create(user=user)
+        token = issue_token(user)
         return Response({"token": token.key, "email": user.email}, status=status.HTTP_200_OK)
 
 
@@ -359,7 +360,7 @@ class PasswordLoginView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        token, _ = Token.objects.get_or_create(user=user)
+        token = issue_token(user)
         return Response(
             {"token": token.key, "phone_number": user.phone_number, "email": user.email},
             status=status.HTTP_200_OK,
@@ -516,7 +517,7 @@ class ResetPasswordCodeView(APIView):
         user.save(update_fields=['password'])
         cache.delete(cache_key)
 
-        token, _ = Token.objects.get_or_create(user=user)
+        token = issue_token(user)
         return Response(
             {"token": token.key, "phone_number": user.phone_number, "email": user.email},
             status=status.HTTP_200_OK,

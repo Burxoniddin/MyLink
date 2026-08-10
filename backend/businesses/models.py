@@ -5,8 +5,8 @@ from django.utils import timezone
 
 class Business(models.Model):
     # Public landing-page design. 'classic' is the original card; the rest are
-    # sector-themed link-in-bio templates (see frontend templates/). Open to all
-    # tiers (template is not a paid feature).
+    # sector-themed link-in-bio templates (see frontend templates/). Selection is
+    # tier-gated: features['templates'] = how many unlock, in THIS list order.
     TEMPLATE_CHOICES = [
         ('classic', 'Classic'),
         ('restoran', 'Restoran (FLAME)'),

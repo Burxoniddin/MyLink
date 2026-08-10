@@ -8,10 +8,6 @@ import SiteHeader from '../components/site/SiteHeader';
 import SiteFooter from '../components/site/SiteFooter';
 import './HomePage.css';
 
-// The hero phone embeds this REAL public page in an iframe — the iframe's own
-// 400px viewport makes the page render exactly like on a phone (its mobile
-// media queries apply), unlike inline rendering inside a desktop viewport.
-const DEMO_PATH = 'mybrand';
 
 // Fallback contact details (used until admin fills SiteSettings).
 const FALLBACK = {
@@ -170,17 +166,25 @@ const HomePage = () => {
                                 <div className="phone">
                                     <div className="notch"></div>
                                     <div className="screen">
-                                        {/* The real page in its own 400px viewport — renders
-                                            pixel-identical to a phone. Decorative only. */}
-                                        <iframe
-                                            className="pf-frame"
-                                            src={`/${DEMO_PATH}`}
-                                            title="MyLink demo"
-                                            scrolling="no"
-                                            loading="lazy"
-                                            tabIndex={-1}
-                                            aria-hidden="true"
-                                        />
+                                        {/* Statik demo-maket — jonli sahifaga (DB'ga) bog'liq emas,
+                                            har muhitda bir xil ko'rinadi. Dekorativ. */}
+                                        <div className="pf-mock" aria-hidden="true">
+                                            <div className="pfm-avatar">M</div>
+                                            <div className="pfm-name">MYBRAND</div>
+                                            <div className="pfm-bio">Rasmiy sahifa — barcha havolalar bitta joyda</div>
+                                            <div className="pfm-links">
+                                                <span className="pfm-link"><i style={{ background: 'var(--coral)' }}></i>Instagram</span>
+                                                <span className="pfm-link"><i style={{ background: 'var(--cyan)' }}></i>Telegram</span>
+                                                <span className="pfm-link"><i style={{ background: 'var(--indigo)' }}></i>Onlayn do'kon</span>
+                                                <span className="pfm-link"><i style={{ background: 'var(--lime)' }}></i>Telefon</span>
+                                            </div>
+                                            <div className="pfm-media">
+                                                <span style={{ background: 'linear-gradient(135deg,#312e81,#6d28d9)' }}></span>
+                                                <span style={{ background: 'linear-gradient(135deg,#0e7490,#2563eb)' }}></span>
+                                                <span style={{ background: 'linear-gradient(135deg,#9d174d,#f59e0b)' }}></span>
+                                            </div>
+                                            <div className="pfm-url">mylink.asia/mybrand</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

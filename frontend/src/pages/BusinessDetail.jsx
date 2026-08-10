@@ -623,6 +623,7 @@ const BusinessDetail = ({ isNew = false }) => {
                                     <TemplatePicker
                                         value={formData.template}
                                         onChange={(tpl) => setFormData({ ...formData, template: tpl })}
+                                        allowed={entitlements?.features?.templates ?? 1}
                                     />
                                     {/* Owner-chosen dark/light mode — the public page renders in this mode. */}
                                     <div className="mode-picker">

@@ -7,8 +7,9 @@ export const TEMPLATE_META = {
     fitnes: { defaultTheme: 'dark', chev: true },
 };
 
-// id + a small preview palette (matches templates.css). Open to all tiers.
-// Used by the editor TemplatePicker and the new-business wizard preview.
+// id + a small preview palette (matches templates.css). Order matters: the
+// tier feature `templates` unlocks the first N entries (backend gates the same
+// order). Used by the editor TemplatePicker and the new-business wizard preview.
 export const TEMPLATE_OPTIONS = [
     { id: 'classic', accent: '#6366f1', bg: '#0f1020', surface: '#1c1d33' },
     { id: 'restoran', accent: '#f0a23c', bg: '#160f0b', surface: '#2e2017' },

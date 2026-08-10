@@ -84,7 +84,7 @@
     "not_found_title": "Sahifa topilmadi",
     "not_found_desc": "Siz qidirgan sahifa mavjud emas.",
     "no_links": "Hali havolalar qo'shilmagan",
-    "powered_by": "Powered by"
+    "powered_by": "Sizga ham kerakmi?"
   },
   "detail": {
     "copy_link": "Havoladan nusxa olish",
@@ -462,7 +462,8 @@
     "moda": "Moda",
     "klinika": "Klinika",
     "avto": "Avto",
-    "fitnes": "Fitnes"
+    "fitnes": "Fitnes",
+    "locked": "Qo'shimcha shablonlar pullik tariflarda ochiladi."
   },
   "limit": {
     "reached": "Tarif limiti ({{limit}} ta) to'ldi. Yangi sahifa uchun bittasini o'chiring yoki tarifni yangilang.",

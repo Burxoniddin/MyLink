@@ -84,7 +84,7 @@
     "not_found_title": "Page not found",
     "not_found_desc": "The page you are looking for does not exist.",
     "no_links": "No links added yet",
-    "powered_by": "Powered by"
+    "powered_by": "Want one too?"
   },
   "detail": {
     "copy_link": "Copy link",
@@ -462,7 +462,8 @@
     "moda": "Fashion",
     "klinika": "Clinic",
     "avto": "Auto",
-    "fitnes": "Fitness"
+    "fitnes": "Fitness",
+    "locked": "More templates unlock on paid plans."
   },
   "limit": {
     "reached": "Plan limit ({{limit}}) reached. Deactivate a page or upgrade your plan.",

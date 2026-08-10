@@ -286,7 +286,9 @@ class GoogleAuthView(APIView):
         # via tokeninfo?access_token= + userinfo for the display name.
         params = {"id_token": credential} if credential else {"access_token": access_token}
         try:
-            resp = requests.get("https://oauth2.googleapis.com/tokeninfo", params=params, timeout=8)
+            # (connect, read): connect budjeti har bir DNS-manzilga alohida qo'llanadi —
+            # jami vaqt gunicorn'ning 30s worker-timeout'idan ancha kam qolishi shart.
+            resp = requests.get("https://oauth2.googleapis.com/tokeninfo", params=params, timeout=(2, 6))
         except requests.RequestException:
             return Response({"error": "Google bilan bog'lanib bo'lmadi"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -311,7 +313,7 @@ class GoogleAuthView(APIView):
                 ui = requests.get(
                     "https://www.googleapis.com/oauth2/v3/userinfo",
                     headers={"Authorization": f"Bearer {access_token}"},
-                    timeout=8,
+                    timeout=(2, 6),
                 )
                 if ui.ok:
                     name = (ui.json().get('name') or '').strip()

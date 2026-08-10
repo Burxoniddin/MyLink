@@ -8,10 +8,6 @@ import './templates.css';
 const ChevIcon = () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
 );
-const MkIcon = () => (
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.6 13.4a4 4 0 0 1 0-5.6l2.8-2.8a4 4 0 1 1 5.6 5.6l-1.4 1.4-1.4-1.4 1.4-1.4a2 2 0 1 0-2.8-2.8l-2.8 2.8a2 2 0 0 0 0 2.8zm2.8-2.8a4 4 0 0 1 0 5.6l-2.8 2.8a4 4 0 1 1-5.6-5.6l1.4-1.4 1.4 1.4-1.4 1.4a2 2 0 1 0 2.8 2.8l2.8-2.8a2 2 0 0 0 0-2.8z" /></svg>
-);
-
 const initials = (name = '') =>
     name.trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || 'M';
 
@@ -80,7 +76,7 @@ const ProfileTemplate = ({ data, tpl, theme, onLinkClick = () => {}, getLogoUrl,
                     <div className="tpl-powered">
                         <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer">
                             {t('landing.powered_by')}
-                            <span className="mklogo"><span className="mk"><MkIcon /></span>MyLink</span>
+                            <span className="mklogo"><span className="mk"><img src="/brand/appicon-192.png" alt="" /></span>MyLink</span>
                         </a>
                     </div>
                 )}

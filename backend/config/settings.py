@@ -61,7 +61,8 @@ JAZZMIN_SETTINGS = {
     "site_title": "MyLink.asia Admin",
     "site_header": "MyLink.asia",
     "site_brand": "MyLink.asia",
-    "site_logo": None,  # Can be updated with actual logo path
+    "site_logo": "brand/appicon-192.png",
+    "site_icon": "brand/appicon-64.png",
     "welcome_sign": "MyLink.asia Admin Paneliga xush kelibsiz!",
     "copyright": "MyLink.asia © 2026",
     

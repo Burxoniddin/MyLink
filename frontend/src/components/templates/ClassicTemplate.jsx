@@ -85,7 +85,7 @@ const ClassicTemplate = ({ data, onLinkClick = () => {}, getLogoUrl, toEmbed, t,
                     <div className="landing-branding">
                         <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer" className="landing-branding-link">
                             <span className="powered-text">{t('landing.powered_by')}</span>
-                            <img src="/logo.png" alt="MyLink" className="landing-brand-logo" />
+                            <img src="/brand/appicon-192.png" alt="MyLink" className="landing-brand-logo" />
                             <strong>MyLink</strong>
                         </a>
                     </div>

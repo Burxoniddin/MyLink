@@ -59,7 +59,7 @@ const BusinessPreview = () => {
                     {/* Footer */}
                     <div className="preview-footer">
                         <span className="powered-text">Powered by</span>
-                        <img src="/logo.png" alt="MyLink" className="footer-brand-logo" />
+                        <img src="/brand/appicon-192.png" alt="MyLink" className="footer-brand-logo" />
                         <strong>MyLink</strong>
                     </div>
                 </div>

@@ -70,8 +70,8 @@
 }
 .tpl-powered a:hover { transform: translateY(-2px); }
 .tpl-powered .mklogo { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; color: var(--t-text); }
-.tpl-powered .mk { width: 19px; height: 19px; border-radius: 6px; background: var(--t-accent); display: grid; place-items: center; }
-.tpl-powered .mk svg { width: 12px; height: 12px; color: #fff; }
+.tpl-powered .mk { width: 19px; height: 19px; display: grid; place-items: center; }
+.tpl-powered .mk img { width: 19px; height: 19px; border-radius: 6px; display: block; }
 
 @media (prefers-reduced-motion: reduce) { .tpl:not(.ready) .tpl-lnk { opacity: 1; translate: none; } }
 
@@ -123,8 +123,6 @@
 .tpl[data-tpl="moda"] .tpl-lnk:hover .tpl-ico { color: var(--t-bg); }
 .tpl[data-tpl="moda"] .tpl-powered a { background: transparent; border: 0; padding: 0; font-size: 10.5px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; }
 .tpl[data-tpl="moda"] .tpl-powered .mklogo { font-family: var(--t-display); font-weight: 700; font-size: 15px; text-transform: none; }
-.tpl[data-tpl="moda"] .tpl-powered .mk { border-radius: 50%; background: transparent; border: 1px solid var(--t-accent); }
-.tpl[data-tpl="moda"] .tpl-powered .mk svg { color: var(--t-accent); }
 
 /* =================== KLINIKA — DENTA SMILE =================== */
 .tpl[data-tpl="klinika"] {
@@ -196,4 +194,3 @@
 .tpl[data-tpl="fitnes"] .tpl-lbl { font-weight: 800; font-size: 15px; letter-spacing: .06em; text-transform: uppercase; }
 .tpl[data-tpl="fitnes"] .tpl-chev { right: 15px; width: 24px; height: 24px; border-radius: 50%; }
 .tpl[data-tpl="fitnes"] .tpl-lnk:hover .tpl-chev { color: var(--lime-ink); background: var(--t-accent); }
-.tpl[data-tpl="fitnes"] .tpl-powered .mk svg { color: var(--lime-ink); }

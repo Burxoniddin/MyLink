@@ -46,7 +46,7 @@ const Navbar = () => {
         <header className="navbar">
             <div className="navbar-container">
                 <Link to="/dashboard" className="navbar-brand">
-                    <img src="/logo.png" alt="MyLink" className="navbar-logo" />
+                    <img src="/brand/appicon-192.png" alt="MyLink" className="navbar-logo" />
                     <span>MyLink</span>
                 </Link>
 

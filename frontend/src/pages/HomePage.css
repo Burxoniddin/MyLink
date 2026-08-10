@@ -95,10 +95,18 @@
 @media (prefers-reduced-motion: reduce) { .lpc .phone { animation: none; } }
 .lpc .phone .notch { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 104px; height: 25px; background: #1a1830; border-radius: 0 0 15px 15px; z-index: 2; }
 .lpc .phone .screen { width: 100%; height: 100%; border-radius: 35px; overflow: hidden; background: #0f0f23; display: block; padding: 0; }
-/* The screen embeds the REAL page in an iframe with its own 400px viewport
-   (so the page's mobile media queries apply), scaled to the 272px inner
-   screen (296 - 2*12 padding). 272/400 = 0.68. Decorative: not interactive. */
-.lpc .pf-frame { display: block; width: 400px; height: 147.06%; border: 0; transform: scale(0.68); transform-origin: top left; pointer-events: none; }
+/* Static demo-page mock inside the phone — DB-independent, renders the same on
+   every environment (a live iframe 404s where the demo path doesn't exist). */
+.lpc .pf-mock { height: 100%; display: flex; flex-direction: column; align-items: center; padding: 56px 20px 22px; background: linear-gradient(180deg, #15132b, #0f0f23 55%); color: #fff; }
+.lpc .pfm-avatar { width: 66px; height: 66px; border-radius: 50%; background: linear-gradient(135deg, var(--indigo), var(--violet)); display: grid; place-items: center; font-weight: 800; font-size: 26px; color: #fff; box-shadow: 0 12px 26px -12px rgba(99,102,241,.9); }
+.lpc .pfm-name { margin-top: 13px; font-weight: 800; font-size: 17px; letter-spacing: .08em; }
+.lpc .pfm-bio { margin-top: 5px; font-size: 11px; color: rgba(255,255,255,.55); text-align: center; }
+.lpc .pfm-links { margin-top: 16px; width: 100%; display: flex; flex-direction: column; gap: 9px; }
+.lpc .pfm-link { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 13px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.09); font-size: 12.5px; font-weight: 600; }
+.lpc .pfm-link i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.lpc .pfm-media { margin-top: 14px; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.lpc .pfm-media span { aspect-ratio: 1 / 1; border-radius: 10px; opacity: .9; }
+.lpc .pfm-url { margin-top: auto; font-size: 10.5px; color: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.14); padding: 6px 13px; border-radius: 999px; }
 
 /* sections */
 .lpc section.block { padding: 92px 0; position: relative; }

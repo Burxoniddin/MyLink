@@ -136,6 +136,14 @@ class BusinessSerializer(serializers.ModelSerializer):
         validated_data.pop('logo_remove', None)  # logo_remove create-da kerak emas
         links_data = validated_data.pop('links', [])
         user = self.context['request'].user
+        # Yangi sahifada ham shablon gate qilinadi — ruxsatdan tashqarisi default
+        # 'classic' ga tushadi (update'dagi kabi jimgina).
+        template = validated_data.get('template')
+        if template and template != 'classic':
+            from billing.services import get_entitlements
+            allowed = int(get_entitlements(user)['features'].get('templates') or 1)
+            if template not in [key for key, _ in Business.TEMPLATE_CHOICES][:allowed]:
+                validated_data.pop('template')
         business = Business.objects.create(owner=user, **validated_data)
         for link_data in links_data:
             Link.objects.create(business=business, **link_data)
@@ -148,7 +156,15 @@ class BusinessSerializer(serializers.ModelSerializer):
         instance.path = validated_data.get('path', instance.path)
         instance.name = validated_data.get('name', instance.name)
         instance.description = validated_data.get('description', instance.description)
-        instance.template = validated_data.get('template', instance.template)
+        # Shablon tanlash tarifga bog'liq: features['templates'] = TEMPLATE_CHOICES
+        # tartibida boshidan nechta shablon ochiqligi (Free 1 → faqat classic).
+        # color_edit kabi jimgina e'tiborsiz qoladi; gate sahifa EGASI tarifiga qaraydi.
+        new_template = validated_data.get('template')
+        if new_template is not None and new_template != instance.template:
+            from billing.services import get_entitlements
+            allowed = int(get_entitlements(instance.owner)['features'].get('templates') or 1)
+            if new_template in [key for key, _ in Business.TEMPLATE_CHOICES][:allowed]:
+                instance.template = new_template
         # Dark/light mode is part of the template choice — ungated like template.
         instance.theme_mode = validated_data.get('theme_mode', instance.theme_mode)
 

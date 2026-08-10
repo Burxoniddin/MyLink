@@ -207,12 +207,42 @@ class TemplateTests(TestCase):
         b = make_business(self.user, 'a', 'A')
         self.assertEqual(b.template, 'classic')
 
-    def test_update_template(self):
+    def test_free_cannot_change_template(self):
+        # Free: templates=1 — faqat 'classic'; boshqa tanlov jimgina e'tiborsiz.
         make_business(self.user, 'a', 'A')
         res = self.client.put('/api/businesses/a/', {'path': 'a', 'name': 'A', 'template': 'restoran'}, format='json')
         self.assertEqual(res.status_code, 200)
+        self.assertEqual(Business.objects.get(path='a').template, 'classic')
+
+    def test_paid_tier_unlocks_templates_in_order(self):
+        from billing.services import grant_subscription
+        grant_subscription(self.user, 'oddiy')  # templates=3: classic, restoran, moda
+        make_business(self.user, 'a', 'A')
+        res = self.client.put('/api/businesses/a/', {'path': 'a', 'name': 'A', 'template': 'restoran'}, format='json')
         self.assertEqual(res.data['template'], 'restoran')
+        # 3 talikdan tashqaridagi shablon o'tmaydi
+        self.client.put('/api/businesses/a/', {'path': 'a', 'name': 'A', 'template': 'avto'}, format='json')
         self.assertEqual(Business.objects.get(path='a').template, 'restoran')
+
+    def test_pro_gets_all_templates(self):
+        from billing.services import grant_subscription
+        grant_subscription(self.user, 'pro')
+        make_business(self.user, 'a', 'A')
+        res = self.client.put('/api/businesses/a/', {'path': 'a', 'name': 'A', 'template': 'fitnes'}, format='json')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['template'], 'fitnes')
+
+    def test_downgraded_owner_can_return_to_classic(self):
+        b = make_business(self.user, 'a', 'A')
+        b.template = 'avto'
+        b.save(update_fields=['template'])
+        self.client.put('/api/businesses/a/', {'path': 'a', 'name': 'A', 'template': 'classic'}, format='json')
+        self.assertEqual(Business.objects.get(path='a').template, 'classic')
+
+    def test_free_create_with_paid_template_falls_back(self):
+        res = self.client.post('/api/businesses/', {'path': 'b', 'name': 'B', 'template': 'moda'}, format='json')
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(Business.objects.get(path='b').template, 'classic')
 
     def test_invalid_template_rejected(self):
         make_business(self.user, 'a', 'A')

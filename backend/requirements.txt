@@ -9,3 +9,5 @@ requests
 django-jazzmin
 dj-database-url
 psycopg2-binary
+# 22.x da worker o'lgach master yangisini qayta ochmaydigan bag bor ("Unhandled signal: cld")
+gunicorn==23.0.0

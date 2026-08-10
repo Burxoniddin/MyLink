@@ -27,7 +27,7 @@ def send_telegram_message(text):
                 "parse_mode": "HTML",
                 "disable_web_page_preview": True,
             },
-            timeout=8,
+            timeout=(2, 6),
         )
         if not resp.ok:
             # Surface Telegram's reason (e.g. "chat not found", "bot is not a member").

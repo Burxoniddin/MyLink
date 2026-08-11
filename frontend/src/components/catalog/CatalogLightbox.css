@@ -1,0 +1,66 @@
+/* ============ MYCATALOG — fullscreen product image viewer (cat-lb-) ============ */
+.cat-lb {
+    position: fixed; inset: 0; z-index: 1200;
+    background: rgba(8, 8, 16, 0.94);
+    display: flex; align-items: center; justify-content: center;
+    animation: catLbIn 0.18s ease-out;
+}
+@keyframes catLbIn { from { opacity: 0; } to { opacity: 1; } }
+
+.cat-lb-stage {
+    max-width: min(94vw, 860px); max-height: 82vh;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; border-radius: 12px;
+    touch-action: pan-y pinch-zoom;
+}
+.cat-lb-stage img {
+    max-width: 100%; max-height: 82vh; object-fit: contain;
+    border-radius: 12px; user-select: none;
+    transition: transform 0.22s ease;
+}
+.cat-lb-stage img.zoomed { transform: scale(2.2); cursor: zoom-out; }
+
+.cat-lb-title {
+    position: absolute; top: 18px; left: 0; right: 0; text-align: center;
+    color: rgba(255, 255, 255, 0.92); font-weight: 700; font-size: 15px;
+    padding: 0 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    pointer-events: none;
+}
+.cat-lb-close {
+    position: absolute; top: 12px; right: 12px; z-index: 2;
+    width: 40px; height: 40px; border-radius: 50%; border: none;
+    background: rgba(255, 255, 255, 0.12); color: #fff; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.cat-lb-close:hover { background: rgba(255, 255, 255, 0.22); }
+
+.cat-lb-nav {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+    width: 44px; height: 44px; border-radius: 50%; border: none;
+    background: rgba(255, 255, 255, 0.12); color: #fff; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.cat-lb-nav:hover { background: rgba(255, 255, 255, 0.22); }
+.cat-lb-prev { left: 14px; }
+.cat-lb-next { right: 14px; }
+
+.cat-lb-dots {
+    position: absolute; bottom: 26px; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 8px;
+}
+.cat-lb-dot {
+    width: 8px; height: 8px; border-radius: 50%; border: none; padding: 0;
+    background: rgba(255, 255, 255, 0.35); cursor: pointer;
+}
+.cat-lb-dot.on { background: #fff; transform: scale(1.25); }
+
+.cat-lb-counter {
+    position: absolute; bottom: 48px; left: 0; right: 0; text-align: center;
+    color: rgba(255, 255, 255, 0.6); font-size: 12.5px; pointer-events: none;
+}
+
+@media (max-width: 560px) {
+    .cat-lb-nav { display: none; } /* touch: swipe instead */
+    .cat-lb-stage { max-width: 100vw; }
+    .cat-lb-stage img { border-radius: 0; }
+}

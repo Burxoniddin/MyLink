@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { FaBookOpen } from 'react-icons/fa';
 import { getLinkIcon, getBrandColor } from '../../lib/linkIcons';
 import { TEMPLATE_META } from './templateMeta';
 import Highlights from '../Highlights';
@@ -47,6 +49,21 @@ const ProfileTemplate = ({ data, tpl, theme, onLinkClick = () => {}, getLogoUrl,
 
                 <Highlights sections={sections} getMediaUrl={getLogoUrl} toEmbed={toEmbed} />
 
+                {/* MyCatalog: featured web-menu button (owner-labeled) */}
+                {data.has_catalog && (
+                    <Link
+                        to={`/${data.path}/menu`}
+                        className="tpl-menu"
+                        onClick={(e) => {
+                            if (previewMode) { e.preventDefault(); return; }
+                            onLinkClick(data.catalog_label || t('landing.menu_button'));
+                        }}
+                    >
+                        <FaBookOpen />
+                        <span>{data.catalog_label || t('landing.menu_button')}</span>
+                    </Link>
+                )}
+
                 <nav className="tpl-links">
                     {links.map((link, i) => (
                         <a
@@ -68,7 +85,7 @@ const ProfileTemplate = ({ data, tpl, theme, onLinkClick = () => {}, getLogoUrl,
                     ))}
                 </nav>
 
-                {links.length === 0 && sections.length === 0 && (
+                {links.length === 0 && sections.length === 0 && !data.has_catalog && (
                     <div className="tpl-empty">{t('landing.no_links')}</div>
                 )}
 

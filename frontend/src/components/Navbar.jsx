@@ -53,6 +53,7 @@ const Navbar = () => {
                 {/* Desktop Menu */}
                 <nav className="navbar-menu">
                     <Link to="/dashboard" className={`nav-link ${isActive('/dashboard')}`}>{t('nav.businesses')}</Link>
+                    <Link to="/catalogs" className={`nav-link ${isActive('/catalogs')}`}>{t('nav.catalogs')}</Link>
                     <Link to="/analytics" className={`nav-link ${isActive('/analytics')}`}>{t('nav.analytics')}</Link>
                     <Link to="/referral" className={`nav-link ${isActive('/referral')}`}>{t('nav.referral')}</Link>
                     <Link to="/nfc" className={`nav-link ${isActive('/nfc')}`}>{t('nav.nfc')}</Link>
@@ -89,6 +90,9 @@ const Navbar = () => {
                     <nav className="mobile-menu" onClick={(e) => e.stopPropagation()}>
                         <Link to="/dashboard" className={`mobile-nav-link ${isActive('/dashboard')}`} onClick={closeMenu}>
                             {t('nav.businesses')}
+                        </Link>
+                        <Link to="/catalogs" className={`mobile-nav-link ${isActive('/catalogs')}`} onClick={closeMenu}>
+                            {t('nav.catalogs')}
                         </Link>
                         <Link to="/analytics" className={`mobile-nav-link ${isActive('/analytics')}`} onClick={closeMenu}>
                             {t('nav.analytics')}

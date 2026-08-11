@@ -1,4 +1,6 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { FaBookOpen } from 'react-icons/fa';
 import LinkButton from '../LinkButton';
 import Highlights from '../Highlights';
 import VerifiedBadge from '../VerifiedBadge';
@@ -59,6 +61,21 @@ const ClassicTemplate = ({ data, onLinkClick = () => {}, getLogoUrl, toEmbed, t,
                 {/* Media sections — cover-card carousel under the bio, above the links */}
                 <Highlights sections={data.media_sections} getMediaUrl={getLogoUrl} toEmbed={toEmbed} />
 
+                {/* MyCatalog: featured web-menu button (owner-labeled) */}
+                {data.has_catalog && (
+                    <Link
+                        to={`/${data.path}/menu`}
+                        className="landing-menu-btn"
+                        onClick={(e) => {
+                            if (previewMode) { e.preventDefault(); return; }
+                            onLinkClick(data.catalog_label || t('landing.menu_button'));
+                        }}
+                    >
+                        <FaBookOpen className="landing-menu-icon" />
+                        <span>{data.catalog_label || t('landing.menu_button')}</span>
+                    </Link>
+                )}
+
                 {/* Links section */}
                 <div className="landing-links">
                     {data.links && data.links.map((link, index) => (
@@ -73,7 +90,7 @@ const ClassicTemplate = ({ data, onLinkClick = () => {}, getLogoUrl, toEmbed, t,
                 </div>
 
                 {/* Empty state */}
-                {(!data.links || data.links.length === 0) && (!data.media_sections || data.media_sections.length === 0) && (
+                {(!data.links || data.links.length === 0) && (!data.media_sections || data.media_sections.length === 0) && !data.has_catalog && (
                     <div className="landing-empty">
                         <div className="empty-icon">🔗</div>
                         <p>{t('landing.no_links')}</p>

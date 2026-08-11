@@ -67,6 +67,10 @@ class BusinessSerializer(serializers.ModelSerializer):
     branding_removed = serializers.SerializerMethodField()
     verified = serializers.SerializerMethodField()
     media_sections = serializers.SerializerMethodField()
+    # MyCatalog: whether an attached, active, tier-enabled web-menu exists, and
+    # the owner-chosen button label for it (public page renders the button).
+    has_catalog = serializers.SerializerMethodField()
+    catalog_label = serializers.SerializerMethodField()
     # Requesting user's role on this page ('owner' | admin | editor | viewer).
     role = serializers.SerializerMethodField()
     # Owner label, shown on the dashboard for pages shared *with* you.
@@ -76,6 +80,7 @@ class BusinessSerializer(serializers.ModelSerializer):
         model = Business
         fields = ['id', 'path', 'name', 'description', 'logo', 'logo_upload', 'logo_remove',
                   'template', 'theme', 'theme_mode', 'is_locked', 'is_pinned', 'branding_removed', 'verified',
+                  'has_catalog', 'catalog_label',
                   'role', 'owner_name', 'created_at', 'links', 'media_sections']
         read_only_fields = ['is_locked', 'is_pinned']
 
@@ -103,6 +108,19 @@ class BusinessSerializer(serializers.ModelSerializer):
         qs = obj.media_sections.prefetch_related('blocks')
         data = MediaSectionSerializer(qs, many=True, context=self.context).data
         return [s for s in data if s['blocks']]
+
+    def get_has_catalog(self, obj):
+        # Attach flow guarantees catalog.owner == business.owner, so the
+        # memoized owner features double as the catalog gate here.
+        catalog = getattr(obj, 'catalog', None)  # reverse OneToOne, AttributeError-safe
+        if catalog is None or not catalog.is_active:
+            return False
+        return bool(self._owner_features(obj).get('catalog'))
+
+    def get_catalog_label(self, obj):
+        if not self.get_has_catalog(obj):
+            return None
+        return obj.catalog.button_label or None
 
     def _owner_features(self, obj):
         """Owner tier features, cached per-request so a dashboard list doesn't

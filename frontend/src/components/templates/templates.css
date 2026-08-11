@@ -29,6 +29,24 @@
 .tpl-name { font-size: 28px; line-height: 1.15; letter-spacing: -.02em; margin-top: 16px; text-align: center; color: var(--t-text); }
 .tpl-bio { color: var(--t-muted); font-size: 14.5px; margin-top: 6px; text-align: center; max-width: 32ch; }
 
+/* MyCatalog: featured web-menu button — accent-filled, adapts per template */
+.tpl-menu {
+    width: 100%; margin-top: 22px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 14px 18px; border-radius: 16px;
+    background: var(--t-accent); color: var(--t-accent-ink, #fff);
+    font-weight: 800; font-size: 15px;
+    box-shadow: 0 10px 24px -12px var(--t-accent);
+    transition: transform .18s ease, filter .18s ease;
+}
+.tpl-menu:hover { transform: translateY(-2px); filter: brightness(1.06); }
+.tpl-menu:active { transform: scale(.98); }
+.tpl-menu + .tpl-links { margin-top: 12px; }
+.tpl[data-tpl="moda"] .tpl-menu { border-radius: 3px; letter-spacing: .18em; text-transform: uppercase; font-size: 12px; font-weight: 600; }
+/* Light accents need dark ink for contrast */
+.tpl[data-tpl="fitnes"] .tpl-menu { color: var(--lime-ink); }
+.tpl[data-tpl="klinika"][data-theme="dark"] .tpl-menu { color: #0c2523; }
+
 .tpl-links { width: 100%; margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
 .tpl-lnk {
     --bc: var(--t-accent);

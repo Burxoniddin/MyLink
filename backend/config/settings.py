@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'users',
     'businesses',
     'billing',
+    'catalog',
 ]
 
 # Jazzmin Admin Theme Settings
@@ -95,6 +96,8 @@ JAZZMIN_SETTINGS = {
         "businesses.Link": "fas fa-link",
         "businesses.MenuItem": "fas fa-bars",
         "businesses.SiteSettings": "fas fa-cog",
+        "catalog.Catalog": "fas fa-book-open",
+        "catalog.CatalogItem": "fas fa-utensils",
     },
     
     # Related Modal

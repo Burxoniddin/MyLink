@@ -24,6 +24,7 @@ const featureLines = (f, t) => {
     if (f.branding_removed) lines.push(t('pricing.feat.branding'));
     if (f.verified_badge) lines.push(t('pricing.feat.verified'));
     if (f.team) lines.push(t('pricing.feat.team'));
+    if (f.catalog) lines.push(t('pricing.feat.catalog'));
     return lines;
 };
 

@@ -11,6 +11,9 @@ import Analytics from './pages/Analytics';
 import Referral from './pages/Referral';
 import Nfc from './pages/Nfc';
 import Dashboard from './pages/Dashboard';
+import Catalogs from './pages/Catalogs';
+import CatalogEditor from './pages/CatalogEditor';
+import MenuPage from './pages/MenuPage';
 import BusinessDetail from './pages/BusinessDetail';
 import NewBusiness from './pages/NewBusiness';
 import LandingPage from './pages/LandingPage';
@@ -33,6 +36,8 @@ function App() {
 
         {/* Main Application with Navbar */}
         <Route path="/dashboard" element={<><Navbar /><Dashboard /></>} />
+        <Route path="/catalogs" element={<><Navbar /><Catalogs /></>} />
+        <Route path="/catalogs/:id" element={<><Navbar /><CatalogEditor /></>} />
         <Route path="/profile" element={<><Navbar /><Profile /></>} />
         <Route path="/analytics" element={<><Navbar /><Analytics /></>} />
         <Route path="/referral" element={<><Navbar /><Referral /></>} />
@@ -52,6 +57,9 @@ function App() {
 
         {/* Marketing landing — entry point */}
         <Route path="/" element={<HomePage />} />
+
+        {/* Public web-menu (before the one-segment catch-all) */}
+        <Route path="/:path/menu" element={<MenuPage />} />
 
         {/* Public business pages (catch-all, must be last) */}
         <Route path="/:path" element={<LandingPage />} />

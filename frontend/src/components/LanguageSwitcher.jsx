@@ -1,53 +1,70 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaGlobe, FaCheck } from 'react-icons/fa';
+import './LanguageSwitcher.css';
 
 const LANGS = [
-    { code: 'uz', label: "O'z" },
-    { code: 'ru', label: 'Ру' },
-    { code: 'en', label: 'En' },
+    { code: 'uz', short: "O'z", label: "O'zbekcha" },
+    { code: 'ru', short: 'Ру', label: 'Русский' },
+    { code: 'en', short: 'En', label: 'English' },
 ];
 
-const wrapStyle = {
-    display: 'inline-flex',
-    gap: 2,
-    background: 'rgba(0,0,0,0.06)',
-    borderRadius: 8,
-    padding: 2,
-};
+/** Compact language dropdown — three inline buttons made the navbar too busy. */
+const LanguageSwitcher = ({ style, className = '' }) => {
+    const { i18n, t } = useTranslation();
+    const [open, setOpen] = useState(false);
+    const wrap = useRef(null);
 
-const btnStyle = (active) => ({
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: 13,
-    fontWeight: 600,
-    padding: '4px 8px',
-    borderRadius: 6,
-    background: active ? '#fff' : 'transparent',
-    color: active ? '#4f46e5' : 'inherit',
-    boxShadow: active ? '0 1px 2px rgba(0,0,0,0.12)' : 'none',
-    transition: 'all 0.15s',
-});
+    const current = LANGS.find((l) => l.code === i18n.language) || LANGS[0];
 
-const LanguageSwitcher = ({ style }) => {
-    const { i18n } = useTranslation();
+    useEffect(() => {
+        if (!open) return undefined;
+        const onDown = (e) => { if (!wrap.current?.contains(e.target)) setOpen(false); };
+        const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+        document.addEventListener('pointerdown', onDown);
+        window.addEventListener('keydown', onKey);
+        return () => {
+            document.removeEventListener('pointerdown', onDown);
+            window.removeEventListener('keydown', onKey);
+        };
+    }, [open]);
 
     const change = (code) => {
         i18n.changeLanguage(code);
         localStorage.setItem('mylink-lang', code);
+        setOpen(false);
     };
 
     return (
-        <div style={{ ...wrapStyle, ...style }} className="lang-switcher">
-            {LANGS.map((l) => (
-                <button
-                    key={l.code}
-                    type="button"
-                    style={btnStyle(i18n.language === l.code)}
-                    onClick={() => change(l.code)}
-                >
-                    {l.label}
-                </button>
-            ))}
+        <div className={`lang-dd ${className}`} style={style} ref={wrap}>
+            <button
+                type="button" className={`lang-dd-btn${open ? ' on' : ''}`}
+                onClick={() => setOpen((v) => !v)}
+                aria-haspopup="listbox" aria-expanded={open} aria-label={t('nav.language', 'Til')}
+            >
+                <FaGlobe className="lang-dd-globe" />
+                <span>{current.short}</span>
+                <svg className="lang-dd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6" />
+                </svg>
+            </button>
+            {open && (
+                <ul className="lang-dd-menu" role="listbox">
+                    {LANGS.map((l) => (
+                        <li key={l.code}>
+                            <button
+                                type="button" role="option" aria-selected={l.code === current.code}
+                                className={l.code === current.code ? 'on' : ''}
+                                onClick={() => change(l.code)}
+                            >
+                                <span>{l.label}</span>
+                                {l.code === current.code && <FaCheck className="lang-dd-check" />}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </div>
     );
 };

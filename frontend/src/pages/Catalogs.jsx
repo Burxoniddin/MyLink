@@ -75,17 +75,28 @@ const Catalogs = () => {
     const { entitlements } = useEntitlements();
     const [catalogs, setCatalogs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [failed, setFailed] = useState(false);
     const [creating, setCreating] = useState(false);
 
     const canCatalog = !!entitlements?.features?.catalog;
 
+    const load = () => {
+        setFailed(false);
+        api.get('catalogs/')
+            // Guard the shape: anything but a list (an error envelope, a future
+            // paginated response) must not leave the page rendering nothing.
+            .then((res) => setCatalogs(Array.isArray(res.data) ? res.data : []))
+            .catch((err) => {
+                if (err.response?.status === 401) navigate('/login');
+                else setFailed(true);
+            })
+            .finally(() => setLoading(false));
+    };
+
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) { navigate('/login'); return; }
-        api.get('catalogs/')
-            .then((res) => setCatalogs(res.data))
-            .catch((err) => { if (err.response?.status === 401) navigate('/login'); })
-            .finally(() => setLoading(false));
+        load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -128,16 +139,48 @@ const Catalogs = () => {
         </div>
     );
 
+    const grid = (
+        <div className="ad-grid">
+            {catalogs.map((c) => (
+                <KatCard
+                    key={c.id} cat={c} t={t} toast={toast}
+                    onToggle={toggleActive}
+                    onOpen={(cat) => navigate(`/catalogs/${cat.id}`)}
+                />
+            ))}
+            {canCatalog && (
+                <button type="button" className="ad-add" onClick={addCatalog} disabled={creating}>
+                    <Ic n="plus" s={20} w={2} />{t('catalog.add_new')}
+                </button>
+            )}
+        </div>
+    );
+
     return (
         <div className="dashboard">
             <main className="dashboard-main">
                 <div className="dashboard-container cat-scope">
-                    {!canCatalog && catalogs.length === 0 ? (
-                        hero('lock', false, t('catalog.upsell_title'), t('catalog.upsell'), (
-                            <>
-                                <Link to="/pricing" className="ad-btn grad">{t('limit.see_plans')}</Link>
-                            </>
+                    {failed ? (
+                        hero('warn', true, t('common.error'), t('catalog.load_failed'), (
+                            <button type="button" className="ad-btn grad" onClick={() => { setLoading(true); load(); }}>
+                                {t('catalog.retry')}
+                            </button>
                         ))
+                    ) : !canCatalog ? (
+                        /* Every non-Pro visit explains the upsell first; any catalogs
+                           kept from an earlier Pro period still list underneath. */
+                        <>
+                            {hero('lock', false, t('catalog.upsell_title'),
+                                catalogs.length ? t('catalog.downgraded_note') : t('catalog.upsell'), (
+                                    <Link to="/pricing" className="ad-btn grad">{t('limit.see_plans')}</Link>
+                                ))}
+                            {catalogs.length > 0 && (
+                                <>
+                                    <div className="ad-head"><h1>{t('catalog.title')}</h1></div>
+                                    {grid}
+                                </>
+                            )}
+                        </>
                     ) : catalogs.length === 0 ? (
                         hero('book', true, t('catalog.empty_title'), t('catalog.empty_desc'), (
                             <button type="button" className="ad-btn grad" onClick={addCatalog} disabled={creating}>
@@ -148,32 +191,11 @@ const Catalogs = () => {
                         <>
                             <div className="ad-head">
                                 <h1>{t('catalog.title')}</h1>
-                                {canCatalog && (
-                                    <button type="button" className="ad-btn grad" onClick={addCatalog} disabled={creating}>
-                                        <Ic n="plus" s={15} w={2.2} />{t('catalog.add')}
-                                    </button>
-                                )}
+                                <button type="button" className="ad-btn grad" onClick={addCatalog} disabled={creating}>
+                                    <Ic n="plus" s={15} w={2.2} />{t('catalog.add')}
+                                </button>
                             </div>
-                            {!canCatalog && (
-                                <p className="ed-note" style={{ marginBottom: 16 }}>
-                                    <Ic n="warn" s={12} w={2} style={{ flex: 'none', marginTop: 2 }} />
-                                    {t('catalog.downgraded_note')}
-                                </p>
-                            )}
-                            <div className="ad-grid">
-                                {catalogs.map((c) => (
-                                    <KatCard
-                                        key={c.id} cat={c} t={t} toast={toast}
-                                        onToggle={toggleActive}
-                                        onOpen={(cat) => navigate(`/catalogs/${cat.id}`)}
-                                    />
-                                ))}
-                                {canCatalog && (
-                                    <button type="button" className="ad-add" onClick={addCatalog} disabled={creating}>
-                                        <Ic n="plus" s={20} w={2} />{t('catalog.add_new')}
-                                    </button>
-                                )}
-                            </div>
+                            {grid}
                         </>
                     )}
                 </div>

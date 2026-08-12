@@ -256,7 +256,7 @@ class CatalogCrudTests(CatalogTestCase):
         res = self.client.get(f'/api/catalogs/{self.catalog.pk}/')
         self.assertEqual(res.data['theme'], 'mylink')
         self.assertEqual(res.data['theme_mode'], 'dark')
-        self.assertEqual(res.data['card_style'], 'list')
+        self.assertEqual(res.data['card_style'], 'grid')
         res = self.client.patch(f'/api/catalogs/{self.catalog.pk}/',
                                 {'theme': 'tandir', 'theme_mode': 'light',
                                  'card_style': 'grid'}, format='json')
@@ -406,7 +406,7 @@ class PublicCatalogTests(CatalogTestCase):
         # Appearance drives the public page's theme.
         self.assertEqual(res.data['theme'], 'mylink')
         self.assertEqual(res.data['theme_mode'], 'dark')
-        self.assertEqual(res.data['card_style'], 'list')
+        self.assertEqual(res.data['card_style'], 'grid')
         self.assertEqual(res.data['business']['path'], 'osh')
         self.assertEqual(res.data['business']['name'], 'Osh Markazi')
         # Empty categories are filtered out.

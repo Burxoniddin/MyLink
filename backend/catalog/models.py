@@ -43,7 +43,7 @@ class Catalog(models.Model):
                              verbose_name='Tema')
     theme_mode = models.CharField(max_length=5, choices=MODE_CHOICES, default='dark',
                                   verbose_name='Muhit')
-    card_style = models.CharField(max_length=5, choices=CARD_CHOICES, default='list',
+    card_style = models.CharField(max_length=5, choices=CARD_CHOICES, default='grid',
                                   verbose_name='Karta stili')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

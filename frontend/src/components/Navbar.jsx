@@ -68,9 +68,13 @@ const Navbar = () => {
                         <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profileLabel}</span>
                         <TierPill tier={tier} t={t} />
                     </Link>
-                    <button className="navbar-logout" onClick={handleLogout}>
+                    {/* Icon-only on desktop — the navbar is crowded; the label
+                        stays in the mobile menu below. */}
+                    <button
+                        className="navbar-logout" onClick={handleLogout}
+                        title={t('nav.logout')} aria-label={t('nav.logout')}
+                    >
                         <FaSignOutAlt />
-                        <span>{t('nav.logout')}</span>
                     </button>
                 </div>
 

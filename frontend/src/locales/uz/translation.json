@@ -50,7 +50,8 @@
     "pricing": "Tariflar",
     "profile": "Profil",
     "logout": "Chiqish",
-    "dashboard": "Boshqaruv paneli"
+    "dashboard": "Boshqaruv paneli",
+    "language": "Til"
   },
   "login": {
     "title_phone": "Kirish",
@@ -596,7 +597,9 @@
     "err_invalid_category": "Kategoriya topilmadi.",
     "err_not_your_business": "Bu biznes sizniki emas.",
     "err_business_has_catalog": "Bu biznesga boshqa katalog biriktirilgan.",
-    "err_not_attached": "Avval katalogni biznesga biriktiring."
+    "err_not_attached": "Avval katalogni biznesga biriktiring.",
+    "load_failed": "Kataloglar ro'yxatini yuklab bo'lmadi. Internet aloqasini tekshirib, qaytadan urinib ko'ring.",
+    "retry": "Qayta urinish"
   },
   "menu": {
     "not_found": "Menyu topilmadi",

@@ -50,7 +50,8 @@
     "pricing": "Pricing",
     "profile": "Profile",
     "logout": "Log out",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "language": "Language"
   },
   "login": {
     "title_phone": "Sign in",
@@ -596,7 +597,9 @@
     "err_invalid_category": "Category not found.",
     "err_not_your_business": "This business is not yours.",
     "err_business_has_catalog": "Another catalog is already attached to this business.",
-    "err_not_attached": "Attach the catalog to a business first."
+    "err_not_attached": "Attach the catalog to a business first.",
+    "load_failed": "Could not load your catalogs. Check your connection and try again.",
+    "retry": "Try again"
   },
   "menu": {
     "not_found": "Menu not found",

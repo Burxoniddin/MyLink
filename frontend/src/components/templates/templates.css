@@ -29,23 +29,63 @@
 .tpl-name { font-size: 28px; line-height: 1.15; letter-spacing: -.02em; margin-top: 16px; text-align: center; color: var(--t-text); }
 .tpl-bio { color: var(--t-muted); font-size: 14.5px; margin-top: 6px; text-align: center; max-width: 32ch; }
 
-/* MyCatalog: featured web-menu button — accent-filled, adapts per template */
+/* ---- MyCatalog: featured web-menu button ----
+   Three archetypes from the design, picked per template via TEMPLATE_META.menuBtn:
+   flame (filled + sheen sweep), line (outlined, letterspaced), soft (accent tint). */
 .tpl-menu {
-    width: 100%; margin-top: 22px;
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    padding: 14px 18px; border-radius: 16px;
-    background: var(--t-accent); color: var(--t-accent-ink, #fff);
-    font-weight: 800; font-size: 15px;
-    box-shadow: 0 10px 24px -12px var(--t-accent);
-    transition: transform .18s ease, filter .18s ease;
+    position: relative; width: 100%; margin-top: 22px;
+    display: flex; align-items: center; gap: 11px;
+    border-radius: 15px; padding: 13px 14px; overflow: hidden;
+    font-family: var(--t-sans); transition: transform .2s, box-shadow .25s, background .25s, color .25s;
 }
-.tpl-menu:hover { transform: translateY(-2px); filter: brightness(1.06); }
-.tpl-menu:active { transform: scale(.98); }
+.tpl-menu:hover { transform: translateY(-2px); }
+.tpl-menu:active { transform: scale(.985); }
 .tpl-menu + .tpl-links { margin-top: 12px; }
-.tpl[data-tpl="moda"] .tpl-menu { border-radius: 3px; letter-spacing: .18em; text-transform: uppercase; font-size: 12px; font-weight: 600; }
-/* Light accents need dark ink for contrast */
-.tpl[data-tpl="fitnes"] .tpl-menu { color: var(--lime-ink); }
-.tpl[data-tpl="klinika"][data-theme="dark"] .tpl-menu { color: #0c2523; }
+.tpl-menu-lbl { flex: 1; text-align: left; font: 700 14.5px var(--t-sans); }
+.tpl-menu-ico {
+    width: 34px; height: 34px; border-radius: 10px; flex: none;
+    background: rgba(255, 255, 255, .18); display: grid; place-items: center;
+}
+.tpl-menu-chev { flex: none; display: grid; place-items: center; }
+.tpl-menu-chev svg { width: 16px; height: 16px; display: block; }
+
+/* flame — filled with the template gradient, with a slow sheen sweep */
+.tpl-menu.is-flame {
+    background: linear-gradient(135deg, var(--t-accent), color-mix(in oklab, var(--t-accent) 55%, #b3300f));
+    color: #fff; box-shadow: 0 16px 32px -14px var(--t-accent);
+}
+.tpl-menu-sheen {
+    position: absolute; top: 0; bottom: 0; width: 46px; left: -60px;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .35), transparent);
+    transform: skewX(-18deg); animation: tplSheen 3.4s ease-in-out infinite;
+}
+@keyframes tplSheen { 0%, 55% { left: -60px; } 85%, 100% { left: 120%; } }
+@media (prefers-reduced-motion: reduce) { .tpl-menu-sheen { animation: none; opacity: 0; } }
+
+/* line — editorial outline, all caps */
+.tpl-menu.is-line {
+    background: transparent; border: 1.5px solid var(--t-accent); color: var(--t-text);
+    border-radius: 0; padding: 15px 14px; justify-content: center;
+}
+.tpl-menu.is-line .tpl-menu-lbl {
+    flex: none; text-align: center;
+    font: 600 11.5px var(--t-sans); letter-spacing: .18em; text-transform: uppercase;
+}
+.tpl-menu.is-line:hover { background: var(--t-accent); color: #fff; }
+
+/* soft — accent tint, circular icon */
+.tpl-menu.is-soft {
+    background: color-mix(in srgb, var(--t-accent) 13%, transparent);
+    color: var(--t-text); border-radius: 16px;
+}
+.tpl-menu.is-soft .tpl-menu-ico {
+    background: var(--t-accent); color: #fff; border-radius: 50%; width: 32px; height: 32px;
+}
+.tpl-menu.is-soft .tpl-menu-chev { color: var(--t-muted); }
+
+/* Light accents need dark ink on the filled variant */
+.tpl[data-tpl="fitnes"] .tpl-menu.is-flame { color: var(--lime-ink); }
+.tpl[data-tpl="fitnes"] .tpl-menu.is-flame .tpl-menu-ico { background: rgba(0, 0, 0, .16); }
 
 .tpl-links { width: 100%; margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
 .tpl-lnk {

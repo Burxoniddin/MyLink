@@ -49,18 +49,27 @@ const ProfileTemplate = ({ data, tpl, theme, onLinkClick = () => {}, getLogoUrl,
 
                 <Highlights sections={sections} getMediaUrl={getLogoUrl} toEmbed={toEmbed} />
 
-                {/* MyCatalog: featured web-menu button (owner-labeled) */}
+                {/* MyCatalog: featured web-menu button, styled per template archetype */}
                 {data.has_catalog && (
                     <Link
                         to={`/${data.path}/menu`}
-                        className="tpl-menu"
+                        className={`tpl-menu is-${meta.menuBtn || 'soft'}`}
                         onClick={(e) => {
                             if (previewMode) { e.preventDefault(); return; }
                             onLinkClick(data.catalog_label || t('landing.menu_button'));
                         }}
                     >
-                        <FaBookOpen />
-                        <span>{data.catalog_label || t('landing.menu_button')}</span>
+                        {meta.menuBtn !== 'line' && (
+                            <span className="tpl-menu-ico"><FaBookOpen /></span>
+                        )}
+                        <span className="tpl-menu-lbl">{data.catalog_label || t('landing.menu_button')}</span>
+                        <span className="tpl-menu-chev" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                                strokeLinecap="round" strokeLinejoin="round">
+                                <path d={meta.menuBtn === 'line' ? 'M4 12h16m-6-6 6 6-6 6' : 'M9 6l6 6-6 6'} />
+                            </svg>
+                        </span>
+                        {meta.menuBtn === 'flame' && <span className="tpl-menu-sheen" />}
                     </Link>
                 )}
 

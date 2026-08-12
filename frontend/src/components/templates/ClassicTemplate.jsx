@@ -71,8 +71,13 @@ const ClassicTemplate = ({ data, onLinkClick = () => {}, getLogoUrl, toEmbed, t,
                             onLinkClick(data.catalog_label || t('landing.menu_button'));
                         }}
                     >
-                        <FaBookOpen className="landing-menu-icon" />
-                        <span>{data.catalog_label || t('landing.menu_button')}</span>
+                        <span className="landing-menu-ico"><FaBookOpen /></span>
+                        <span className="landing-menu-lbl">{data.catalog_label || t('landing.menu_button')}</span>
+                        <span className="landing-menu-chev" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                                strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+                        </span>
+                        <span className="landing-menu-sheen" />
                     </Link>
                 )}
 

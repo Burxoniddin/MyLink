@@ -1,32 +1,32 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FaChevronLeft, FaChevronRight, FaTimes } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
+import { Ic } from './icons';
 import './CatalogLightbox.css';
 
 /**
- * Fullscreen swipeable viewer for one product's images (hl-modal fork, no
- * auto-advance). Touch: swipe to navigate, double-tap to zoom 2.2x. Desktop:
- * arrows / arrow keys, Escape or backdrop click to close.
+ * Fullscreen product-photo viewer: swipe or arrows to move between shots,
+ * double-tap/click to zoom, Escape or the backdrop to close.
  */
-const CatalogLightbox = ({ images, start = 0, title, onClose }) => {
-    const [idx, setIdx] = useState(start);
-    const [zoomed, setZoomed] = useState(false);
+const CatalogLightbox = ({ images = [], title, start = 0, onClose }) => {
+    const { t } = useTranslation();
+    const n = images.length;
+    const [i, setI] = useState(start);
+    const [zoom, setZoom] = useState(false);
     const [origin, setOrigin] = useState('50% 50%');
-    const touchX = useRef(null);
-    const count = images.length;
+    const px = useRef(null);
 
-    const go = (delta) => {
-        setZoomed(false);
-        setIdx((i) => (i + delta + count) % count);
+    const go = (d) => {
+        setZoom(false);
+        setI((v) => Math.max(0, Math.min(n - 1, v + d)));
     };
 
     useEffect(() => {
         const onKey = (e) => {
             if (e.key === 'Escape') onClose();
-            else if (e.key === 'ArrowLeft') go(-1);
             else if (e.key === 'ArrowRight') go(1);
+            else if (e.key === 'ArrowLeft') go(-1);
         };
         window.addEventListener('keydown', onKey);
-        // Lock body scroll while open.
         const prev = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
         return () => {
@@ -34,70 +34,64 @@ const CatalogLightbox = ({ images, start = 0, title, onClose }) => {
             document.body.style.overflow = prev;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [count]);
+    }, [n]);
 
-    const onTouchStart = (e) => { touchX.current = e.touches[0].clientX; };
-    const onTouchEnd = (e) => {
-        if (touchX.current === null || zoomed) return;
-        const dx = e.changedTouches[0].clientX - touchX.current;
-        touchX.current = null;
-        if (Math.abs(dx) > 40) go(dx > 0 ? -1 : 1);
-    };
+    if (!n) return null;
+    const img = images[i];
 
     const toggleZoom = (e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const x = ((e.clientX ?? rect.width / 2) - rect.left) / rect.width * 100;
-        const y = ((e.clientY ?? rect.height / 2) - rect.top) / rect.height * 100;
-        setOrigin(`${x}% ${y}%`);
-        setZoomed((z) => !z);
+        const r = e.currentTarget.getBoundingClientRect();
+        setOrigin(`${((e.clientX - r.left) / r.width) * 100}% ${((e.clientY - r.top) / r.height) * 100}%`);
+        setZoom((z) => !z);
     };
 
-    if (!count) return null;
-    const img = images[idx];
-
     return (
-        <div className="cat-lb" onClick={onClose}>
-            <button type="button" className="cat-lb-close" onClick={onClose} aria-label="close"><FaTimes /></button>
-            {title && <div className="cat-lb-title">{title}</div>}
+        <div
+            className="cat-lb"
+            onPointerDown={(e) => { px.current = e.clientX; }}
+            onPointerUp={(e) => {
+                if (px.current === null || zoom) return;
+                const dx = e.clientX - px.current;
+                px.current = null;
+                if (Math.abs(dx) > 42) go(dx < 0 ? 1 : -1);
+            }}
+        >
+            <div className="cat-lb-top">
+                <span className="cat-lb-nom">{title}</span>
+                <button type="button" className="cat-lb-x" onClick={onClose} aria-label={t('common.close')}>
+                    <Ic n="x" s={17} />
+                </button>
+            </div>
 
-            <div
-                className="cat-lb-stage"
-                onClick={(e) => e.stopPropagation()}
-                onTouchStart={onTouchStart}
-                onTouchEnd={onTouchEnd}
-                onDoubleClick={toggleZoom}
-            >
+            <div className="cat-lb-stage" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
                 <img
-                    src={img.image || img.thumb}
-                    alt={title || ''}
-                    className={zoomed ? 'zoomed' : ''}
-                    style={zoomed ? { transformOrigin: origin } : undefined}
-                    draggable={false}
+                    className={`cat-lb-img${zoom ? ' zoom' : ''}`}
+                    style={zoom ? { transformOrigin: origin } : undefined}
+                    src={img.image || img.thumb} alt={title || ''} draggable={false}
+                    onDoubleClick={toggleZoom}
                 />
             </div>
 
-            {count > 1 && (
+            {n > 1 && (
                 <>
-                    <button type="button" className="cat-lb-nav cat-lb-prev"
-                        onClick={(e) => { e.stopPropagation(); go(-1); }} aria-label="prev">
-                        <FaChevronLeft />
+                    <button type="button" className="cat-lb-ar l" onClick={() => go(-1)} disabled={i === 0} aria-label="prev">
+                        <Ic n="back" s={20} />
                     </button>
-                    <button type="button" className="cat-lb-nav cat-lb-next"
-                        onClick={(e) => { e.stopPropagation(); go(1); }} aria-label="next">
-                        <FaChevronRight />
+                    <button type="button" className="cat-lb-ar r" onClick={() => go(1)} disabled={i === n - 1} aria-label="next">
+                        <Ic n="chevR" s={20} />
                     </button>
-                    <div className="cat-lb-dots" onClick={(e) => e.stopPropagation()}>
-                        {images.map((_, i) => (
-                            <button
-                                key={i} type="button" aria-label={`image ${i + 1}`}
-                                className={`cat-lb-dot ${i === idx ? 'on' : ''}`}
-                                onClick={() => { setZoomed(false); setIdx(i); }}
-                            />
-                        ))}
-                    </div>
-                    <div className="cat-lb-counter">{idx + 1}/{count}</div>
                 </>
             )}
+
+            <div className="cat-lb-foot">
+                {n > 1 && (
+                    <span className="cat-lb-dots">
+                        {images.map((im, k) => <span key={im.id ?? k} className={k === i ? 'on' : ''} />)}
+                    </span>
+                )}
+                <span className="cat-lb-count">{i + 1} / {n}</span>
+                <span className="cat-lb-hint">{t('menu.lb_hint')}</span>
+            </div>
         </div>
     );
 };

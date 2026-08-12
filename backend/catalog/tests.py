@@ -252,6 +252,25 @@ class CatalogCrudTests(CatalogTestCase):
         i2.refresh_from_db()
         self.assertLess(i2.order, i1.order)
 
+    def test_appearance_defaults_and_update(self):
+        res = self.client.get(f'/api/catalogs/{self.catalog.pk}/')
+        self.assertEqual(res.data['theme'], 'mylink')
+        self.assertEqual(res.data['theme_mode'], 'dark')
+        self.assertEqual(res.data['card_style'], 'list')
+        res = self.client.patch(f'/api/catalogs/{self.catalog.pk}/',
+                                {'theme': 'tandir', 'theme_mode': 'light',
+                                 'card_style': 'grid'}, format='json')
+        self.assertEqual(res.status_code, 200)
+        self.catalog.refresh_from_db()
+        self.assertEqual(self.catalog.theme, 'tandir')
+        self.assertEqual(self.catalog.theme_mode, 'light')
+        self.assertEqual(self.catalog.card_style, 'grid')
+
+    def test_unknown_theme_rejected(self):
+        res = self.client.patch(f'/api/catalogs/{self.catalog.pk}/',
+                                {'theme': 'kosmos'}, format='json')
+        self.assertEqual(res.status_code, 400)
+
     def test_stranger_cannot_touch_children(self):
         other, other_client = self.make_other_user()
         cat = self.make_category()
@@ -384,6 +403,10 @@ class PublicCatalogTests(CatalogTestCase):
         self.assertEqual(res.data['name'], 'Menyu')
         self.assertEqual(res.data['button_label'], 'Menyu')
         self.assertEqual(res.data['currency'], "so'm")
+        # Appearance drives the public page's theme.
+        self.assertEqual(res.data['theme'], 'mylink')
+        self.assertEqual(res.data['theme_mode'], 'dark')
+        self.assertEqual(res.data['card_style'], 'list')
         self.assertEqual(res.data['business']['path'], 'osh')
         self.assertEqual(res.data['business']['name'], 'Osh Markazi')
         # Empty categories are filtered out.

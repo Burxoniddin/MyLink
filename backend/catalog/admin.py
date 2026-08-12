@@ -12,8 +12,9 @@ class CatalogCategoryInline(admin.TabularInline):
 
 @admin.register(Catalog)
 class CatalogAdmin(admin.ModelAdmin):
-    list_display = ('name', 'owner', 'business', 'button_label', 'is_active', 'created_at')
-    list_filter = ('is_active',)
+    list_display = ('name', 'owner', 'business', 'button_label', 'theme',
+                    'theme_mode', 'card_style', 'is_active', 'created_at')
+    list_filter = ('is_active', 'theme', 'theme_mode', 'card_style')
     search_fields = ('name', 'owner__phone_number', 'owner__email',
                      'business__name', 'business__path')
     autocomplete_fields = ('owner', 'business')

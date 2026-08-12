@@ -13,6 +13,22 @@ class Catalog(models.Model):
     attached to ONE of their businesses — only while attached (and active, and
     the owner's tier has the ``catalog`` feature) does it get a public page at
     ``/<business-path>/menu``."""
+
+    # Visual presets for the public menu. Each id maps to a palette + font pair
+    # in frontend/src/lib/catalogThemes.js — keep the two lists in sync.
+    THEME_CHOICES = [
+        ('mylink', 'MyLink (indigo)'),
+        ('tandir', 'Tandir (issiq)'),
+        ('anor', 'Anor (qizil)'),
+        ('rayhon', "Rayhon (yashil)"),
+        ('oltin', 'Oltin tun'),
+        ('chinni', 'Chinni (ko‘k)'),
+        ('qaymoq', 'Qaymoq (neytral)'),
+        ('tut', 'Tut (siyoh)'),
+    ]
+    MODE_CHOICES = [('dark', 'Tungi'), ('light', 'Kunduzgi')]
+    CARD_CHOICES = [('list', "Ro‘yxat"), ('grid', 'Grid')]
+
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                               related_name='catalogs')
     name = models.CharField(max_length=100, help_text="Ro'yxatda ko'rinadigan nom")
@@ -23,6 +39,12 @@ class Catalog(models.Model):
                                     help_text="Sahifadagi tugma matni, masalan 'Menyu'")
     banner = models.ImageField(upload_to='catalog/banners/', blank=True, null=True)
     currency = models.CharField(max_length=12, default="so'm")
+    theme = models.CharField(max_length=12, choices=THEME_CHOICES, default='mylink',
+                             verbose_name='Tema')
+    theme_mode = models.CharField(max_length=5, choices=MODE_CHOICES, default='dark',
+                                  verbose_name='Muhit')
+    card_style = models.CharField(max_length=5, choices=CARD_CHOICES, default='list',
+                                  verbose_name='Karta stili')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

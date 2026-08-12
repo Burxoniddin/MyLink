@@ -1,66 +1,61 @@
-/* ============ MYCATALOG — fullscreen product image viewer (cat-lb-) ============ */
+/* ============ MYCATALOG — fullscreen photo viewer (cat-lb-) ============ */
 .cat-lb {
     position: fixed; inset: 0; z-index: 1200;
-    background: rgba(8, 8, 16, 0.94);
-    display: flex; align-items: center; justify-content: center;
-    animation: catLbIn 0.18s ease-out;
+    background: rgba(6, 6, 10, .94);
+    display: flex; flex-direction: column; color: #fff;
+    animation: catLbIn .25s ease; touch-action: pan-y;
+    padding-top: env(safe-area-inset-top, 0px);
 }
-@keyframes catLbIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes catLbIn { from { opacity: 0; } }
+
+.cat-lb-top { display: flex; align-items: center; gap: 10px; padding: 16px 16px 8px; }
+.cat-lb-nom {
+    font: 700 16px var(--display, "Outfit", sans-serif); flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cat-lb-x {
+    width: 36px; height: 36px; border-radius: 50%; flex: none;
+    background: rgba(255, 255, 255, .13); border: 0; color: #fff;
+    display: grid; place-items: center; cursor: pointer;
+}
+.cat-lb-x:hover { background: rgba(255, 255, 255, .22); }
 
 .cat-lb-stage {
-    max-width: min(94vw, 860px); max-height: 82vh;
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden; border-radius: 12px;
-    touch-action: pan-y pinch-zoom;
+    flex: 1; display: grid; place-items: center;
+    padding: 10px 20px; overflow: hidden; min-height: 0;
 }
-.cat-lb-stage img {
-    max-width: 100%; max-height: 82vh; object-fit: contain;
-    border-radius: 12px; user-select: none;
-    transition: transform 0.22s ease;
+.cat-lb-img {
+    max-width: min(92%, 520px); max-height: 100%;
+    border-radius: 22px; object-fit: contain; user-select: none;
+    transition: transform .35s cubic-bezier(.2, .7, .2, 1);
+    cursor: zoom-in;
 }
-.cat-lb-stage img.zoomed { transform: scale(2.2); cursor: zoom-out; }
+.cat-lb-img.zoom { transform: scale(1.9); cursor: zoom-out; }
 
-.cat-lb-title {
-    position: absolute; top: 18px; left: 0; right: 0; text-align: center;
-    color: rgba(255, 255, 255, 0.92); font-weight: 700; font-size: 15px;
-    padding: 0 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    pointer-events: none;
+.cat-lb-ar {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 40px; height: 40px; border-radius: 50%; border: 0;
+    background: rgba(255, 255, 255, .13); color: #fff;
+    display: grid; place-items: center; cursor: pointer; z-index: 2;
 }
-.cat-lb-close {
-    position: absolute; top: 12px; right: 12px; z-index: 2;
-    width: 40px; height: 40px; border-radius: 50%; border: none;
-    background: rgba(255, 255, 255, 0.12); color: #fff; font-size: 16px;
-    display: flex; align-items: center; justify-content: center; cursor: pointer;
-}
-.cat-lb-close:hover { background: rgba(255, 255, 255, 0.22); }
+.cat-lb-ar:hover:not(:disabled) { background: rgba(255, 255, 255, .22); }
+.cat-lb-ar.l { left: 12px; }
+.cat-lb-ar.r { right: 12px; }
+.cat-lb-ar:disabled { opacity: .28; cursor: default; }
 
-.cat-lb-nav {
-    position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
-    width: 44px; height: 44px; border-radius: 50%; border: none;
-    background: rgba(255, 255, 255, 0.12); color: #fff; font-size: 16px;
-    display: flex; align-items: center; justify-content: center; cursor: pointer;
+.cat-lb-foot {
+    display: flex; flex-direction: column; align-items: center; gap: 7px;
+    padding: 0 0 calc(42px + env(safe-area-inset-bottom, 0px));
 }
-.cat-lb-nav:hover { background: rgba(255, 255, 255, 0.22); }
-.cat-lb-prev { left: 14px; }
-.cat-lb-next { right: 14px; }
-
-.cat-lb-dots {
-    position: absolute; bottom: 26px; left: 0; right: 0;
-    display: flex; justify-content: center; gap: 8px;
+.cat-lb-dots { display: flex; gap: 6px; }
+.cat-lb-dots span {
+    width: 6px; height: 6px; border-radius: 999px;
+    background: rgba(255, 255, 255, .32); transition: .25s;
 }
-.cat-lb-dot {
-    width: 8px; height: 8px; border-radius: 50%; border: none; padding: 0;
-    background: rgba(255, 255, 255, 0.35); cursor: pointer;
-}
-.cat-lb-dot.on { background: #fff; transform: scale(1.25); }
-
-.cat-lb-counter {
-    position: absolute; bottom: 48px; left: 0; right: 0; text-align: center;
-    color: rgba(255, 255, 255, 0.6); font-size: 12.5px; pointer-events: none;
-}
+.cat-lb-dots span.on { background: #fff; width: 18px; }
+.cat-lb-count { font: 700 12px var(--sans, "Outfit", sans-serif); }
+.cat-lb-hint { font-size: 10.5px; font-weight: 500; color: rgba(255, 255, 255, .5); text-align: center; }
 
 @media (max-width: 560px) {
-    .cat-lb-nav { display: none; } /* touch: swipe instead */
-    .cat-lb-stage { max-width: 100vw; }
-    .cat-lb-stage img { border-radius: 0; }
+    .cat-lb-ar { display: none; } /* touch: swipe instead */
 }

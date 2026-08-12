@@ -83,7 +83,8 @@ class CatalogSerializer(AbsoluteFileMixin, serializers.ModelSerializer):
         model = Catalog
         fields = ['id', 'name', 'business', 'business_path', 'business_name',
                   'button_label', 'banner', 'banner_upload', 'banner_remove',
-                  'currency', 'is_active', 'categories', 'created_at']
+                  'currency', 'theme', 'theme_mode', 'card_style',
+                  'is_active', 'categories', 'created_at']
 
     def get_banner(self, obj):
         return self._abs(obj.banner)
@@ -131,7 +132,8 @@ class CatalogListSerializer(AbsoluteFileMixin, serializers.ModelSerializer):
     class Meta:
         model = Catalog
         fields = ['id', 'name', 'business', 'business_path', 'business_name',
-                  'button_label', 'banner', 'currency', 'is_active',
+                  'button_label', 'banner', 'currency', 'theme', 'theme_mode',
+                  'card_style', 'is_active',
                   'categories_count', 'items_count', 'created_at']
         read_only_fields = fields
 

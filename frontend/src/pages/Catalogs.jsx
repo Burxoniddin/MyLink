@@ -4,12 +4,69 @@ import api from '../api';
 import { useTranslation } from 'react-i18next';
 import { useEntitlements } from '../context/EntitlementContext';
 import { useToast } from '../components/Toast';
-import { FaBookOpen, FaLink as FaLinkIcon, FaLock, FaPlus, FaUnlink } from 'react-icons/fa';
+import { Ic } from '../components/catalog/icons';
+import { getCatalogTheme } from '../lib/catalogThemes';
 import '../components/catalog/catalog.css';
 
+const PUBLIC_HOST = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? window.location.host
+    : 'mylink.asia';
+
+const KatCard = ({ cat, onToggle, onOpen, t, toast }) => {
+    const th = getCatalogTheme(cat.theme);
+    const menuUrl = cat.business_path ? `${PUBLIC_HOST}/${cat.business_path}/menu` : null;
+    const copy = (e) => {
+        e.stopPropagation();
+        navigator.clipboard?.writeText(`${window.location.protocol}//${menuUrl}`);
+        toast.success(t('catalog.link_copied'));
+    };
+    return (
+        <div className="ad-kat">
+            <div
+                className="ad-katban"
+                style={{ backgroundImage: cat.banner ? undefined : `linear-gradient(135deg, ${th.sw[0]}, ${th.sw[1]})` }}
+            >
+                {cat.banner
+                    ? <img src={cat.banner} alt="" />
+                    : <span className="ad-katbnote">{t('catalog.banner')}</span>}
+            </div>
+            <div className="ad-katb">
+                <b className="ad-katnom">{cat.name}</b>
+                {menuUrl ? (
+                    <span className="ad-link ok">
+                        <Ic n="check" s={12} w={2.4} />{menuUrl}
+                        <button type="button" className="ad-linkcp" onClick={copy} aria-label={t('catalog.copy')}>
+                            <Ic n="copy" s={12} />
+                        </button>
+                    </span>
+                ) : (
+                    <span className="ad-link warn">
+                        <Ic n="warn" s={12} w={2} />{t('catalog.not_attached')}
+                    </span>
+                )}
+                <span className="ad-katmeta">
+                    {t('catalog.card_counts', { c: cat.categories_count, i: cat.items_count })}
+                </span>
+                <div className="ad-katfoot">
+                    <button
+                        type="button" className={`ad-tgl${cat.is_active ? ' on' : ''}`}
+                        onClick={() => onToggle(cat)} aria-label={t('catalog.active')}
+                    >
+                        <span />
+                    </button>
+                    <span className="ad-tgll">{cat.is_active ? t('catalog.active_on') : t('catalog.inactive')}</span>
+                    <button type="button" className="ad-btn sm ghost" style={{ marginLeft: 'auto' }} onClick={() => onOpen(cat)}>
+                        {t('common.edit')}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 /**
- * "Kataloglarim" — standalone catalog list (navbar section). Catalogs are
- * created here and attached to one of the user's businesses inside the editor.
+ * "Kataloglarim" — the standalone catalog list in the navbar. Catalogs are
+ * created here and attached to one of the user's businesses in the editor.
  */
 const Catalogs = () => {
     const { t } = useTranslation();
@@ -32,7 +89,7 @@ const Catalogs = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Create with a default name and jump straight into the editor.
+    // Create with a default name and drop straight into the editor.
     const addCatalog = async () => {
         if (creating) return;
         setCreating(true);
@@ -46,73 +103,77 @@ const Catalogs = () => {
         }
     };
 
+    const toggleActive = async (cat) => {
+        const next = !cat.is_active;
+        setCatalogs((cs) => cs.map((c) => (c.id === cat.id ? { ...c, is_active: next } : c)));
+        try {
+            await api.patch(`catalogs/${cat.id}/`, { is_active: next });
+        } catch (err) {
+            setCatalogs((cs) => cs.map((c) => (c.id === cat.id ? { ...c, is_active: !next } : c)));
+            const reason = err.response?.data?.reason;
+            toast.error(reason === 'catalog' ? t('catalog.err_catalog') : t('common.error'));
+        }
+    };
+
     if (loading) {
         return <div className="dashboard-loading"><div className="spinner" /><p>{t('common.loading')}</p></div>;
     }
 
+    const hero = (icon, soft, title, desc, actions) => (
+        <div className="ad-hero">
+            <span className={`ad-lockc${soft ? ' soft' : ''}`}><Ic n={icon} s={24} w={1.7} /></span>
+            <h2>{title}</h2>
+            <p>{desc}</p>
+            <div className="ad-heroraw">{actions}</div>
+        </div>
+    );
+
     return (
         <div className="dashboard">
             <main className="dashboard-main">
-                <div className="dashboard-container">
-                    {!canCatalog && (
-                        <div className="blocks-upsell">
-                            <FaLock className="blocks-upsell-icon" />
-                            <p>{t('catalog.upsell')}</p>
-                            <Link to="/pricing" className="qr-dl">{t('limit.see_plans')}</Link>
-                        </div>
-                    )}
-
-                    {(canCatalog || catalogs.length > 0) && (
+                <div className="dashboard-container cat-scope">
+                    {!canCatalog && catalogs.length === 0 ? (
+                        hero('lock', false, t('catalog.upsell_title'), t('catalog.upsell'), (
+                            <>
+                                <Link to="/pricing" className="ad-btn grad">{t('limit.see_plans')}</Link>
+                            </>
+                        ))
+                    ) : catalogs.length === 0 ? (
+                        hero('book', true, t('catalog.empty_title'), t('catalog.empty_desc'), (
+                            <button type="button" className="ad-btn grad" onClick={addCatalog} disabled={creating}>
+                                <Ic n="plus" s={15} w={2.2} />{t('catalog.add')}
+                            </button>
+                        ))
+                    ) : (
                         <>
-                            <div className="dashboard-title-row">
+                            <div className="ad-head">
                                 <h1>{t('catalog.title')}</h1>
                                 {canCatalog && (
-                                    <button className="add-btn" onClick={addCatalog} disabled={creating}>
-                                        <FaPlus />
-                                        <span>{t('catalog.add')}</span>
+                                    <button type="button" className="ad-btn grad" onClick={addCatalog} disabled={creating}>
+                                        <Ic n="plus" s={15} w={2.2} />{t('catalog.add')}
                                     </button>
                                 )}
                             </div>
-
-                            {catalogs.length === 0 ? (
-                                <div className="empty-state">
-                                    <div className="empty-icon">📖</div>
-                                    <h3>{t('catalog.empty_title')}</h3>
-                                    <p>{t('catalog.empty_desc')}</p>
-                                    <button className="add-btn-large" onClick={addCatalog} disabled={creating}>
-                                        <FaPlus />
-                                        {t('catalog.add')}
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="business-grid">
-                                    {catalogs.map((c) => (
-                                        <div key={c.id} className="business-card cat-card"
-                                            style={!c.is_active ? { opacity: 0.65 } : undefined}
-                                            onClick={() => navigate(`/catalogs/${c.id}`)}>
-                                            <div className="cat-card-banner">
-                                                {c.banner ? <img src={c.banner} alt="" /> : <FaBookOpen />}
-                                            </div>
-                                            <div className="card-info">
-                                                <h3>{c.name}</h3>
-                                                {c.business_path ? (
-                                                    <span className="cat-badge cat-badge-ok">
-                                                        <FaLinkIcon size={11} /> mylink.asia/{c.business_path}/menu
-                                                    </span>
-                                                ) : (
-                                                    <span className="cat-badge cat-badge-warn">
-                                                        <FaUnlink size={11} /> {t('catalog.not_attached')}
-                                                    </span>
-                                                )}
-                                                <p className="cat-card-meta">
-                                                    {t('catalog.card_counts', { c: c.categories_count, i: c.items_count })}
-                                                    {!c.is_active && <> · {t('catalog.inactive')}</>}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                            {!canCatalog && (
+                                <p className="ed-note" style={{ marginBottom: 16 }}>
+                                    <Ic n="warn" s={12} w={2} style={{ flex: 'none', marginTop: 2 }} />
+                                    {t('catalog.downgraded_note')}
+                                </p>
                             )}
+                            <div className="ad-grid">
+                                {catalogs.map((c) => (
+                                    <KatCard
+                                        key={c.id} cat={c} t={t} toast={toast}
+                                        onToggle={toggleActive}
+                                        onOpen={(cat) => navigate(`/catalogs/${cat.id}`)}
+                                    />
+                                ))}
+                                {canCatalog && (
+                                    <button type="button" className="ad-add" onClick={addCatalog} disabled={creating}>
+                                        <Ic n="plus" s={20} w={2} />{t('catalog.add_new')}
+                                    </button>
+                                )}
+                            </div>
                         </>
                     )}
                 </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import api from '../../api';
 import { useTranslation } from 'react-i18next';
-import { FaPlus, FaTimes, FaTrash } from 'react-icons/fa';
+import { Ic } from './icons';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -9,30 +9,31 @@ import { CSS } from '@dnd-kit/utilities';
 const MAX_IMAGES_PER_ITEM = 5;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
-// One draggable thumbnail in the modal's image strip (media-cell fork).
-const ImageCell = ({ img, onDelete }) => {
+/** One draggable photo in the modal's strip; the first one is the card cover. */
+const ImgCell = ({ img, main, onDelete, t }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: img.id });
-    const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
+    const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? .6 : 1 };
     return (
-        <div ref={setNodeRef} style={style} className="cat-img-cell" {...attributes} {...listeners}>
+        <span ref={setNodeRef} style={style} className="md-img" {...attributes} {...listeners}>
             <img src={img.thumb || img.image} alt="" />
+            {main && <i className="md-main">{t('catalog.main_image')}</i>}
             <button
-                type="button" className="cat-img-del" aria-label="delete"
+                type="button" className="md-imgx" aria-label={t('common.delete')}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => { e.stopPropagation(); onDelete(img); }}
             >
-                <FaTrash />
+                <Ic n="x" s={10} w={2.6} />
             </button>
-        </div>
+        </span>
     );
 };
 
 /**
- * Create/edit one catalog item. Create mode queues picked images locally and
- * uploads them after the item exists; edit mode uploads/deletes/reorders
- * immediately (media-grid style). `onSaved` refetches the catalog.
+ * Create/edit one catalog item. In create mode the picked photos are queued
+ * locally and uploaded once the item exists; in edit mode every photo action
+ * (add/delete/reorder) hits the API straight away.
  */
-const ItemModal = ({ catalogId, categoryId, item, onClose, onSaved, showErr }) => {
+const ItemModal = ({ catalogId, categoryId, item, currency, onClose, onSaved, showErr }) => {
     const { t } = useTranslation();
     const isEdit = !!item;
     const [form, setForm] = useState({
@@ -42,17 +43,23 @@ const ItemModal = ({ catalogId, categoryId, item, onClose, onSaved, showErr }) =
         description: item?.description || '',
         is_available: item?.is_available ?? true,
     });
-    const [images, setImages] = useState(item?.images || []); // edit mode (server rows)
-    const [pending, setPending] = useState([]);               // create mode (local files)
+    const [images, setImages] = useState(item?.images || []);
+    const [pending, setPending] = useState([]);
     const [busy, setBusy] = useState(false);
     const [uploading, setUploading] = useState(false);
     const fileInput = useRef(null);
-    const sensors = useSensors(useSensor(PointerSensor));
+    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
-    // Revoke local previews on unmount.
-    useEffect(() => () => pending.forEach((p) => URL.revokeObjectURL(p.url)),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []);
+    useEffect(() => {
+        const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [onClose]);
+
+    // Revoke object URLs for photos queued but never uploaded.
+    const pendingRef = useRef(pending);
+    pendingRef.current = pending;
+    useEffect(() => () => pendingRef.current.forEach((p) => URL.revokeObjectURL(p.url)), []);
 
     const set = (patch) => setForm((f) => ({ ...f, ...patch }));
     const count = isEdit ? images.length : pending.length;
@@ -61,10 +68,11 @@ const ItemModal = ({ catalogId, categoryId, item, onClose, onSaved, showErr }) =
     const pickFiles = (files) => {
         const room = MAX_IMAGES_PER_ITEM - count;
         let picked = Array.from(files).slice(0, Math.max(0, room));
-        const oversize = picked.some((f) => f.size > MAX_IMAGE_BYTES);
-        if (oversize) picked = picked.filter((f) => f.size <= MAX_IMAGE_BYTES);
-        if (oversize) showErr({ response: { data: { reason: 'image_too_large' } } });
-        if (picked.length === 0) return;
+        if (picked.some((f) => f.size > MAX_IMAGE_BYTES)) {
+            showErr({ response: { data: { reason: 'image_too_large' } } });
+            picked = picked.filter((f) => f.size <= MAX_IMAGE_BYTES);
+        }
+        if (!picked.length) return;
         if (!isEdit) {
             setPending((ps) => [...ps, ...picked.map((f) => ({ file: f, url: URL.createObjectURL(f) }))]);
             return;
@@ -94,7 +102,7 @@ const ItemModal = ({ catalogId, categoryId, item, onClose, onSaved, showErr }) =
         } catch (err) { showErr(err); }
     };
 
-    const onImageDragEnd = async ({ active, over }) => {
+    const onImgDragEnd = async ({ active, over }) => {
         if (!over || active.id === over.id) return;
         const next = arrayMove(images,
             images.findIndex((i) => i.id === active.id),
@@ -119,8 +127,7 @@ const ItemModal = ({ catalogId, categoryId, item, onClose, onSaved, showErr }) =
             if (isEdit) {
                 await api.patch(`catalog/items/${item.id}/`, payload);
             } else {
-                const res = await api.post(`catalogs/${catalogId}/items/`,
-                    { ...payload, category: categoryId });
+                const res = await api.post(`catalogs/${catalogId}/items/`, { ...payload, category: categoryId });
                 for (const p of pending) {
                     const fd = new FormData();
                     fd.append('image_upload', p.file);
@@ -133,95 +140,115 @@ const ItemModal = ({ catalogId, categoryId, item, onClose, onSaved, showErr }) =
         } catch (err) { showErr(err); setBusy(false); }
     };
 
+    const strip = isEdit ? (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onImgDragEnd}>
+            <SortableContext items={images.map((i) => i.id)} strategy={rectSortingStrategy}>
+                {images.map((img, k) => (
+                    <ImgCell key={img.id} img={img} main={k === 0} onDelete={deleteImage} t={t} />
+                ))}
+            </SortableContext>
+        </DndContext>
+    ) : (
+        pending.map((p, k) => (
+            <span key={p.url} className="md-img">
+                <img src={p.url} alt="" />
+                {k === 0 && <i className="md-main">{t('catalog.main_image')}</i>}
+                <button
+                    type="button" className="md-imgx" aria-label={t('common.delete')}
+                    onClick={() => {
+                        URL.revokeObjectURL(p.url);
+                        setPending((ps) => ps.filter((_, idx) => idx !== k));
+                    }}
+                >
+                    <Ic n="x" s={10} w={2.6} />
+                </button>
+            </span>
+        ))
+    );
+
     return (
-        <div className="cat-modal" onClick={onClose}>
-            <div className="cat-modal-box" onClick={(e) => e.stopPropagation()}>
-                <div className="cat-modal-head">
-                    <h3>{isEdit ? t('catalog.edit_item') : t('catalog.add_item')}</h3>
-                    <button type="button" className="cat-modal-close" onClick={onClose}><FaTimes /></button>
+        <div className="md-ovl cat-scope" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+            <div className="md-card">
+                <div className="md-head">
+                    <b>{isEdit ? t('catalog.edit_item') : t('catalog.add_item')}</b>
+                    <button type="button" className="ed-ico" onClick={onClose} aria-label={t('common.close')}>
+                        <Ic n="x" s={16} />
+                    </button>
                 </div>
 
-                {/* Image strip */}
-                <div className="cat-img-strip">
-                    <input
-                        ref={fileInput} type="file" accept="image/*" multiple hidden
-                        onChange={(e) => { pickFiles(e.target.files); e.target.value = ''; }}
-                    />
-                    <button
-                        type="button" className="cat-img-add"
-                        disabled={count >= MAX_IMAGES_PER_ITEM || uploading}
-                        onClick={() => fileInput.current?.click()}
-                        title={t('catalog.images', { n: count })}
-                    >
-                        {uploading ? <span className="spinner spinner-sm" /> : <FaPlus />}
-                    </button>
-                    {isEdit ? (
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onImageDragEnd}>
-                            <SortableContext items={images.map((i) => i.id)} strategy={rectSortingStrategy}>
-                                {images.map((img) => (
-                                    <ImageCell key={img.id} img={img} onDelete={deleteImage} />
-                                ))}
-                            </SortableContext>
-                        </DndContext>
-                    ) : (
-                        pending.map((p, idx) => (
-                            <div key={p.url} className="cat-img-cell">
-                                <img src={p.url} alt="" />
-                                <button
-                                    type="button" className="cat-img-del" aria-label="delete"
-                                    onClick={() => {
-                                        URL.revokeObjectURL(p.url);
-                                        setPending((ps) => ps.filter((_, i) => i !== idx));
-                                    }}
-                                >
-                                    <FaTrash />
-                                </button>
-                            </div>
-                        ))
+                <label className="ed-lab">
+                    {t('catalog.images_lab')}<i>{count}/{MAX_IMAGES_PER_ITEM}</i>
+                </label>
+                <input
+                    ref={fileInput} type="file" accept="image/*" multiple hidden
+                    onChange={(e) => { pickFiles(e.target.files); e.target.value = ''; }}
+                />
+                <div className="md-imgs">
+                    {strip}
+                    {count < MAX_IMAGES_PER_ITEM && (
+                        <button
+                            type="button" className="md-addimg" disabled={uploading}
+                            onClick={() => fileInput.current?.click()}
+                        >
+                            {uploading ? <span className="spinner spinner-sm" /> : <Ic n="plus" s={16} w={2} />}
+                            <i>{t('catalog.photo')}</i>
+                        </button>
                     )}
                 </div>
-                <p className="cat-img-hint">{t('catalog.images', { n: count })}</p>
+                <p className="ed-note soft">{t('catalog.image_hint')}</p>
 
-                <div className="cat-form">
-                    <input
-                        className="cat-input" autoFocus
-                        placeholder={t('catalog.item_name_ph')}
-                        value={form.name}
-                        onChange={(e) => set({ name: e.target.value })}
-                    />
-                    <div className="cat-form-row">
-                        <input
-                            className="cat-input" type="number" min="0"
-                            placeholder={t('catalog.price_ph')}
-                            value={form.price}
-                            onChange={(e) => set({ price: e.target.value })}
-                        />
-                        <input
-                            className="cat-input" type="number" min="0"
-                            placeholder={t('catalog.old_price_ph')}
-                            value={form.old_price}
-                            onChange={(e) => set({ old_price: e.target.value })}
-                        />
-                    </div>
-                    <textarea
-                        className="cat-input cat-textarea"
-                        placeholder={t('catalog.desc_ph')}
-                        value={form.description}
-                        onChange={(e) => set({ description: e.target.value })}
-                    />
-                    <label className="cat-check">
-                        <input
-                            type="checkbox"
-                            checked={form.is_available}
-                            onChange={(e) => set({ is_available: e.target.checked })}
-                        />
-                        <span>{t('catalog.available')}</span>
-                    </label>
+                <label className="ed-lab" htmlFor="md-nom">
+                    {t('catalog.item_name')}<i>{form.name.length}/100</i>
+                </label>
+                <input
+                    id="md-nom" className="ed-in" autoFocus maxLength={100}
+                    placeholder={t('catalog.item_name_ph')}
+                    value={form.name} onChange={(e) => set({ name: e.target.value })}
+                />
+
+                <div className="ed-2col">
+                    <span>
+                        <label className="ed-lab" htmlFor="md-narx">{t('catalog.price')}</label>
+                        <span className="ed-inwrap">
+                            <input
+                                id="md-narx" className="ed-in" type="number" min="0" placeholder="0"
+                                value={form.price} onChange={(e) => set({ price: e.target.value })}
+                            />
+                            <i>{currency}</i>
+                        </span>
+                    </span>
+                    <span>
+                        <label className="ed-lab" htmlFor="md-eski">
+                            {t('catalog.old_price')}<i>{t('catalog.optional')}</i>
+                        </label>
+                        <span className="ed-inwrap">
+                            <input
+                                id="md-eski" className="ed-in" type="number" min="0" placeholder="—"
+                                value={form.old_price} onChange={(e) => set({ old_price: e.target.value })}
+                            />
+                            <i>{currency}</i>
+                        </span>
+                    </span>
                 </div>
 
-                <div className="cat-modal-actions">
-                    <button type="button" className="cat-btn-ghost" onClick={onClose}>{t('common.cancel')}</button>
-                    <button type="button" className="cat-btn-primary" disabled={!canSave || busy} onClick={save}>
+                <label className="ed-lab" htmlFor="md-tasnif">{t('catalog.description')}</label>
+                <textarea
+                    id="md-tasnif" className="ed-in" rows={3} placeholder={t('catalog.desc_ph')}
+                    value={form.description} onChange={(e) => set({ description: e.target.value })}
+                />
+
+                <label className="md-chk">
+                    <input
+                        type="checkbox" checked={form.is_available}
+                        onChange={(e) => set({ is_available: e.target.checked })}
+                    />
+                    <span className="md-chkbox"><Ic n="check" s={11} w={3} /></span>
+                    {t('catalog.available')}
+                </label>
+
+                <div className="md-foot">
+                    <button type="button" className="ad-btn ghost" onClick={onClose}>{t('common.cancel')}</button>
+                    <button type="button" className="ad-btn grad" disabled={!canSave || busy} onClick={save}>
                         {busy ? t('detail.saving') : t('common.save')}
                     </button>
                 </div>

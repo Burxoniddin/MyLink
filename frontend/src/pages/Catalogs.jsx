@@ -21,41 +21,41 @@ const KatCard = ({ cat, onToggle, onOpen, t, toast }) => {
         toast.success(t('catalog.link_copied'));
     };
     return (
-        <div className="ad-kat">
+        <div className="mc-kat">
             <div
-                className="ad-katban"
+                className="mc-katban"
                 style={{ backgroundImage: cat.banner ? undefined : `linear-gradient(135deg, ${th.sw[0]}, ${th.sw[1]})` }}
             >
                 {cat.banner
                     ? <img src={cat.banner} alt="" />
-                    : <span className="ad-katbnote">{t('catalog.banner')}</span>}
+                    : <span className="mc-katbnote">{t('catalog.banner')}</span>}
             </div>
-            <div className="ad-katb">
-                <b className="ad-katnom">{cat.name}</b>
+            <div className="mc-katb">
+                <b className="mc-katnom">{cat.name}</b>
                 {menuUrl ? (
-                    <span className="ad-link ok">
+                    <span className="mc-link ok">
                         <Ic n="check" s={12} w={2.4} />{menuUrl}
-                        <button type="button" className="ad-linkcp" onClick={copy} aria-label={t('catalog.copy')}>
+                        <button type="button" className="mc-linkcp" onClick={copy} aria-label={t('catalog.copy')}>
                             <Ic n="copy" s={12} />
                         </button>
                     </span>
                 ) : (
-                    <span className="ad-link warn">
+                    <span className="mc-link warn">
                         <Ic n="warn" s={12} w={2} />{t('catalog.not_attached')}
                     </span>
                 )}
-                <span className="ad-katmeta">
+                <span className="mc-katmeta">
                     {t('catalog.card_counts', { c: cat.categories_count, i: cat.items_count })}
                 </span>
-                <div className="ad-katfoot">
+                <div className="mc-katfoot">
                     <button
-                        type="button" className={`ad-tgl${cat.is_active ? ' on' : ''}`}
+                        type="button" className={`mc-tgl${cat.is_active ? ' on' : ''}`}
                         onClick={() => onToggle(cat)} aria-label={t('catalog.active')}
                     >
                         <span />
                     </button>
-                    <span className="ad-tgll">{cat.is_active ? t('catalog.active_on') : t('catalog.inactive')}</span>
-                    <button type="button" className="ad-btn sm ghost" style={{ marginLeft: 'auto' }} onClick={() => onOpen(cat)}>
+                    <span className="mc-tgll">{cat.is_active ? t('catalog.active_on') : t('catalog.inactive')}</span>
+                    <button type="button" className="mc-btn sm ghost" style={{ marginLeft: 'auto' }} onClick={() => onOpen(cat)}>
                         {t('common.edit')}
                     </button>
                 </div>
@@ -131,16 +131,16 @@ const Catalogs = () => {
     }
 
     const hero = (icon, soft, title, desc, actions) => (
-        <div className="ad-hero">
-            <span className={`ad-lockc${soft ? ' soft' : ''}`}><Ic n={icon} s={24} w={1.7} /></span>
+        <div className="mc-hero">
+            <span className={`mc-lockc${soft ? ' soft' : ''}`}><Ic n={icon} s={24} w={1.7} /></span>
             <h2>{title}</h2>
             <p>{desc}</p>
-            <div className="ad-heroraw">{actions}</div>
+            <div className="mc-heroraw">{actions}</div>
         </div>
     );
 
     const grid = (
-        <div className="ad-grid">
+        <div className="mc-grid">
             {catalogs.map((c) => (
                 <KatCard
                     key={c.id} cat={c} t={t} toast={toast}
@@ -149,7 +149,7 @@ const Catalogs = () => {
                 />
             ))}
             {canCatalog && (
-                <button type="button" className="ad-add" onClick={addCatalog} disabled={creating}>
+                <button type="button" className="mc-add" onClick={addCatalog} disabled={creating}>
                     <Ic n="plus" s={20} w={2} />{t('catalog.add_new')}
                 </button>
             )}
@@ -162,7 +162,7 @@ const Catalogs = () => {
                 <div className="dashboard-container cat-scope">
                     {failed ? (
                         hero('warn', true, t('common.error'), t('catalog.load_failed'), (
-                            <button type="button" className="ad-btn grad" onClick={() => { setLoading(true); load(); }}>
+                            <button type="button" className="mc-btn grad" onClick={() => { setLoading(true); load(); }}>
                                 {t('catalog.retry')}
                             </button>
                         ))
@@ -172,26 +172,26 @@ const Catalogs = () => {
                         <>
                             {hero('lock', false, t('catalog.upsell_title'),
                                 catalogs.length ? t('catalog.downgraded_note') : t('catalog.upsell'), (
-                                    <Link to="/pricing" className="ad-btn grad">{t('limit.see_plans')}</Link>
+                                    <Link to="/pricing" className="mc-btn grad">{t('limit.see_plans')}</Link>
                                 ))}
                             {catalogs.length > 0 && (
                                 <>
-                                    <div className="ad-head"><h1>{t('catalog.title')}</h1></div>
+                                    <div className="mc-head"><h1>{t('catalog.title')}</h1></div>
                                     {grid}
                                 </>
                             )}
                         </>
                     ) : catalogs.length === 0 ? (
                         hero('book', true, t('catalog.empty_title'), t('catalog.empty_desc'), (
-                            <button type="button" className="ad-btn grad" onClick={addCatalog} disabled={creating}>
+                            <button type="button" className="mc-btn grad" onClick={addCatalog} disabled={creating}>
                                 <Ic n="plus" s={15} w={2.2} />{t('catalog.add')}
                             </button>
                         ))
                     ) : (
                         <>
-                            <div className="ad-head">
+                            <div className="mc-head">
                                 <h1>{t('catalog.title')}</h1>
-                                <button type="button" className="ad-btn grad" onClick={addCatalog} disabled={creating}>
+                                <button type="button" className="mc-btn grad" onClick={addCatalog} disabled={creating}>
                                     <Ic n="plus" s={15} w={2.2} />{t('catalog.add')}
                                 </button>
                             </div>

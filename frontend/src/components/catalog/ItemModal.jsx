@@ -247,8 +247,8 @@ const ItemModal = ({ catalogId, categoryId, item, currency, onClose, onSaved, sh
                 </label>
 
                 <div className="md-foot">
-                    <button type="button" className="ad-btn ghost" onClick={onClose}>{t('common.cancel')}</button>
-                    <button type="button" className="ad-btn grad" disabled={!canSave || busy} onClick={save}>
+                    <button type="button" className="mc-btn ghost" onClick={onClose}>{t('common.cancel')}</button>
+                    <button type="button" className="mc-btn grad" disabled={!canSave || busy} onClick={save}>
                         {busy ? t('detail.saving') : t('common.save')}
                     </button>
                 </div>

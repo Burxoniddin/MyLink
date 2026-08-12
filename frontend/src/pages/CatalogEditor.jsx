@@ -265,7 +265,7 @@ const CatalogEditor = () => {
             <main className="dashboard-main">
                 <div className="dashboard-container cat-scope">
                     <div className="ed-top">
-                        <Link to="/catalogs" className="ad-btn sm ghost"><Ic n="back" s={14} />{t('catalog.back')}</Link>
+                        <Link to="/catalogs" className="mc-btn sm ghost"><Ic n="back" s={14} />{t('catalog.back')}</Link>
                         <h1 className="ed-h1">
                             <input
                                 defaultValue={catalog.name} placeholder={t('catalog.name_ph')} maxLength={100}
@@ -276,7 +276,7 @@ const CatalogEditor = () => {
                                 onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
                             />
                         </h1>
-                        <button type="button" className="ad-btn sm danger" onClick={deleteCatalog}>{t('common.delete')}</button>
+                        <button type="button" className="mc-btn sm danger" onClick={deleteCatalog}>{t('common.delete')}</button>
                     </div>
 
                     {!canCatalog && (
@@ -289,8 +289,8 @@ const CatalogEditor = () => {
                     <div className="ed-cols">
                         {/* ---- column 1: settings + appearance ---- */}
                         <div className="ed-col1">
-                            <div className="ad-card">
-                                <h3 className="ad-ch">{t('catalog.settings')}</h3>
+                            <div className="mc-card">
+                                <h3 className="mc-ch">{t('catalog.settings')}</h3>
 
                                 <label className="ed-lab" htmlFor="cat-biz">{t('catalog.attach_business')}</label>
                                 <select
@@ -380,7 +380,7 @@ const CatalogEditor = () => {
                                 <div className="ed-tglrow">
                                     <span>{t('catalog.active')}</span>
                                     <button
-                                        type="button" className={`ad-tgl${catalog.is_active ? ' on' : ''}`}
+                                        type="button" className={`mc-tgl${catalog.is_active ? ' on' : ''}`}
                                         onClick={() => saveField({ is_active: !catalog.is_active }, true)}
                                         aria-label={t('catalog.active')}
                                     >
@@ -388,7 +388,7 @@ const CatalogEditor = () => {
                                     </button>
                                 </div>
 
-                                <button type="button" className="ad-btn ghost w100" onClick={downloadQr} disabled={!attached}>
+                                <button type="button" className="mc-btn ghost w100" onClick={downloadQr} disabled={!attached}>
                                     <Ic n="qr" s={15} />{t('catalog.qr_download')}
                                 </button>
                                 {attached && (
@@ -399,10 +399,10 @@ const CatalogEditor = () => {
                                 )}
                             </div>
 
-                            <div className="ad-card">
-                                <h3 className="ad-ch">
+                            <div className="mc-card">
+                                <h3 className="mc-ch">
                                     {t('catalog.appearance')}
-                                    <span className="ad-chsub">{t('catalog.appearance_sub')}</span>
+                                    <span className="mc-chsub">{t('catalog.appearance_sub')}</span>
                                 </h3>
 
                                 <label className="ed-lab">{t('catalog.theme')}</label>
@@ -452,12 +452,12 @@ const CatalogEditor = () => {
                         </div>
 
                         {/* ---- column 2: categories ---- */}
-                        <div className="ed-col2 ad-card">
-                            <h3 className="ad-ch">
+                        <div className="ed-col2 mc-card">
+                            <h3 className="mc-ch">
                                 {t('catalog.categories')}
-                                <span className="ad-chsub">{categories.length} / {MAX_CATEGORIES}</span>
+                                <span className="mc-chsub">{categories.length} / {MAX_CATEGORIES}</span>
                                 <button
-                                    type="button" className="ad-btn sm ghost" style={{ marginLeft: 'auto' }}
+                                    type="button" className="mc-btn sm ghost" style={{ marginLeft: 'auto' }}
                                     onClick={addCategory} disabled={categories.length >= MAX_CATEGORIES}
                                 >
                                     <Ic n="plus" s={13} w={2.2} />{t('catalog.add_category')}

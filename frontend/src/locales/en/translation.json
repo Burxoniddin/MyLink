@@ -611,5 +611,12 @@
     "item_count": "{{n}} items",
     "powered_by": "Made with MyLink",
     "lb_hint": "double-tap to zoom · swipe for the next one"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "desc": "Try reloading the page. If it keeps happening, get in touch with us.",
+    "reload": "Reload the page",
+    "home": "Go to dashboard",
+    "details": "Technical details"
   }
 }

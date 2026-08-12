@@ -611,5 +611,12 @@
     "item_count": "{{n}} ta",
     "powered_by": "MyLink bilan yaratilgan",
     "lb_hint": "ikki marta bosing — kattalashadi · suring — keyingisi"
+  },
+  "error": {
+    "title": "Nimadir noto'g'ri ketdi",
+    "desc": "Sahifani yangilab ko'ring. Muammo takrorlansa, biz bilan bog'laning.",
+    "reload": "Sahifani yangilash",
+    "home": "Bosh sahifaga",
+    "details": "Texnik tafsilot"
   }
 }

@@ -12,7 +12,7 @@ const PUBLIC_HOST = window.location.hostname === 'localhost' || window.location.
     ? window.location.host
     : 'mylink.asia';
 
-const KatCard = ({ cat, onToggle, onOpen, t, toast }) => {
+const KatCard = ({ cat, onToggle, t, toast }) => {
     const th = getCatalogTheme(cat.theme);
     const menuUrl = cat.business_path ? `${PUBLIC_HOST}/${cat.business_path}/menu` : null;
     const copy = (e) => {
@@ -31,7 +31,10 @@ const KatCard = ({ cat, onToggle, onOpen, t, toast }) => {
                     : <span className="mc-katbnote">{t('catalog.banner')}</span>}
             </div>
             <div className="mc-katb">
-                <b className="mc-katnom">{cat.name}</b>
+                {/* Stretched link: the whole card opens the editor, while the
+                    controls below stay clickable (they sit above the overlay).
+                    A real <a> keeps middle-click / "open in new tab" working. */}
+                <Link to={`/catalogs/${cat.id}`} className="mc-katnom mc-stretch">{cat.name}</Link>
                 {menuUrl ? (
                     <span className="mc-link ok">
                         <Ic n="check" s={12} w={2.4} />{menuUrl}
@@ -55,9 +58,9 @@ const KatCard = ({ cat, onToggle, onOpen, t, toast }) => {
                         <span />
                     </button>
                     <span className="mc-tgll">{cat.is_active ? t('catalog.active_on') : t('catalog.inactive')}</span>
-                    <button type="button" className="mc-btn sm ghost" style={{ marginLeft: 'auto' }} onClick={() => onOpen(cat)}>
+                    <Link to={`/catalogs/${cat.id}`} className="mc-btn sm ghost" style={{ marginLeft: 'auto' }}>
                         {t('common.edit')}
-                    </button>
+                    </Link>
                 </div>
             </div>
         </div>
@@ -142,11 +145,7 @@ const Catalogs = () => {
     const grid = (
         <div className="mc-grid">
             {catalogs.map((c) => (
-                <KatCard
-                    key={c.id} cat={c} t={t} toast={toast}
-                    onToggle={toggleActive}
-                    onOpen={(cat) => navigate(`/catalogs/${cat.id}`)}
-                />
+                <KatCard key={c.id} cat={c} t={t} toast={toast} onToggle={toggleActive} />
             ))}
             {canCatalog && (
                 <button type="button" className="mc-add" onClick={addCatalog} disabled={creating}>

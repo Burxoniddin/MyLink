@@ -19,6 +19,10 @@ const PUBLIC_ORIGIN = window.location.hostname === 'localhost' || window.locatio
     ? window.location.origin
     : 'https://mylink.asia';
 
+// Typed fields wait for the Save button; everything else applies immediately.
+const TEXT_FIELDS = ['name', 'button_label', 'currency', 'order_link', 'order_label'];
+const pickText = (c) => Object.fromEntries(TEXT_FIELDS.map((k) => [k, c[k] ?? '']));
+
 /* ---- one product row inside an expanded category ---- */
 const ItemRow = ({ item, onEdit, onDelete, t }) => {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id });
@@ -93,6 +97,8 @@ const CatalogEditor = () => {
     const [modal, setModal] = useState(null);
     const [copied, setCopied] = useState(false);
     const [bannerBusy, setBannerBusy] = useState(false);
+    const [form, setForm] = useState(null);
+    const [saving, setSaving] = useState(false);
     const bannerInput = useRef(null);
 
     const sensors = useSensors(
@@ -109,6 +115,7 @@ const CatalogEditor = () => {
             .then(([catRes, bizRes]) => {
                 if (!active) return;
                 setCatalog(catRes.data);
+                setForm(pickText(catRes.data));
                 setBusinesses(bizRes.data.filter((b) => b.role === 'owner'));
             })
             .catch((err) => {
@@ -122,6 +129,9 @@ const CatalogEditor = () => {
 
     const attached = !!catalog?.business;
     const menuUrl = attached ? `${PUBLIC_ORIGIN}/${catalog.business_path}/menu` : null;
+
+    const setField = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+    const dirty = !!form && !!catalog && TEXT_FIELDS.some((k) => (form[k] ?? '') !== (catalog[k] ?? ''));
 
     const showErr = (err) => {
         const reason = err?.response?.data?.reason;
@@ -148,6 +158,21 @@ const CatalogEditor = () => {
             if (optimistic) setCatalog(before);
             showErr(err);
         }
+    };
+
+    const saveAll = async () => {
+        if (!dirty || saving) return;
+        setSaving(true);
+        const patch = {};
+        TEXT_FIELDS.forEach((k) => {
+            if ((form[k] ?? '') !== (catalog[k] ?? '')) patch[k] = form[k];
+        });
+        try {
+            const res = await api.patch(`catalogs/${id}/`, patch);
+            setCatalog(res.data);
+            setForm(pickText(res.data));
+            toast.success(t('detail.saved'));
+        } catch (err) { showErr(err); } finally { setSaving(false); }
     };
 
     const uploadBanner = async (file) => {
@@ -251,9 +276,11 @@ const CatalogEditor = () => {
     if (!catalog) return null;
 
     const categories = catalog.categories || [];
-    // The preview renders the exact public payload shape.
+    // The preview renders the exact public payload shape; unsaved text is
+    // merged in so typing a currency or label shows up straight away.
     const previewData = {
         ...catalog,
+        ...(form || {}),
         business: attached
             ? { name: catalog.business_name, path: catalog.business_path, logo: null, verified: false }
             : { name: t('catalog.not_attached'), path: '', logo: null, verified: false },
@@ -265,19 +292,33 @@ const CatalogEditor = () => {
             <main className="dashboard-main">
                 <div className="dashboard-container cat-scope">
                     <div className="ed-top">
-                        <Link to="/catalogs" className="mc-btn sm ghost"><Ic n="back" s={14} />{t('catalog.back')}</Link>
+                        <Link
+                            to="/catalogs" className="mc-btn sm ghost"
+                            onClick={(e) => {
+                                if (dirty && !window.confirm(t('catalog.leave_unsaved'))) e.preventDefault();
+                            }}
+                        >
+                            <Ic n="back" s={14} />{t('catalog.back')}
+                        </Link>
                         <h1 className="ed-h1">
                             <input
-                                defaultValue={catalog.name} placeholder={t('catalog.name_ph')} maxLength={100}
-                                onBlur={(e) => {
-                                    const v = e.target.value.trim();
-                                    if (v && v !== catalog.name) saveField({ name: v });
-                                }}
-                                onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+                                value={form?.name ?? ''} placeholder={t('catalog.name_ph')} maxLength={100}
+                                onChange={(e) => setField('name', e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') saveAll(); }}
                             />
                         </h1>
+                        <button
+                            type="button" className="mc-btn sm grad"
+                            onClick={saveAll} disabled={!dirty || saving}
+                        >
+                            {saving ? t('detail.saving') : t('common.save')}
+                        </button>
                         <button type="button" className="mc-btn sm danger" onClick={deleteCatalog}>{t('common.delete')}</button>
                     </div>
+                    {dirty && <p className="ed-note" style={{ marginBottom: 14 }}>
+                        <Ic n="warn" s={12} w={2} style={{ flex: 'none', marginTop: 2 }} />
+                        {t('catalog.unsaved')}
+                    </p>}
 
                     {!canCatalog && (
                         <p className="ed-note" style={{ marginBottom: 16 }}>
@@ -329,24 +370,19 @@ const CatalogEditor = () => {
                                 <div className="ed-2col">
                                     <span>
                                         <label className="ed-lab" htmlFor="cat-btn">
-                                            {t('catalog.button_label')}<i>{(catalog.button_label || '').length}/30</i>
+                                            {t('catalog.button_label')}<i>{(form?.button_label || '').length}/30</i>
                                         </label>
                                         <input
-                                            id="cat-btn" className="ed-in" defaultValue={catalog.button_label}
+                                            id="cat-btn" className="ed-in" value={form?.button_label ?? ''}
                                             placeholder={t('catalog.button_label_ph')} maxLength={30}
-                                            onBlur={(e) => {
-                                                if (e.target.value !== catalog.button_label) saveField({ button_label: e.target.value });
-                                            }}
+                                            onChange={(e) => setField('button_label', e.target.value)}
                                         />
                                     </span>
                                     <span>
                                         <label className="ed-lab" htmlFor="cat-cur">{t('catalog.currency')}</label>
                                         <input
-                                            id="cat-cur" className="ed-in" defaultValue={catalog.currency} maxLength={12}
-                                            onBlur={(e) => {
-                                                const v = e.target.value.trim();
-                                                if (v && v !== catalog.currency) saveField({ currency: v });
-                                            }}
+                                            id="cat-cur" className="ed-in" value={form?.currency ?? ''} maxLength={12}
+                                            onChange={(e) => setField('currency', e.target.value)}
                                         />
                                     </span>
                                 </div>
@@ -432,21 +468,17 @@ const CatalogEditor = () => {
                                     <>
                                         <label className="ed-lab" htmlFor="cat-olink">{t('catalog.order_link')}</label>
                                         <input
-                                            id="cat-olink" className="ed-in" defaultValue={catalog.order_link}
+                                            id="cat-olink" className="ed-in" value={form?.order_link ?? ''}
                                             placeholder={t('catalog.order_link_ph')} maxLength={200}
-                                            onBlur={(e) => {
-                                                if (e.target.value !== catalog.order_link) saveField({ order_link: e.target.value });
-                                            }}
+                                            onChange={(e) => setField('order_link', e.target.value)}
                                         />
                                         <p className="ed-note soft">{t('catalog.order_link_hint')}</p>
 
                                         <label className="ed-lab" htmlFor="cat-olabel">{t('catalog.order_label')}</label>
                                         <input
-                                            id="cat-olabel" className="ed-in" defaultValue={catalog.order_label}
+                                            id="cat-olabel" className="ed-in" value={form?.order_label ?? ''}
                                             placeholder={t('menu.order_cta')} maxLength={40}
-                                            onBlur={(e) => {
-                                                if (e.target.value !== catalog.order_label) saveField({ order_label: e.target.value });
-                                            }}
+                                            onChange={(e) => setField('order_label', e.target.value)}
                                         />
                                     </>
                                 )}

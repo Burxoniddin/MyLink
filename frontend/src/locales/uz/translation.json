@@ -608,7 +608,9 @@
     "order_link": "Havola",
     "order_link_ph": "@foydalanuvchi yoki +998 90 123 45 67",
     "order_link_hint": "Telegram (@nom) yoki WhatsApp raqami bo‘lsa, buyurtma ro‘yxati xabarga avtomatik yoziladi. Boshqa havola shunchaki ochiladi.",
-    "order_label": "Tugma matni"
+    "order_label": "Tugma matni",
+    "unsaved": "Saqlanmagan o‘zgarishlar bor — «Saqlash» tugmasini bosing.",
+    "leave_unsaved": "Saqlanmagan o‘zgarishlar bor. Chiqib ketilsinmi?"
   },
   "menu": {
     "not_found": "Menyu topilmadi",

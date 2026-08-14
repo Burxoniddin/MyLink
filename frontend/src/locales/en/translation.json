@@ -608,7 +608,9 @@
     "order_link": "Link",
     "order_link_ph": "@username or +998 90 123 45 67",
     "order_link_hint": "For a Telegram handle (@name) or a WhatsApp number the order list is filled into the message automatically. Any other link just opens.",
-    "order_label": "Button label"
+    "order_label": "Button label",
+    "unsaved": "You have unsaved changes — press Save.",
+    "leave_unsaved": "You have unsaved changes. Leave anyway?"
   },
   "menu": {
     "not_found": "Menu not found",

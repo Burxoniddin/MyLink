@@ -182,21 +182,23 @@ const CatalogMenu = ({ data, embedded = false }) => {
                     <span className="menu-bpat" />
                 </div>
 
-                <div className="menu-wrap">
-                    <Link className="menu-biz" to={`/${biz.path}`}>
-                        {biz.logo
-                            ? <img className="menu-logo" src={biz.logo} alt="" />
-                            : <span className="menu-logo">{(biz.name || '?').charAt(0)}</span>}
-                        <span className="menu-bizt">
-                            <b>
-                                {biz.name}
-                                {biz.verified && <Seal s={17} c="var(--accent)" />}
-                            </b>
-                            <i>{t('menu.back')}</i>
-                        </span>
-                        <Ic n="chevR" s={16} className="menu-bizch" />
+                <header className="menu-hero">
+                    {biz.logo
+                        ? <img className="menu-logo" src={biz.logo} alt="" />
+                        : <span className="menu-logo">{(biz.name || '?').charAt(0)}</span>}
+                    <Link className="menu-back" to={`/${biz.path}`}>
+                        <Ic n="back" s={13} w={2.4} />{t('menu.back')}
                     </Link>
+                    <div className="menu-bizname">
+                        <b>
+                            {biz.name}
+                            {biz.verified && <Seal s={17} c="var(--accent)" style={{ marginLeft: 7, flex: 'none' }} />}
+                        </b>
+                        {biz.description && <i>{biz.description}</i>}
+                    </div>
+                </header>
 
+                <div className="menu-wrap">
                     {categories.length > 0 && (
                         <div className="menu-tools">
                             <label className="menu-search">
@@ -266,21 +268,7 @@ const CatalogMenu = ({ data, embedded = false }) => {
                             </div>
                         </nav>
 
-                        <div className="menu-wrap menu-cols">
-                            {/* Desktop rail — the chips above stay for phones. */}
-                            <aside className="menu-rail">
-                                <span className="menu-raillab">{t('catalog.categories')}</span>
-                                {categories.map((c) => (
-                                    <button
-                                        key={c.id} type="button"
-                                        className={`menu-railitem${act === c.id ? ' on' : ''}`}
-                                        onClick={() => pick(c.id)}
-                                    >
-                                        <span>{c.name}</span><i>{c.items.length}</i>
-                                    </button>
-                                ))}
-                            </aside>
-
+                        <div className="menu-wrap">
                             <div className="menu-body">
                                 {categories.map((c) => (
                                     <section

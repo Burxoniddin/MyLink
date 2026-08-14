@@ -34,7 +34,7 @@
 
 /* ---- banner ---- */
 .menu-banner {
-    height: 210px; position: relative; overflow: hidden;
+    height: 192px; position: relative; overflow: hidden;
     display: flex; align-items: flex-end; justify-content: flex-end; padding: 12px 14px;
 }
 .menu-banner img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -46,26 +46,44 @@
     mask-image: linear-gradient(215deg, #000, transparent 65%);
 }
 
-/* ---- business row (logo overlaps the banner) ---- */
-.menu-biz {
-    position: relative; display: flex; align-items: center; gap: 14px;
-    margin-top: -34px; z-index: 2; color: inherit; text-decoration: none;
+/* ---- hero: logo overlapping the banner, "back" pill, name + tagline ---- */
+.menu-hero {
+    position: relative; z-index: 2;
+    display: grid; grid-template-columns: 1fr auto; align-items: start;
+    row-gap: 8px; padding: 0 16px;
 }
 .menu-logo {
-    width: 72px; height: 72px; border-radius: 50%; flex: none;
+    grid-column: 1; grid-row: 1; margin-top: -40px;
+    width: 80px; height: 80px; border-radius: 50%; flex: none;
     background-image: var(--grad); color: var(--aink);
-    font: 800 28px var(--display); display: grid; place-items: center;
-    border: 4px solid var(--bg); box-shadow: 0 14px 30px -14px var(--accent);
+    font: 800 31px var(--display); display: grid; place-items: center;
+    border: 4px solid var(--bg);
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent) 40%, transparent),
+                0 16px 34px -14px var(--accent);
     object-fit: cover; overflow: hidden;
 }
-.menu-bizt { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding-top: 30px; }
-.menu-bizt b {
-    font: 700 21px/1.2 var(--display); letter-spacing: -.015em;
-    display: flex; align-items: center; gap: 7px;
+.menu-back {
+    grid-column: 2; grid-row: 1; justify-self: end; margin-top: 12px;
+    display: inline-flex; align-items: center; gap: 7px;
+    font: 700 12px var(--sans); color: var(--text); text-decoration: none;
+    background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+    padding: 9px 14px; box-shadow: 0 8px 20px -12px rgba(0, 0, 0, .5);
+    transition: border-color .2s, color .2s, transform .2s; white-space: nowrap;
+}
+.menu-back:hover {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+    color: var(--accent); transform: translateY(-1px);
+}
+.menu-bizname {
+    grid-column: 1 / -1; grid-row: 2;
+    display: flex; flex-direction: column; gap: 4px; min-width: 0;
+}
+.menu-bizname b {
+    font: 800 23px/1.3 var(--display); letter-spacing: -.015em;
+    display: flex; align-items: center;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.menu-bizt i { font-style: normal; font-size: 12.5px; font-weight: 600; color: var(--muted); }
-.menu-bizch { margin-left: auto; color: var(--muted); flex: none; margin-top: 30px; }
+.menu-bizname i { font-style: normal; font: 600 12.5px var(--sans); color: var(--muted); }
 
 /* ---- search + view switch ---- */
 .menu-tools { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
@@ -121,20 +139,17 @@
     border-color: transparent; box-shadow: 0 6px 16px -7px var(--accent);
 }
 
-/* ---- desktop category rail (hidden on phones) ---- */
-.menu-cols { display: block; }
-.menu-rail { display: none; }
 .menu-results { padding-top: 18px; }
 .menu-noresult { color: var(--muted); font-size: 14px; font-weight: 500; padding: 8px 0 30px; }
 
 /* ---- sections ---- */
 .menu-body { position: relative; }
-.menu-sec { padding-top: 22px; scroll-margin-top: 68px; }
+.menu-sec { padding-top: 20px; scroll-margin-top: 68px; }
 .menu-kh {
-    font: 700 21px var(--display); letter-spacing: -.015em;
-    display: flex; align-items: baseline; gap: 9px; margin: 0 0 13px;
+    font: 700 20px var(--display); letter-spacing: -.01em;
+    display: flex; align-items: baseline; gap: 8px; margin: 0 0 12px;
 }
-.menu-kh i { font: 600 12px var(--sans); font-style: normal; color: var(--muted); }
+.menu-kh i { font: 600 11.5px var(--sans); font-style: normal; color: var(--muted); }
 .menu-list { display: flex; flex-direction: column; gap: 10px; }
 .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
@@ -159,10 +174,10 @@
     background: var(--soft); flex: none;
 }
 .menu-th img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.menu-th-s { width: 96px; height: 96px; border-radius: var(--rs); }
+.menu-th-s { width: 88px; height: 88px; border-radius: var(--rs); }
 .menu-th-g { width: 100%; aspect-ratio: 1/1; border-radius: var(--rs); }
-.menu-thl { font: 700 28px var(--display); color: var(--muted); opacity: .65; }
-.menu-th-g .menu-thl { font-size: 40px; }
+.menu-thl { font: 700 26px var(--display); color: var(--muted); opacity: .65; }
+.menu-th-g .menu-thl { font-size: 38px; }
 .menu-shine {
     position: absolute; inset: 0; pointer-events: none;
     background: linear-gradient(155deg, rgba(255,255,255,.18), transparent 42%);
@@ -177,11 +192,11 @@
 
 .menu-cb { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
 .menu-cnom {
-    font: 700 15.5px/1.3 var(--display); letter-spacing: -.005em;
+    font: 700 15px/1.25 var(--display); letter-spacing: -.005em;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .menu-ct {
-    font-size: 12.5px; line-height: 1.45; font-weight: 500; color: var(--muted);
+    font-size: 12px; line-height: 1.45; font-weight: 500; color: var(--muted);
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .menu-cg .menu-ct { -webkit-line-clamp: 1; }
@@ -190,10 +205,10 @@
     gap: 8px; margin-top: auto; padding-top: 4px;
 }
 .menu-narx { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0; }
-.menu-narx b { font: 800 16px var(--sans); color: var(--accent); white-space: nowrap; }
+.menu-narx b { font: 800 15px var(--sans); color: var(--accent); white-space: nowrap; }
 .menu-narx b i { font: 600 11.5px var(--sans); font-style: normal; opacity: .8; }
 .menu-narx s {
-    font: 600 12.5px var(--sans); color: var(--muted);
+    font: 600 12px var(--sans); color: var(--muted);
     text-decoration-thickness: 1.5px; white-space: nowrap;
 }
 
@@ -435,56 +450,45 @@
     .menu-root:not(.menu-embed) .pm-shot { border-radius: 24px 24px 0 0; }
 }
 
+/* ---- desktop (standalone page only; the editor preview stays phone-sized) ----
+   Matches the design's .mn-dk block: a wider 1140px column, a three-part hero
+   (logo | name | back pill) on one row, and larger chips/cards. */
 @media (min-width: 1024px) {
-    .menu-root:not(.menu-embed) .menu-banner { height: 300px; }
-    .menu-root:not(.menu-embed) .menu-wrap {
-        max-width: 1200px; margin-inline: auto; padding-inline: 28px;
+    .menu-root:not(.menu-embed) .menu-banner { height: 280px; }
+    .menu-root:not(.menu-embed) .menu-hero,
+    .menu-root:not(.menu-embed) .menu-chipsrow,
+    .menu-root:not(.menu-embed) .menu-wrap { max-width: 1140px; margin-inline: auto; }
+    .menu-root:not(.menu-embed) .menu-hero {
+        grid-template-columns: auto 1fr auto; column-gap: 24px; padding: 0 28px;
     }
-    /* bigger profile block */
-    .menu-root:not(.menu-embed) .menu-biz { margin-top: -46px; gap: 18px; }
     .menu-root:not(.menu-embed) .menu-logo {
-        width: 104px; height: 104px; font-size: 40px; border-width: 5px;
+        grid-row: 1; margin-top: -54px;
+        width: 112px; height: 112px; font-size: 44px; border-width: 5px;
     }
-    .menu-root:not(.menu-embed) .menu-bizt { padding-top: 46px; }
-    .menu-root:not(.menu-embed) .menu-bizt b { font-size: 30px; }
-    .menu-root:not(.menu-embed) .menu-bizt i { font-size: 13.5px; }
-    .menu-root:not(.menu-embed) .menu-bizch { margin-top: 46px; }
-    .menu-root:not(.menu-embed) .menu-tools { margin-top: 22px; max-width: 560px; }
+    .menu-root:not(.menu-embed) .menu-bizname {
+        grid-column: 2; grid-row: 1; padding-top: 10px;
+    }
+    .menu-root:not(.menu-embed) .menu-bizname b { font-size: 36px; }
+    .menu-root:not(.menu-embed) .menu-bizname i { font-size: 14px; }
+    .menu-root:not(.menu-embed) .menu-back {
+        grid-column: 3; grid-row: 1; margin-top: 16px;
+        font-size: 13.5px; padding: 11px 18px;
+    }
 
-    /* the rail replaces the chip bar */
-    .menu-root:not(.menu-embed) .menu-chips { display: none; }
-    .menu-root:not(.menu-embed) .menu-cols {
-        display: grid; grid-template-columns: 236px minmax(0, 1fr);
-        gap: 32px; align-items: start; margin-top: 6px;
-    }
-    .menu-root:not(.menu-embed) .menu-rail {
-        display: flex; flex-direction: column; gap: 2px;
-        position: sticky; top: 24px; padding-top: 24px;
-    }
-    .menu-root:not(.menu-embed) .menu-raillab {
-        font: 700 10.5px var(--sans); letter-spacing: .08em; text-transform: uppercase;
-        color: var(--muted); padding: 0 12px 8px;
-    }
-    .menu-root:not(.menu-embed) .menu-railitem {
-        display: flex; align-items: center; justify-content: space-between; gap: 10px;
-        padding: 11px 13px; border: 0; border-radius: 13px; cursor: pointer;
-        background: transparent; color: var(--muted);
-        font: 600 14.5px var(--sans); text-align: left; width: 100%;
-    }
-    .menu-root:not(.menu-embed) .menu-railitem:hover { background: var(--soft); color: var(--text); }
-    .menu-root:not(.menu-embed) .menu-railitem i {
-        font-style: normal; font: 700 11.5px var(--sans); opacity: .7;
-    }
-    .menu-root:not(.menu-embed) .menu-railitem.on {
-        background-image: var(--grad); color: var(--aink);
-        box-shadow: 0 8px 20px -10px var(--accent);
-    }
-    .menu-root:not(.menu-embed) .menu-railitem.on i { opacity: .85; }
-    .menu-root:not(.menu-embed) .menu-sec { scroll-margin-top: 24px; padding-top: 26px; }
-    .menu-root:not(.menu-embed) .menu-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .menu-root:not(.menu-embed) .menu-wrap { padding-inline: 28px; }
+    .menu-root:not(.menu-embed) .menu-chipsrow { padding: 12px 28px; }
+    .menu-root:not(.menu-embed) .menu-chip { font-size: 14px; padding: 10px 18px; }
+    .menu-root:not(.menu-embed) .menu-tools { max-width: 560px; }
+
+    .menu-root:not(.menu-embed) .menu-sec { padding-top: 28px; }
+    .menu-root:not(.menu-embed) .menu-kh { font-size: 26px; margin-bottom: 16px; }
+    .menu-root:not(.menu-embed) .menu-kh i { font-size: 13px; }
+    .menu-root:not(.menu-embed) .menu-card { padding: 12px; gap: 14px; }
+    .menu-root:not(.menu-embed) .menu-th-s { width: 108px; height: 108px; }
+    .menu-root:not(.menu-embed) .menu-cnom { font-size: 17px; }
+    .menu-root:not(.menu-embed) .menu-ct { font-size: 13px; }
+    .menu-root:not(.menu-embed) .menu-narx b { font-size: 17px; }
+    .menu-root:not(.menu-embed) .menu-list { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .menu-root:not(.menu-embed) .menu-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
     .menu-root:not(.menu-embed) .menu-cartbar { bottom: 24px; }
-}
-
-@media (min-width: 1360px) {
-    .menu-root:not(.menu-embed) .menu-grid { grid-template-columns: repeat(4, 1fr); }
 }

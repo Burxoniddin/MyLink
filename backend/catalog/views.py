@@ -266,6 +266,7 @@ class PublicCatalogView(APIView):
             'order': catalog.order_target(),
             'order_label': catalog.order_label,
             'business': {'name': business.name, 'path': business.path,
+                         'description': business.description,
                          'logo': logo, 'verified': verified},
             'categories': [c for c in cat_data if c['items']],
         })

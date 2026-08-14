@@ -282,8 +282,12 @@ const CatalogEditor = () => {
         ...catalog,
         ...(form || {}),
         business: attached
-            ? { name: catalog.business_name, path: catalog.business_path, logo: null, verified: false }
-            : { name: t('catalog.not_attached'), path: '', logo: null, verified: false },
+            ? {
+                name: catalog.business_name, path: catalog.business_path,
+                description: businesses.find((b) => b.id === catalog.business)?.description || '',
+                logo: null, verified: false,
+            }
+            : { name: t('catalog.not_attached'), path: '', description: '', logo: null, verified: false },
         categories: categories.filter((c) => (c.items || []).length > 0),
     };
 

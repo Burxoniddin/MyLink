@@ -110,6 +110,15 @@
 
 .tpl-rule { width: 34px; height: 1px; margin: 22px 0 4px; background: var(--t-accent); }
 
+/* Highlights row: index.css pulls it up by -14px, which is tuned for the
+   classic page (its profile block carries a 32px bottom margin). Sector
+   templates have no such margin, so the row ended up touching the bio.
+   The 8px lands on top of the bio paragraph's own ~14.5px bottom margin, so
+   the row sits ~22px below the text — matching the 22px gap to whatever
+   follows (menu button / links), which all bring their own top margin. */
+.tpl .hl-row { margin: 8px 0 0; }
+.tpl .tpl-rule + .hl-row { margin-top: 14px; }   /* the rule already sits close */
+
 .tpl-blocks { width: 100%; margin-top: 22px; display: flex; flex-direction: column; gap: 14px; }
 .tpl-block { background: var(--t-surface); border: 1px solid var(--t-surface-line); border-radius: 16px; padding: 16px; }
 .tpl-block-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--t-text); }

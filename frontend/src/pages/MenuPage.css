@@ -240,15 +240,9 @@
     border-radius: 999px; padding: 7px 14px; text-decoration: none;
 }
 .menu-mk {
-    width: 15px; height: 15px; border-radius: 5px; background-image: var(--grad);
-    position: relative; display: inline-block;
+    width: 18px; height: 18px; border-radius: 6px;
+    display: inline-block; object-fit: cover; flex: none;
 }
-.menu-mk::before, .menu-mk::after {
-    content: ""; position: absolute; width: 5px; height: 2px; border-radius: 2px;
-    background: #fff; left: 50%; top: 50%;
-}
-.menu-mk::before { transform: translate(-75%, -50%) rotate(-32deg); }
-.menu-mk::after { transform: translate(-25%, -50%) rotate(-32deg); }
 
 /* ---- empty / 404 states ---- */
 .menu-state {

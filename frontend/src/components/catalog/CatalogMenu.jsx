@@ -305,7 +305,8 @@ const CatalogMenu = ({ data, embedded = false }) => {
                 <footer className="menu-foot">
                     <Link className="menu-fbiz" to={`/${biz.path}`}>{biz.name}</Link>
                     <a className="menu-pow" href="https://mylink.asia" target="_blank" rel="noopener noreferrer">
-                        <span className="menu-mk" />{t('menu.powered_by')}
+                        <img className="menu-mk" src="/brand/appicon-192.png" alt="MyLink" />
+                        {t('menu.powered_by')}
                     </a>
                 </footer>
             </div>

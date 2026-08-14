@@ -84,6 +84,7 @@ class CatalogSerializer(AbsoluteFileMixin, serializers.ModelSerializer):
         fields = ['id', 'name', 'business', 'business_path', 'business_name',
                   'button_label', 'banner', 'banner_upload', 'banner_remove',
                   'currency', 'theme', 'theme_mode', 'card_style',
+                  'cart_enabled', 'order_enabled', 'order_link', 'order_label',
                   'is_active', 'categories', 'created_at']
 
     def get_banner(self, obj):

@@ -599,7 +599,16 @@
     "err_business_has_catalog": "Bu biznesga boshqa katalog biriktirilgan.",
     "err_not_attached": "Avval katalogni biznesga biriktiring.",
     "load_failed": "Kataloglar ro'yxatini yuklab bo'lmadi. Internet aloqasini tekshirib, qaytadan urinib ko'ring.",
-    "retry": "Qayta urinish"
+    "retry": "Qayta urinish",
+    "ordering": "Buyurtma",
+    "ordering_sub": "savatcha va bog‘lanish",
+    "cart_enabled": "Savatcha",
+    "cart_hint": "Mijoz mahsulot yig‘ib, ro‘yxatni bir xabarda yuboradi.",
+    "order_enabled": "Bog‘lanish tugmasi",
+    "order_link": "Havola",
+    "order_link_ph": "@foydalanuvchi yoki +998 90 123 45 67",
+    "order_link_hint": "Telegram (@nom) yoki WhatsApp raqami bo‘lsa, buyurtma ro‘yxati xabarga avtomatik yoziladi. Boshqa havola shunchaki ochiladi.",
+    "order_label": "Tugma matni"
   },
   "menu": {
     "not_found": "Menyu topilmadi",
@@ -610,7 +619,21 @@
     "empty": "Egasi taomlarni qo‘shishi bilan shu yerda ko‘rinadi.",
     "item_count": "{{n}} ta",
     "powered_by": "MyLink bilan yaratilgan",
-    "lb_hint": "ikki marta bosing — kattalashadi · suring — keyingisi"
+    "lb_hint": "ikki marta bosing — kattalashadi · suring — keyingisi",
+    "search_ph": "Qidirish",
+    "results": "Natijalar",
+    "no_results": "«{{q}}» bo‘yicha hech narsa topilmadi",
+    "tap_to_zoom": "kattalashtirish",
+    "add_to_cart": "Savatchaga",
+    "cart": "Savatcha",
+    "cart_empty": "Savatcha bo‘sh",
+    "cart_clear": "Savatchani tozalash",
+    "total": "Jami",
+    "order_cta": "Buyurtma uchun bog‘lanish",
+    "order_intro": "Salom! {{biz}} — buyurtma bermoqchiman:",
+    "order_hint": "Xabar tayyor holda ochiladi — yuborish tugmasini bosishingiz kifoya.",
+    "order_hint_plain": "Havola ochiladi. Buyurtma ro‘yxatini o‘zingiz yozib yuborasiz.",
+    "order_off": "Bog‘lanish tugmasi hali sozlanmagan."
   },
   "error": {
     "title": "Nimadir noto'g'ri ketdi",

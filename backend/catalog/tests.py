@@ -266,6 +266,42 @@ class CatalogCrudTests(CatalogTestCase):
         self.assertEqual(self.catalog.theme_mode, 'light')
         self.assertEqual(self.catalog.card_style, 'grid')
 
+    def test_order_link_normalisation(self):
+        from catalog.models import normalize_order_link as norm
+        cases = [
+            ('@osh_kafe', 'telegram', 'https://t.me/osh_kafe'),
+            ('osh_kafe', 'telegram', 'https://t.me/osh_kafe'),
+            ('t.me/osh_kafe', 'telegram', 'https://t.me/osh_kafe'),
+            ('https://t.me/osh_kafe', 'telegram', 'https://t.me/osh_kafe'),
+            ('+998 90 123 45 67', 'whatsapp', 'https://wa.me/998901234567'),
+            ('998901234567', 'whatsapp', 'https://wa.me/998901234567'),
+            ('https://instagram.com/osh', 'other', 'https://instagram.com/osh'),
+            ('example.com/order', 'other', 'https://example.com/order'),
+        ]
+        for raw, kind, url in cases:
+            with self.subTest(raw=raw):
+                self.assertEqual(norm(raw), {'kind': kind, 'url': url})
+        for empty in ('', '   ', None, '@'):
+            self.assertIsNone(norm(empty))
+
+    def test_order_target_respects_toggle(self):
+        self.catalog.order_link = '@osh_kafe'
+        self.catalog.order_enabled = False
+        self.assertIsNone(self.catalog.order_target())
+        self.catalog.order_enabled = True
+        self.assertEqual(self.catalog.order_target()['kind'], 'telegram')
+
+    def test_cart_and_order_fields_update(self):
+        res = self.client.patch(f'/api/catalogs/{self.catalog.pk}/', {
+            'cart_enabled': True, 'order_enabled': True,
+            'order_link': '@osh_kafe', 'order_label': 'Buyurtma berish',
+        }, format='json')
+        self.assertEqual(res.status_code, 200)
+        self.catalog.refresh_from_db()
+        self.assertTrue(self.catalog.cart_enabled)
+        self.assertTrue(self.catalog.order_enabled)
+        self.assertEqual(self.catalog.order_label, 'Buyurtma berish')
+
     def test_unknown_theme_rejected(self):
         res = self.client.patch(f'/api/catalogs/{self.catalog.pk}/',
                                 {'theme': 'kosmos'}, format='json')
@@ -407,6 +443,22 @@ class PublicCatalogTests(CatalogTestCase):
         self.assertEqual(res.data['theme'], 'mylink')
         self.assertEqual(res.data['theme_mode'], 'dark')
         self.assertEqual(res.data['card_style'], 'grid')
+        # Ordering is off until the owner turns it on.
+        self.assertFalse(res.data['cart_enabled'])
+        self.assertIsNone(res.data['order'])
+
+    def test_public_order_target(self):
+        Catalog.objects.filter(pk=self.catalog.pk).update(
+            cart_enabled=True, order_enabled=True, order_link='@osh_kafe',
+            order_label='Buyurtma berish')
+        res = self.anon.get('/api/public/osh/catalog/')
+        self.assertTrue(res.data['cart_enabled'])
+        self.assertEqual(res.data['order'], {'kind': 'telegram', 'url': 'https://t.me/osh_kafe'})
+        self.assertEqual(res.data['order_label'], 'Buyurtma berish')
+        # A broken link hides the button instead of rendering a dead CTA.
+        Catalog.objects.filter(pk=self.catalog.pk).update(order_link='  ')
+        res = self.anon.get('/api/public/osh/catalog/')
+        self.assertIsNone(res.data['order'])
         self.assertEqual(res.data['business']['path'], 'osh')
         self.assertEqual(res.data['business']['name'], 'Osh Markazi')
         # Empty categories are filtered out.

@@ -401,6 +401,59 @@ const CatalogEditor = () => {
 
                             <div className="mc-card">
                                 <h3 className="mc-ch">
+                                    {t('catalog.ordering')}
+                                    <span className="mc-chsub">{t('catalog.ordering_sub')}</span>
+                                </h3>
+
+                                <div className="ed-tglrow" style={{ borderTop: 0, marginTop: 4, paddingTop: 4 }}>
+                                    <span>{t('catalog.cart_enabled')}</span>
+                                    <button
+                                        type="button" className={`mc-tgl${catalog.cart_enabled ? ' on' : ''}`}
+                                        onClick={() => saveField({ cart_enabled: !catalog.cart_enabled }, true)}
+                                        aria-label={t('catalog.cart_enabled')}
+                                    >
+                                        <span />
+                                    </button>
+                                </div>
+                                <p className="ed-note soft" style={{ marginTop: 0 }}>{t('catalog.cart_hint')}</p>
+
+                                <div className="ed-tglrow">
+                                    <span>{t('catalog.order_enabled')}</span>
+                                    <button
+                                        type="button" className={`mc-tgl${catalog.order_enabled ? ' on' : ''}`}
+                                        onClick={() => saveField({ order_enabled: !catalog.order_enabled }, true)}
+                                        aria-label={t('catalog.order_enabled')}
+                                    >
+                                        <span />
+                                    </button>
+                                </div>
+
+                                {catalog.order_enabled && (
+                                    <>
+                                        <label className="ed-lab" htmlFor="cat-olink">{t('catalog.order_link')}</label>
+                                        <input
+                                            id="cat-olink" className="ed-in" defaultValue={catalog.order_link}
+                                            placeholder={t('catalog.order_link_ph')} maxLength={200}
+                                            onBlur={(e) => {
+                                                if (e.target.value !== catalog.order_link) saveField({ order_link: e.target.value });
+                                            }}
+                                        />
+                                        <p className="ed-note soft">{t('catalog.order_link_hint')}</p>
+
+                                        <label className="ed-lab" htmlFor="cat-olabel">{t('catalog.order_label')}</label>
+                                        <input
+                                            id="cat-olabel" className="ed-in" defaultValue={catalog.order_label}
+                                            placeholder={t('menu.order_cta')} maxLength={40}
+                                            onBlur={(e) => {
+                                                if (e.target.value !== catalog.order_label) saveField({ order_label: e.target.value });
+                                            }}
+                                        />
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="mc-card">
+                                <h3 className="mc-ch">
                                     {t('catalog.appearance')}
                                     <span className="mc-chsub">{t('catalog.appearance_sub')}</span>
                                 </h3>

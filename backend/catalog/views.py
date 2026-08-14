@@ -260,6 +260,11 @@ class PublicCatalogView(APIView):
             'theme': catalog.theme,
             'theme_mode': catalog.theme_mode,
             'card_style': catalog.card_style,
+            'cart_enabled': catalog.cart_enabled,
+            # None when the button is off or the link is unusable — the menu
+            # then simply doesn't render an order CTA.
+            'order': catalog.order_target(),
+            'order_label': catalog.order_label,
             'business': {'name': business.name, 'path': business.path,
                          'logo': logo, 'verified': verified},
             'categories': [c for c in cat_data if c['items']],

@@ -19,6 +19,22 @@ const PATHS = {
     ),
     drag: <path d="M8 6h8M8 12h8M8 18h8" />,
     plus: <path d="M12 5v14M5 12h14" />,
+    minus: <path d="M5 12h14" />,
+    search: <g><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" /></g>,
+    grid: (
+        <g>
+            <rect x="3.5" y="3.5" width="7" height="7" rx="2" /><rect x="13.5" y="3.5" width="7" height="7" rx="2" />
+            <rect x="3.5" y="13.5" width="7" height="7" rx="2" /><rect x="13.5" y="13.5" width="7" height="7" rx="2" />
+        </g>
+    ),
+    rows: <g><path d="M9 6h11M9 12h11M9 18h11" /><path d="M4.5 6v.01M4.5 12v.01M4.5 18v.01" /></g>,
+    cart: (
+        <g>
+            <path d="M3 4h2.2l2.3 11h9.4l2.1-8H6" />
+            <circle cx="9.5" cy="19" r="1.4" /><circle cx="17" cy="19" r="1.4" />
+        </g>
+    ),
+    send: <path d="M21 3L10.5 13.5M21 3l-6.8 18-3.7-7.5L3 10l18-7z" />,
     trash: <g><path d="M4 7h16M10 11v6M14 11v6" /><path d="M6 7l1 13h10l1-13M9 7V4h6v3" /></g>,
     pen: <path d="M4 20l4.5-1L20 7.5a2.12 2.12 0 0 0-3-3L5.5 16zM13.5 6l3 3" />,
     warn: <g><path d="M12 3L2.5 20h19z" /><path d="M12 9.5V14M12 17v.01" /></g>,

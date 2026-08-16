@@ -158,7 +158,7 @@ const CatalogMenu = ({ data, embedded = false }) => {
         if (embedded) {
             const sc = scRef.current;
             const delta = el.getBoundingClientRect().top - sc.getBoundingClientRect().top;
-            sc.scrollTo({ top: sc.scrollTop + delta - 56, behavior: 'smooth' });
+            sc.scrollTo({ top: sc.scrollTop + delta - 114, behavior: 'smooth' });
         } else {
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -198,38 +198,57 @@ const CatalogMenu = ({ data, embedded = false }) => {
                     </div>
                 </header>
 
-                <div className="menu-wrap">
-                    {categories.length > 0 && (
-                        <div className="menu-tools">
-                            <label className="menu-search">
-                                <Ic n="search" s={17} w={2} />
-                                <input
-                                    type="search" value={query} placeholder={t('menu.search_ph')}
-                                    onChange={(e) => setQuery(e.target.value)}
-                                />
-                                {query && (
-                                    <button type="button" onClick={() => setQuery('')} aria-label={t('common.cancel')}>
-                                        <Ic n="x" s={14} w={2.2} />
+                {/* Search + view switch + chips travel together and pin to the
+                    top, so the visitor can search from anywhere in the menu. */}
+                {categories.length > 0 && (
+                    <div className="menu-stick">
+                        <div className="menu-wrap">
+                            <div className="menu-tools">
+                                <label className="menu-search">
+                                    <Ic n="search" s={17} w={2} />
+                                    <input
+                                        type="search" value={query} placeholder={t('menu.search_ph')}
+                                        onChange={(e) => setQuery(e.target.value)}
+                                    />
+                                    {query && (
+                                        <button type="button" onClick={() => setQuery('')} aria-label={t('common.cancel')}>
+                                            <Ic n="x" s={14} w={2.2} />
+                                        </button>
+                                    )}
+                                </label>
+                                <div className="menu-views">
+                                    <button
+                                        type="button" className={layout === 'grid' ? 'on' : ''}
+                                        onClick={() => setLayout('grid')} aria-label={t('catalog.card_grid')}
+                                    >
+                                        <Ic n="grid" s={17} w={1.7} />
                                     </button>
-                                )}
-                            </label>
-                            <div className="menu-views">
-                                <button
-                                    type="button" className={layout === 'grid' ? 'on' : ''}
-                                    onClick={() => setLayout('grid')} aria-label={t('catalog.card_grid')}
-                                >
-                                    <Ic n="grid" s={17} w={1.7} />
-                                </button>
-                                <button
-                                    type="button" className={layout === 'list' ? 'on' : ''}
-                                    onClick={() => setLayout('list')} aria-label={t('catalog.card_list')}
-                                >
-                                    <Ic n="rows" s={17} w={2} />
-                                </button>
+                                    <button
+                                        type="button" className={layout === 'list' ? 'on' : ''}
+                                        onClick={() => setLayout('list')} aria-label={t('catalog.card_list')}
+                                    >
+                                        <Ic n="rows" s={17} w={2} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    )}
-                </div>
+                        {!results && (
+                            <nav className="menu-chips">
+                                <div className="menu-chipsrow">
+                                    {categories.map((c) => (
+                                        <button
+                                            key={c.id} type="button"
+                                            className={`menu-chip${act === c.id ? ' on' : ''}`}
+                                            onClick={() => pick(c.id)}
+                                        >
+                                            {c.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </nav>
+                        )}
+                    </div>
+                )}
 
                 {categories.length === 0 ? (
                     <div className="menu-state">
@@ -253,41 +272,25 @@ const CatalogMenu = ({ data, embedded = false }) => {
                         )}
                     </div>
                 ) : (
-                    <>
-                        <nav className="menu-chips">
-                            <div className="menu-chipsrow">
-                                {categories.map((c) => (
-                                    <button
-                                        key={c.id} type="button"
-                                        className={`menu-chip${act === c.id ? ' on' : ''}`}
-                                        onClick={() => pick(c.id)}
-                                    >
-                                        {c.name}
-                                    </button>
-                                ))}
-                            </div>
-                        </nav>
-
-                        <div className="menu-wrap">
-                            <div className="menu-body">
-                                {categories.map((c) => (
-                                    <section
-                                        key={c.id} className="menu-sec"
-                                        ref={(el) => { secRefs.current[c.id] = el; }}
-                                    >
-                                        <h2 className="menu-kh">
-                                            {c.name}<i>{t('menu.item_count', { n: c.items.length })}</i>
-                                        </h2>
-                                        <div className={layout === 'grid' ? 'menu-grid' : 'menu-list'}>
-                                            {c.items.map((item) => (
-                                                <Card key={item.id} item={item} qty={cart.qtyOf(item.id)} {...cardProps} />
-                                            ))}
-                                        </div>
-                                    </section>
-                                ))}
-                            </div>
+                    <div className="menu-wrap">
+                        <div className="menu-body">
+                            {categories.map((c) => (
+                                <section
+                                    key={c.id} className="menu-sec"
+                                    ref={(el) => { secRefs.current[c.id] = el; }}
+                                >
+                                    <h2 className="menu-kh">
+                                        {c.name}<i>{t('menu.item_count', { n: c.items.length })}</i>
+                                    </h2>
+                                    <div className={layout === 'grid' ? 'menu-grid' : 'menu-list'}>
+                                        {c.items.map((item) => (
+                                            <Card key={item.id} item={item} qty={cart.qtyOf(item.id)} {...cardProps} />
+                                        ))}
+                                    </div>
+                                </section>
+                            ))}
                         </div>
-                    </>
+                    </div>
                 )}
 
                 <footer className="menu-foot">

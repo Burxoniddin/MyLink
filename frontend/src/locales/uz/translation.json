@@ -124,6 +124,8 @@
     "business_name_ph": "Biznesingiz nomi",
     "description": "Tavsif",
     "description_ph": "Qisqacha tavsif...",
+    "bio_words": "{{n}}/{{max}} so‘z",
+    "err_bio_too_long": "Tavsif {{max}} so‘zdan oshmasligi kerak",
     "logo": "Logo",
     "change": "O'zgartirish",
     "drop_image": "Rasm tashlang yoki tanlang",
@@ -615,7 +617,7 @@
   "menu": {
     "not_found": "Menyu topilmadi",
     "not_found_desc": "Katalog o‘chirilgan yoki vaqtincha faol emas.",
-    "back": "Sahifaga qaytish",
+    "back": "MyLink sahifasiga qaytish",
     "sold_out": "Vaqtincha yo‘q",
     "empty_title": "Menyu hali to‘ldirilmagan",
     "empty": "Egasi taomlarni qo‘shishi bilan shu yerda ko‘rinadi.",

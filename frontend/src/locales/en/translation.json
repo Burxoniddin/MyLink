@@ -124,6 +124,8 @@
     "business_name_ph": "Your business name",
     "description": "Description",
     "description_ph": "Short description...",
+    "bio_words": "{{n}}/{{max}} words",
+    "err_bio_too_long": "The description must not exceed {{max}} words",
     "logo": "Logo",
     "change": "Change",
     "drop_image": "Drop or select an image",
@@ -615,7 +617,7 @@
   "menu": {
     "not_found": "Menu not found",
     "not_found_desc": "The catalog is switched off or temporarily inactive.",
-    "back": "Back to the page",
+    "back": "Back to the MyLink page",
     "sold_out": "Sold out",
     "empty_title": "The menu is not filled in yet",
     "empty": "Dishes show up here as soon as the owner adds them.",

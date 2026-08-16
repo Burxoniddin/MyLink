@@ -74,6 +74,11 @@
     border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
     color: var(--accent); transform: translateY(-1px);
 }
+/* The label spells out where it goes ("MyLink sahifasiga qaytish"), so the
+   pill tightens up rather than crowding the logo on narrow phones. */
+@media (max-width: 390px) {
+    .menu-back { font-size: 11px; padding: 8px 11px; gap: 5px; }
+}
 .menu-bizname {
     grid-column: 1 / -1; grid-row: 2;
     display: flex; flex-direction: column; gap: 4px; min-width: 0;
@@ -85,8 +90,17 @@
 }
 .menu-bizname i { font-style: normal; font: 600 12.5px var(--sans); color: var(--muted); }
 
-/* ---- search + view switch ---- */
-.menu-tools { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+/* ---- pinned toolbar: search + view switch + category chips ----
+   One sticky container, so the search stays reachable at any scroll depth.
+   Sections carry a matching scroll-margin-top so their heading clears it. */
+.menu-stick {
+    position: sticky; top: 0; z-index: 6; margin-top: 16px;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--line);
+    padding-top: max(10px, env(safe-area-inset-top, 0px));
+}
+.menu-tools { display: flex; align-items: center; gap: 10px; }
 .menu-search {
     flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px;
     background: var(--card); border: 1px solid var(--line); border-radius: var(--rc);
@@ -117,14 +131,7 @@
     box-shadow: 0 6px 16px -8px var(--accent);
 }
 
-/* ---- sticky category chips (phone) ---- */
-.menu-chips {
-    position: sticky; top: 0; z-index: 6; margin-top: 14px;
-    background: color-mix(in srgb, var(--bg) 82%, transparent);
-    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--line);
-    padding-top: env(safe-area-inset-top, 0px);
-}
+/* ---- category chips (inside the pinned toolbar) ---- */
 .menu-chipsrow { display: flex; gap: 8px; overflow-x: auto; padding: 10px 16px; scrollbar-width: none; }
 .menu-chipsrow::-webkit-scrollbar { width: 0; height: 0; }
 .menu-chip {
@@ -144,7 +151,8 @@
 
 /* ---- sections ---- */
 .menu-body { position: relative; }
-.menu-sec { padding-top: 20px; scroll-margin-top: 68px; }
+/* scroll-margin clears the pinned toolbar (search ~56 + chips ~58). */
+.menu-sec { padding-top: 20px; scroll-margin-top: 122px; }
 .menu-kh {
     font: 700 20px var(--display); letter-spacing: -.01em;
     display: flex; align-items: baseline; gap: 8px; margin: 0 0 12px;
@@ -480,7 +488,7 @@
     .menu-root:not(.menu-embed) .menu-chip { font-size: 14px; padding: 10px 18px; }
     .menu-root:not(.menu-embed) .menu-tools { max-width: 560px; }
 
-    .menu-root:not(.menu-embed) .menu-sec { padding-top: 28px; }
+    .menu-root:not(.menu-embed) .menu-sec { padding-top: 28px; scroll-margin-top: 134px; }
     .menu-root:not(.menu-embed) .menu-kh { font-size: 26px; margin-bottom: 16px; }
     .menu-root:not(.menu-embed) .menu-kh i { font-size: 13px; }
     .menu-root:not(.menu-embed) .menu-card { padding: 12px; gap: 14px; }

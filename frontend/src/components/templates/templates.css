@@ -26,8 +26,11 @@
 }
 .tpl-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; position: relative; z-index: 1; }
 
-.tpl-name { font-size: 28px; line-height: 1.15; letter-spacing: -.02em; margin-top: 16px; text-align: center; color: var(--t-text); }
-.tpl-bio { color: var(--t-muted); font-size: 14.5px; margin-top: 6px; text-align: center; max-width: 32ch; }
+/* Explicit margins on both sides: the card is a flex column, so the browser's
+   default h1/p bottom margins do NOT collapse — left alone they scale with the
+   font size and blow the gap open on the big-type templates (moda, fitnes). */
+.tpl-name { font-size: 28px; line-height: 1.15; letter-spacing: -.02em; margin: 16px 0 0; text-align: center; color: var(--t-text); }
+.tpl-bio { color: var(--t-muted); font-size: 14.5px; margin: 8px 0 0; text-align: center; max-width: 32ch; }
 
 /* ---- MyCatalog: featured web-menu button ----
    Three archetypes from the design, picked per template via TEMPLATE_META.menuBtn:
@@ -87,7 +90,7 @@
 .tpl[data-tpl="fitnes"] .tpl-menu.is-flame { color: var(--lime-ink); }
 .tpl[data-tpl="fitnes"] .tpl-menu.is-flame .tpl-menu-ico { background: rgba(0, 0, 0, .16); }
 
-.tpl-links { width: 100%; margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+.tpl-links { width: 100%; margin-top: 22px; display: flex; flex-direction: column; gap: 12px; }
 .tpl-lnk {
     --bc: var(--t-accent);
     display: flex; align-items: center; gap: 14px; position: relative; overflow: hidden;
@@ -108,16 +111,13 @@
 .tpl-chev svg { width: 18px; height: 18px; }
 .tpl-lnk:hover .tpl-chev { transform: translateX(4px); color: var(--bc); }
 
-.tpl-rule { width: 34px; height: 1px; margin: 22px 0 4px; background: var(--t-accent); }
+.tpl-rule { width: 34px; height: 1px; margin: 20px 0 0; background: var(--t-accent); }
 
-/* Highlights row: index.css pulls it up by -14px, which is tuned for the
-   classic page (its profile block carries a 32px bottom margin). Sector
-   templates have no such margin, so the row ended up touching the bio.
-   The 8px lands on top of the bio paragraph's own ~14.5px bottom margin, so
-   the row sits ~22px below the text — matching the 22px gap to whatever
-   follows (menu button / links), which all bring their own top margin. */
-.tpl .hl-row { margin: 8px 0 0; }
-.tpl .tpl-rule + .hl-row { margin-top: 14px; }   /* the rule already sits close */
+/* One rhythm for the card's major blocks: bio → highlights → menu button →
+   links are all 22px apart (each block brings its own top margin, since the
+   flex column means nothing collapses). */
+.tpl .hl-row { margin: 22px 0 0; }
+.tpl .tpl-rule + .hl-row { margin-top: 18px; }   /* the rule already sits close */
 
 .tpl-blocks { width: 100%; margin-top: 22px; display: flex; flex-direction: column; gap: 14px; }
 .tpl-block { background: var(--t-surface); border: 1px solid var(--t-surface-line); border-radius: 16px; padding: 16px; }
@@ -128,9 +128,11 @@
 .tpl-block-embed { position: relative; width: 100%; aspect-ratio: 16 / 9; }
 .tpl-block-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 10px; }
 
-.tpl-empty { margin-top: 26px; color: var(--t-muted); font-size: 14.5px; text-align: center; }
+.tpl-empty { margin-top: 22px; color: var(--t-muted); font-size: 14.5px; text-align: center; }
 
-.tpl-powered { margin-top: 26px; }
+/* Sits outside .tpl-card (see ProfileTemplate) — MyLink's badge, not content.
+   Same z-index as the card so the templates' fixed glow blobs stay behind it. */
+.tpl-powered { position: relative; z-index: 2; margin-top: 20px; }
 .tpl-powered a {
     display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--t-muted);
     background: var(--t-surface); border: 1px solid var(--t-surface-line); border-radius: 999px; padding: 9px 18px; transition: transform .2s;

@@ -97,16 +97,17 @@ const ProfileTemplate = ({ data, tpl, theme, onLinkClick = () => {}, getLogoUrl,
                 {links.length === 0 && sections.length === 0 && !data.has_catalog && (
                     <div className="tpl-empty">{t('landing.no_links')}</div>
                 )}
-
-                {!data.branding_removed && (
-                    <div className="tpl-powered">
-                        <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer">
-                            {t('landing.powered_by')}
-                            <span className="mklogo"><span className="mk"><img src="/brand/appicon-192.png" alt="" /></span>MyLink</span>
-                        </a>
-                    </div>
-                )}
             </main>
+
+            {/* Platform badge — outside the business card frame on purpose. */}
+            {!data.branding_removed && (
+                <div className="tpl-powered">
+                    <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer">
+                        {t('landing.powered_by')}
+                        <span className="mklogo"><span className="mk"><img src="/brand/appicon-192.png" alt="" /></span>MyLink</span>
+                    </a>
+                </div>
+            )}
         </div>
     );
 };

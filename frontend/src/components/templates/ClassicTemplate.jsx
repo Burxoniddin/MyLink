@@ -102,17 +102,20 @@ const ClassicTemplate = ({ data, onLinkClick = () => {}, getLogoUrl, toEmbed, t,
                     </div>
                 )}
 
-                {/* Footer — hidden for paid tiers (branding_removed) */}
-                {!data.branding_removed && (
-                    <div className="landing-branding">
-                        <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer" className="landing-branding-link">
-                            <span className="powered-text">{t('landing.powered_by')}</span>
-                            <img src="/brand/appicon-192.png" alt="MyLink" className="landing-brand-logo" />
-                            <strong>MyLink</strong>
-                        </a>
-                    </div>
-                )}
             </div>
+
+            {/* Platform badge — deliberately OUTSIDE the business card, so it
+                reads as MyLink's mark rather than part of the page content.
+                Hidden for paid tiers (branding_removed). */}
+            {!data.branding_removed && (
+                <div className="landing-branding">
+                    <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer" className="landing-branding-link">
+                        <span className="powered-text">{t('landing.powered_by')}</span>
+                        <img src="/brand/appicon-192.png" alt="MyLink" className="landing-brand-logo" />
+                        <strong>MyLink</strong>
+                    </a>
+                </div>
+            )}
         </div>
     );
 };

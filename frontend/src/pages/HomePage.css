@@ -93,17 +93,93 @@
 .lpc .phone .notch { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 104px; height: 25px; background: #1a1830; border-radius: 0 0 15px 15px; z-index: 2; }
 .lpc .phone .screen { width: 100%; height: 100%; border-radius: 35px; overflow: hidden; background: #0f0f23; display: block; padding: 0; }
 /* Static demo-page mock inside the phone — DB-independent, renders the same on
-   every environment (a live iframe 404s where the demo path doesn't exist). */
-.lpc .pf-mock { height: 100%; display: flex; flex-direction: column; align-items: center; padding: 56px 20px 22px; background: linear-gradient(180deg, #15132b, #0f0f23 55%); color: #fff; }
-.lpc .pfm-avatar { width: 66px; height: 66px; border-radius: 50%; background: linear-gradient(135deg, var(--indigo), var(--violet)); display: grid; place-items: center; font-weight: 800; font-size: 26px; color: #fff; box-shadow: 0 12px 26px -12px rgba(99,102,241,.9); }
-.lpc .pfm-name { margin-top: 13px; font-weight: 800; font-size: 17px; letter-spacing: .08em; }
-.lpc .pfm-bio { margin-top: 5px; font-size: 11px; color: rgba(255,255,255,.55); text-align: center; }
+   every environment (a live iframe 404s where the demo path doesn't exist).
+   [data-m] swaps the whole palette between the real page designs; HomePage.jsx
+   cycles it every few seconds. NOTE: nothing here may carry a `transition` on a
+   var()-driven property — Chromium never lands on the new value when the var
+   changes. The swap remounts the node instead and replays lpc-pfm-in. */
+.lpc .pf-mock {
+    --m-bg: linear-gradient(180deg, #15132b, #0f0f23 55%);
+    --m-text: #fff;
+    --m-muted: rgba(255,255,255,.55);
+    --m-surface: rgba(255,255,255,.07);
+    --m-line: rgba(255,255,255,.09);
+    --m-accent: var(--indigo);
+    --m-accent2: var(--violet);
+    --m-aink: #fff;
+    --m-avatar-r: 50%;
+    --m-avatar-font: var(--display);
+    --m-name-font: var(--display);
+    --m-name-size: 17px;
+    --m-name-ls: .08em;
+    --m-link-font: var(--sans);
+    --m-link-r: 13px;
+    --m-link-size: 12.5px;
+    --m-link-ls: 0;
+    --m-link-tt: none;
+    --m-url-color: rgba(255,255,255,.5);
+    --m-url-line: rgba(255,255,255,.14);
+    height: 100%; display: flex; flex-direction: column; align-items: center;
+    padding: 56px 20px 22px; background: var(--m-bg); color: var(--m-text);
+    animation: lpc-pfm-in .5s ease both;
+}
+@keyframes lpc-pfm-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .lpc .pf-mock { animation: none; } }
+
+.lpc .pfm-avatar { width: 66px; height: 66px; border-radius: var(--m-avatar-r); background: linear-gradient(135deg, var(--m-accent), var(--m-accent2)); display: grid; place-items: center; font-family: var(--m-avatar-font); font-weight: 800; font-size: 26px; color: var(--m-aink); box-shadow: 0 12px 26px -12px color-mix(in srgb, var(--m-accent) 85%, transparent); }
+.lpc .pfm-name { margin-top: 13px; font-family: var(--m-name-font); font-weight: 800; font-size: var(--m-name-size); letter-spacing: var(--m-name-ls); text-align: center; }
+.lpc .pfm-bio { margin-top: 5px; font-size: 11px; color: var(--m-muted); text-align: center; }
 .lpc .pfm-links { margin-top: 16px; width: 100%; display: flex; flex-direction: column; gap: 9px; }
-.lpc .pfm-link { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 13px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.09); font-size: 12.5px; font-weight: 600; }
+.lpc .pfm-link { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: var(--m-link-r); background: var(--m-surface); border: 1px solid var(--m-line); font-family: var(--m-link-font); font-size: var(--m-link-size); font-weight: 600; letter-spacing: var(--m-link-ls); text-transform: var(--m-link-tt); }
 .lpc .pfm-link i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .lpc .pfm-media { margin-top: 14px; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .lpc .pfm-media span { aspect-ratio: 1 / 1; border-radius: 10px; opacity: .9; }
-.lpc .pfm-url { margin-top: auto; font-size: 10.5px; color: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.14); padding: 6px 13px; border-radius: 999px; }
+.lpc .pfm-url { margin-top: auto; font-size: 10.5px; color: var(--m-url-color); border: 1px solid var(--m-url-line); padding: 6px 13px; border-radius: 999px; }
+
+/* restoran — FLAME */
+.lpc .pf-mock[data-m="restoran"] {
+    --m-bg: linear-gradient(180deg, #2b1c12, #160f0b 58%);
+    --m-text: #fdeee2; --m-muted: #b89b86;
+    --m-surface: rgba(46,32,23,.86); --m-line: rgba(255,224,196,.14);
+    --m-accent: #f0a23c; --m-accent2: #d4582a;
+    --m-avatar-font: "Bricolage Grotesque", var(--display);
+    --m-name-font: "Bricolage Grotesque", var(--display);
+    --m-name-size: 19px; --m-name-ls: -.005em;
+    --m-link-r: 15px;
+    --m-url-color: rgba(253,238,226,.55); --m-url-line: rgba(255,224,196,.2);
+}
+
+/* moda — editorial, light */
+.lpc .pf-mock[data-m="moda"] {
+    --m-bg: linear-gradient(180deg, #faf8f3, #f3efe7 60%);
+    --m-text: #1c1813; --m-muted: #8c8474;
+    --m-surface: #fff; --m-line: #ded7c8;
+    --m-accent: #9c8466; --m-accent2: #b89e7a;
+    --m-name-font: "Cormorant Garamond", Georgia, serif;
+    --m-name-size: 30px; --m-name-ls: .01em;
+    --m-link-font: "Jost", var(--sans);
+    --m-link-r: 3px; --m-link-size: 10.5px; --m-link-ls: .2em; --m-link-tt: uppercase;
+    --m-url-color: #8c8474; --m-url-line: #ded7c8;
+}
+.lpc .pf-mock[data-m="moda"] .pfm-avatar { background: #fff; border: 1px solid #1c1813; color: #1c1813; font-family: "Cormorant Garamond", Georgia, serif; font-weight: 600; box-shadow: none; }
+.lpc .pf-mock[data-m="moda"] .pfm-name { font-weight: 700; }
+.lpc .pf-mock[data-m="moda"] .pfm-bio { margin-top: 8px; font-size: 9.5px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; }
+.lpc .pf-mock[data-m="moda"] .pfm-media span { border-radius: 2px; }
+
+/* fitnes — PULSE */
+.lpc .pf-mock[data-m="fitnes"] {
+    --m-bg: linear-gradient(180deg, #16190f, #0b0c0a 58%);
+    --m-text: #f3f6ec; --m-muted: #969d88;
+    --m-surface: rgba(28,31,24,.92); --m-line: rgba(220,240,200,.14);
+    --m-accent: #b6f23a; --m-accent2: #93d11f; --m-aink: #0c1006;
+    --m-name-font: "Anton", var(--display);
+    --m-name-size: 25px; --m-name-ls: .02em;
+    --m-link-r: 14px; --m-link-size: 11.5px; --m-link-ls: .06em; --m-link-tt: uppercase;
+    --m-url-color: rgba(243,246,236,.5); --m-url-line: rgba(220,240,200,.18);
+}
+/* Anton ships a single weight — asking for 800 triggers a synthetic bold. */
+.lpc .pf-mock[data-m="fitnes"] .pfm-name { font-weight: 400; }
+.lpc .pf-mock[data-m="fitnes"] .pfm-avatar { background: #0b0c0a; border: 3px solid #b6f23a; color: #b6f23a; font-family: "Anton", var(--display); font-weight: 400; box-shadow: 0 0 0 6px rgba(182,242,58,.12), 0 12px 30px -14px #b6f23a; }
 
 /* sections */
 .lpc section.block { padding: 92px 0; position: relative; }

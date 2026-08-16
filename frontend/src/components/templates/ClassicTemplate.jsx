@@ -1,4 +1,6 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { FaBookOpen } from 'react-icons/fa';
 import LinkButton from '../LinkButton';
 import Highlights from '../Highlights';
 import VerifiedBadge from '../VerifiedBadge';
@@ -59,6 +61,26 @@ const ClassicTemplate = ({ data, onLinkClick = () => {}, getLogoUrl, toEmbed, t,
                 {/* Media sections — cover-card carousel under the bio, above the links */}
                 <Highlights sections={data.media_sections} getMediaUrl={getLogoUrl} toEmbed={toEmbed} />
 
+                {/* MyCatalog: featured web-menu button (owner-labeled) */}
+                {data.has_catalog && (
+                    <Link
+                        to={`/${data.path}/menu`}
+                        className="landing-menu-btn"
+                        onClick={(e) => {
+                            if (previewMode) { e.preventDefault(); return; }
+                            onLinkClick(data.catalog_label || t('landing.menu_button'));
+                        }}
+                    >
+                        <span className="landing-menu-ico"><FaBookOpen /></span>
+                        <span className="landing-menu-lbl">{data.catalog_label || t('landing.menu_button')}</span>
+                        <span className="landing-menu-chev" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                                strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+                        </span>
+                        <span className="landing-menu-sheen" />
+                    </Link>
+                )}
+
                 {/* Links section */}
                 <div className="landing-links">
                     {data.links && data.links.map((link, index) => (
@@ -73,24 +95,27 @@ const ClassicTemplate = ({ data, onLinkClick = () => {}, getLogoUrl, toEmbed, t,
                 </div>
 
                 {/* Empty state */}
-                {(!data.links || data.links.length === 0) && (!data.media_sections || data.media_sections.length === 0) && (
+                {(!data.links || data.links.length === 0) && (!data.media_sections || data.media_sections.length === 0) && !data.has_catalog && (
                     <div className="landing-empty">
                         <div className="empty-icon">🔗</div>
                         <p>{t('landing.no_links')}</p>
                     </div>
                 )}
 
-                {/* Footer — hidden for paid tiers (branding_removed) */}
-                {!data.branding_removed && (
-                    <div className="landing-branding">
-                        <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer" className="landing-branding-link">
-                            <span className="powered-text">{t('landing.powered_by')}</span>
-                            <img src="/brand/appicon-192.png" alt="MyLink" className="landing-brand-logo" />
-                            <strong>MyLink</strong>
-                        </a>
-                    </div>
-                )}
             </div>
+
+            {/* Platform badge — deliberately OUTSIDE the business card, so it
+                reads as MyLink's mark rather than part of the page content.
+                Hidden for paid tiers (branding_removed). */}
+            {!data.branding_removed && (
+                <div className="landing-branding">
+                    <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer" className="landing-branding-link">
+                        <span className="powered-text">{t('landing.powered_by')}</span>
+                        <img src="/brand/appicon-192.png" alt="MyLink" className="landing-brand-logo" />
+                        <strong>MyLink</strong>
+                    </a>
+                </div>
+            )}
         </div>
     );
 };

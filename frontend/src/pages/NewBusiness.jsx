@@ -8,6 +8,7 @@ import { useEntitlements } from '../context/EntitlementContext';
 import LogoCropper from '../components/LogoCropper';
 import { TEMPLATE_OPTIONS } from '../components/templates/templateMeta';
 import { PALETTES, PALETTE_IDS } from '../lib/palettes';
+import { MAX_BIO_WORDS, countWords } from '../lib/format';
 
 // Two-step creation wizard: 1) info (path/name/desc/logo) → 2) design
 // (template + palette cards on the left, live phone preview on the right).
@@ -104,7 +105,9 @@ const NewBusiness = () => {
         reader.readAsDataURL(file);
     };
 
-    const step1Valid = form.name.trim().length > 0 && form.path.length >= 2 && pathStatus !== 'taken';
+    const bioWords = countWords(form.description);
+    const step1Valid = form.name.trim().length > 0 && form.path.length >= 2
+        && pathStatus !== 'taken' && bioWords <= MAX_BIO_WORDS;
 
     const create = async () => {
         setSaving(true);
@@ -120,7 +123,12 @@ const NewBusiness = () => {
             if (res.data.is_locked) toast.info(t('limit.created_inactive'));
             navigate(`/business/${res.data.path}`);
         } catch (err) {
-            if (err.response?.data?.path) {
+            // DRF wraps a ValidationError value in a list — unwrap either shape.
+            const reason = err.response?.data?.reason;
+            if ((Array.isArray(reason) ? reason[0] : reason) === 'bio_too_long') {
+                setStep(1);
+                toast.error(t('detail.err_bio_too_long', { max: MAX_BIO_WORDS }));
+            } else if (err.response?.data?.path) {
                 setStep(1);
                 setPathStatus('taken');
                 toast.error(t('detail.path_taken'));
@@ -178,6 +186,9 @@ const NewBusiness = () => {
                     <div className="form-group">
                         <label>{t('detail.description')}</label>
                         <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder={t('detail.description_ph')} rows={3} />
+                        <div className={`bio-count${bioWords > MAX_BIO_WORDS ? ' over' : ''}`}>
+                            {t('detail.bio_words', { n: bioWords, max: MAX_BIO_WORDS })}
+                        </div>
                     </div>
 
                     <div className="form-group">

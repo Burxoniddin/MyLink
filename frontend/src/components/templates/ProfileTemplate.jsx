@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { FaBookOpen } from 'react-icons/fa';
 import { getLinkIcon, getBrandColor } from '../../lib/linkIcons';
 import { TEMPLATE_META } from './templateMeta';
 import Highlights from '../Highlights';
@@ -47,6 +49,30 @@ const ProfileTemplate = ({ data, tpl, theme, onLinkClick = () => {}, getLogoUrl,
 
                 <Highlights sections={sections} getMediaUrl={getLogoUrl} toEmbed={toEmbed} />
 
+                {/* MyCatalog: featured web-menu button, styled per template archetype */}
+                {data.has_catalog && (
+                    <Link
+                        to={`/${data.path}/menu`}
+                        className={`tpl-menu is-${meta.menuBtn || 'soft'}`}
+                        onClick={(e) => {
+                            if (previewMode) { e.preventDefault(); return; }
+                            onLinkClick(data.catalog_label || t('landing.menu_button'));
+                        }}
+                    >
+                        {meta.menuBtn !== 'line' && (
+                            <span className="tpl-menu-ico"><FaBookOpen /></span>
+                        )}
+                        <span className="tpl-menu-lbl">{data.catalog_label || t('landing.menu_button')}</span>
+                        <span className="tpl-menu-chev" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                                strokeLinecap="round" strokeLinejoin="round">
+                                <path d={meta.menuBtn === 'line' ? 'M4 12h16m-6-6 6 6-6 6' : 'M9 6l6 6-6 6'} />
+                            </svg>
+                        </span>
+                        {meta.menuBtn === 'flame' && <span className="tpl-menu-sheen" />}
+                    </Link>
+                )}
+
                 <nav className="tpl-links">
                     {links.map((link, i) => (
                         <a
@@ -68,19 +94,20 @@ const ProfileTemplate = ({ data, tpl, theme, onLinkClick = () => {}, getLogoUrl,
                     ))}
                 </nav>
 
-                {links.length === 0 && sections.length === 0 && (
+                {links.length === 0 && sections.length === 0 && !data.has_catalog && (
                     <div className="tpl-empty">{t('landing.no_links')}</div>
                 )}
-
-                {!data.branding_removed && (
-                    <div className="tpl-powered">
-                        <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer">
-                            {t('landing.powered_by')}
-                            <span className="mklogo"><span className="mk"><img src="/brand/appicon-192.png" alt="" /></span>MyLink</span>
-                        </a>
-                    </div>
-                )}
             </main>
+
+            {/* Platform badge — outside the business card frame on purpose. */}
+            {!data.branding_removed && (
+                <div className="tpl-powered">
+                    <a href="https://mylink.asia" target="_blank" rel="noopener noreferrer">
+                        {t('landing.powered_by')}
+                        <span className="mklogo"><span className="mk"><img src="/brand/appicon-192.png" alt="" /></span>MyLink</span>
+                    </a>
+                </div>
+            )}
         </div>
     );
 };

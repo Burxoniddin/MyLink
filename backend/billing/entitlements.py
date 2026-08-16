@@ -52,6 +52,7 @@ FEATURES = {
         'branding_removed': False,
         'verified_badge': False,
         'team': False,
+        'catalog': False,
     },
     ODDIY: {
         'profile_limit': 5,
@@ -64,6 +65,7 @@ FEATURES = {
         'branding_removed': True,
         'verified_badge': False,
         'team': False,
+        'catalog': False,
     },
     PRO: {
         'profile_limit': 20,
@@ -76,6 +78,7 @@ FEATURES = {
         'branding_removed': True,
         'verified_badge': True,
         'team': True,
+        'catalog': True,
     },
 }
 

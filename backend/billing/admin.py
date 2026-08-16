@@ -51,6 +51,7 @@ class PlanAdmin(admin.ModelAdmin):
         ('Funksiyalar', {'fields': (
             'profile_limit', 'templates', 'color_edit', 'banners', 'banner_video',
             'analytics', 'qr', 'branding_removed', 'verified_badge', 'team',
+            'catalog',
         )}),
     )
 

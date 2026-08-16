@@ -66,6 +66,13 @@ class EntitlementTests(TestCase):
         self.assertEqual(e['usage']['businesses'], 0)
         self.assertEqual(e['usage']['profile_limit'], 1)
 
+    def test_catalog_feature_pro_only(self):
+        self.assertFalse(get_entitlements(self.user)['features']['catalog'])
+        Subscription.objects.create(user=self.user, tier=ent.ODDIY, expires_at=None)
+        self.assertFalse(get_entitlements(self.user)['features']['catalog'])
+        Subscription.objects.create(user=self.user, tier=ent.PRO, expires_at=None)
+        self.assertTrue(get_entitlements(self.user)['features']['catalog'])
+
 
 class PromoCodeTests(TestCase):
     def setUp(self):

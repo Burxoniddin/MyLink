@@ -17,6 +17,55 @@ const FALLBACK = {
     support_telegram_url: 'https://t.me/mylink_asia',
 };
 
+// Hero phone: four of the real page designs, cycled every few seconds. Static
+// demo data on purpose — DB-independent, so it renders the same everywhere
+// (a live iframe would 404 wherever the demo path doesn't exist). Palettes and
+// fonts mirror templates.css; `id` picks the matching block in HomePage.css.
+// `label` = brand name (never translated), `key` = a home.* translation key.
+const HERO_MOCKS = [
+    {
+        id: 'classic', initial: 'M', name: 'MYBRAND', path: 'mybrand', bio: 'mock_bio_classic',
+        links: [
+            { label: 'Instagram', dot: 'var(--coral)' },
+            { label: 'Telegram', dot: 'var(--cyan)' },
+            { key: 'mock_shop', dot: 'var(--indigo)' },
+            { key: 'mock_phone', dot: 'var(--lime)' },
+        ],
+        media: ['linear-gradient(135deg,#312e81,#6d28d9)', 'linear-gradient(135deg,#0e7490,#2563eb)', 'linear-gradient(135deg,#9d174d,#f59e0b)'],
+    },
+    {
+        id: 'restoran', initial: 'O', name: 'OSH MARKAZI', path: 'oshmarkazi', bio: 'mock_bio_restoran',
+        links: [
+            { key: 'mock_menu', dot: '#f0a23c' },
+            { label: 'Instagram', dot: '#e1306c' },
+            { label: 'Telegram', dot: '#2aabee' },
+            { key: 'mock_phone', dot: '#d4582a' },
+        ],
+        media: ['linear-gradient(135deg,#d4582a,#f0a23c)', 'linear-gradient(135deg,#7c2d12,#c2410c)', 'linear-gradient(135deg,#b45309,#fbbf24)'],
+    },
+    {
+        id: 'moda', initial: 'N', name: 'MAISON NUR', path: 'maisonnur', bio: 'mock_bio_moda',
+        links: [
+            { label: 'Instagram', dot: '#9c8466' },
+            { label: 'Telegram', dot: '#9c8466' },
+            { key: 'mock_shop', dot: '#9c8466' },
+            { key: 'mock_phone', dot: '#9c8466' },
+        ],
+        media: ['linear-gradient(135deg,#d8d1c2,#9c8466)', 'linear-gradient(135deg,#e8e2d6,#b8a184)', 'linear-gradient(135deg,#c7bda6,#8a7355)'],
+    },
+    {
+        id: 'fitnes', initial: 'P', name: 'PULSE GYM', path: 'pulsegym', bio: 'mock_bio_fitnes',
+        links: [
+            { key: 'mock_book', dot: '#b6f23a' },
+            { label: 'Instagram', dot: '#e1306c' },
+            { label: 'Telegram', dot: '#2aabee' },
+            { key: 'mock_phone', dot: '#93d11f' },
+        ],
+        media: ['linear-gradient(135deg,#3f6212,#b6f23a)', 'linear-gradient(135deg,#1c1f18,#65a30d)', 'linear-gradient(135deg,#4d7c0f,#d9f99d)'],
+    },
+];
+const MOCK_MS = 3600;
+
 const HomePage = () => {
     const { t } = useTranslation();
     const toast = useToast();
@@ -36,6 +85,15 @@ const HomePage = () => {
         api.get('public/settings/').then((r) => setSettings(r.data)).catch(() => {});
         api.get('public/featured/').then((r) => setFeatured(r.data || [])).catch(() => {});
     }, []);
+
+    // Hero phone rotates through HERO_MOCKS. Reduced motion → first one, fixed.
+    const [mockIdx, setMockIdx] = useState(0);
+    useEffect(() => {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+        const id = setInterval(() => setMockIdx((i) => (i + 1) % HERO_MOCKS.length), MOCK_MS);
+        return () => clearInterval(id);
+    }, []);
+    const mock = HERO_MOCKS[mockIdx];
 
     // Arriving from another page with /#section — scroll to it once rendered.
     useEffect(() => {
@@ -166,24 +224,25 @@ const HomePage = () => {
                                 <div className="phone">
                                     <div className="notch"></div>
                                     <div className="screen">
-                                        {/* Statik demo-maket — jonli sahifaga (DB'ga) bog'liq emas,
-                                            har muhitda bir xil ko'rinadi. Dekorativ. */}
-                                        <div className="pf-mock" aria-hidden="true">
-                                            <div className="pfm-avatar">M</div>
-                                            <div className="pfm-name">MYBRAND</div>
-                                            <div className="pfm-bio">Rasmiy sahifa — barcha havolalar bitta joyda</div>
+                                        {/* Shablon maketlari almashib turadi (HERO_MOCKS). `key`
+                                            har almashuvda qayta ulaydi — shunda kirish animatsiyasi
+                                            takrorlanadi va tema o'zgaruvchilari kechikmasdan tushadi. */}
+                                        <div className="pf-mock" data-m={mock.id} key={mock.id} aria-hidden="true">
+                                            <div className="pfm-avatar">{mock.initial}</div>
+                                            <div className="pfm-name">{mock.name}</div>
+                                            <div className="pfm-bio">{t(`home.${mock.bio}`)}</div>
                                             <div className="pfm-links">
-                                                <span className="pfm-link"><i style={{ background: 'var(--coral)' }}></i>Instagram</span>
-                                                <span className="pfm-link"><i style={{ background: 'var(--cyan)' }}></i>Telegram</span>
-                                                <span className="pfm-link"><i style={{ background: 'var(--indigo)' }}></i>Onlayn do'kon</span>
-                                                <span className="pfm-link"><i style={{ background: 'var(--lime)' }}></i>Telefon</span>
+                                                {mock.links.map((l) => (
+                                                    <span className="pfm-link" key={l.label || l.key}>
+                                                        <i style={{ background: l.dot }}></i>
+                                                        {l.label || t(`home.${l.key}`)}
+                                                    </span>
+                                                ))}
                                             </div>
                                             <div className="pfm-media">
-                                                <span style={{ background: 'linear-gradient(135deg,#312e81,#6d28d9)' }}></span>
-                                                <span style={{ background: 'linear-gradient(135deg,#0e7490,#2563eb)' }}></span>
-                                                <span style={{ background: 'linear-gradient(135deg,#9d174d,#f59e0b)' }}></span>
+                                                {mock.media.map((bg) => <span key={bg} style={{ background: bg }}></span>)}
                                             </div>
-                                            <div className="pfm-url">mylink.asia/mybrand</div>
+                                            <div className="pfm-url">mylink.asia/{mock.path}</div>
                                         </div>
                                     </div>
                                 </div>

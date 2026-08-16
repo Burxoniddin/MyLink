@@ -3,6 +3,12 @@ from django.db.models import Q
 from django.conf import settings
 from django.utils import timezone
 
+# Bio (Business.description) cap. Counted in WORDS, not characters, so the
+# limit reads the same in uz/ru/en; enforced in BusinessSerializer.validate()
+# and mirrored by the live counter under the editor's textarea.
+MAX_BIO_WORDS = 100
+
+
 class Business(models.Model):
     # Public landing-page design. 'classic' is the original card; the rest are
     # sector-themed link-in-bio templates (see frontend templates/). Selection is

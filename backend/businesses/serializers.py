@@ -2,6 +2,7 @@ import re
 
 from rest_framework import serializers
 from .models import (
+    MAX_BIO_WORDS,
     Business, Link, ContentBlock, MediaSection, BusinessMembership,
     ContactMessage, NfcOrder, StaticPage, BlogPost,
 )
@@ -83,6 +84,13 @@ class BusinessSerializer(serializers.ModelSerializer):
                   'has_catalog', 'catalog_label',
                   'role', 'owner_name', 'created_at', 'links', 'media_sections']
         read_only_fields = ['is_locked', 'is_pinned']
+
+    def validate(self, attrs):
+        # Bio cap, counted in words — same number the editor's counter shows.
+        description = attrs.get('description') or ''
+        if len(description.split()) > MAX_BIO_WORDS:
+            raise serializers.ValidationError({'reason': 'bio_too_long', 'limit': MAX_BIO_WORDS})
+        return attrs
 
     def get_role(self, obj):
         request = self.context.get('request')

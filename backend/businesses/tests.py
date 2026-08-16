@@ -11,7 +11,10 @@ from rest_framework.test import APIClient
 from billing import entitlements as ent
 from billing.models import Subscription
 from billing.services import sync_locks
-from businesses.models import MAX_BLOCKS_PER_SECTION, Business, BusinessMembership, ContentBlock, Event, MediaSection, NfcOrder
+from businesses.models import (
+    MAX_BIO_WORDS, MAX_BLOCKS_PER_SECTION, Business, BusinessMembership, ContentBlock,
+    Event, MediaSection, NfcOrder,
+)
 from businesses.access import claim_pending_invites
 
 User = get_user_model()
@@ -859,6 +862,47 @@ class ContactPhoneTests(TestCase):
 
     def test_neither_rejected(self):
         res = self._post(name='Ali', message='Salom')
+        self.assertEqual(res.status_code, 400)
+
+
+@override_settings(CACHES=LOCMEM)
+class BioLimitTests(TestCase):
+    """The page bio (description) is capped at MAX_BIO_WORDS words."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(phone_number='+998901112233')
+        self.client = APIClient()
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+
+    def test_at_limit_accepted(self):
+        bio = ' '.join(['soz'] * MAX_BIO_WORDS)
+        res = self.client.post('/api/businesses/', {'path': 'a', 'name': 'A', 'description': bio},
+                               format='json')
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(Business.objects.get(path='a').description, bio)
+
+    def test_over_limit_rejected(self):
+        bio = ' '.join(['soz'] * (MAX_BIO_WORDS + 1))
+        res = self.client.post('/api/businesses/', {'path': 'a', 'name': 'A', 'description': bio},
+                               format='json')
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.data['reason'][0], 'bio_too_long')
+        self.assertFalse(Business.objects.filter(path='a').exists())
+
+    def test_update_over_limit_rejected(self):
+        make_business(self.user, 'a', 'A')
+        res = self.client.patch('/api/businesses/a/',
+                                {'description': ' '.join(['soz'] * (MAX_BIO_WORDS + 1))},
+                                format='json')
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(Business.objects.get(path='a').description, '')
+
+    def test_newlines_count_as_separators(self):
+        # str.split() on the server and the editor's /\s+/ counter must agree.
+        bio = '\n'.join(['soz'] * (MAX_BIO_WORDS + 1))
+        res = self.client.post('/api/businesses/', {'path': 'a', 'name': 'A', 'description': bio},
+                               format='json')
         self.assertEqual(res.status_code, 400)
 
 

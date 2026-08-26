@@ -203,26 +203,97 @@ def story_png_bytes(business, url):
 # PDF deliverables
 # --------------------------------------------------------------------------- #
 
+def _wrap_pdf(text, font, size, max_w, max_lines=2):
+    """stringWidth asosida so'zma-so'z o'rash; oxirgi qator '...' bilan kesiladi."""
+    lines, cur = [], ''
+    for word in text.split():
+        test = (cur + ' ' + word).strip()
+        if stringWidth(test, font, size) <= max_w or not cur:
+            cur = test
+        else:
+            lines.append(cur)
+            cur = word
+    if cur:
+        lines.append(cur)
+    if len(lines) > max_lines:
+        last = lines[max_lines - 1]
+        while last and stringWidth(last + '...', font, size) > max_w:
+            last = last[:-1]
+        lines = lines[:max_lines - 1] + [last + '...']
+    return lines
+
+
+# Stend geometriyasi — assets/stand_bg.jpg (2481x3508 px, 300dpi A4) ichidagi
+# dizayn elementlarining piksel koordinatalari (dizayn SVG'idan o'lchangan).
+_STAND = {
+    'card': (607, 897, 1873, 2478, 64),   # l, t, r, b, burchak radiusi
+    'avatar': (1225, 898, 111, 128),      # cx, cy, logo r, oq halqa r
+    'name_base': 1150,                    # nom baseline (px, tepadan)
+    'qr_top': 1269,
+    'qr_size': 650,
+    'bio_base': (2259, 2352),             # bio 2 qator baseline
+}
+
+
 def qr_pdf_bytes(business, url):
-    """A4 PDF: large centred QR + business name + URL (Pro tier)."""
+    """A4 stend PDF: brendlangan zanjirli fon (assets/stand_bg.jpg) ustiga oq
+    karta qayta chizilib, ichiga logo/avatar, biznes nomi, QR va bio tushadi.
+    Statik matnlar (BIZNI KUZATING!, ikonkalar, MyLink) fonda tayyor turadi;
+    fondagi namunaviy karta to'liq ustidan yopiladi."""
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     w, h = A4
+    k = w / 2481.0  # px -> pt
 
-    # Brand logo (or initial) centred near the top.
-    _draw_logo_circle(c, business, w / 2, h - 35 * mm, 18 * mm)
+    def X(px):
+        return px * k
 
-    size = 90 * mm
-    x = (w - size) / 2
-    y = h - size - 70 * mm
-    c.drawImage(_image_reader(_qr_image(url, border=1)), x, y, size, size)
+    def Y(px):  # rasm (tepadan) -> PDF (pastdan)
+        return h - px * k
 
-    c.setFillColor(colors.HexColor('#1f1b4f'))
-    c.setFont('Helvetica-Bold', 26)
-    c.drawCentredString(w / 2, y - 18 * mm, business.name)
-    c.setFont('Helvetica', 14)
-    c.setFillColorRGB(0.31, 0.27, 0.9)  # indigo
-    c.drawCentredString(w / 2, y - 30 * mm, url)
+    c.drawImage(os.path.join(_ASSETS_DIR, 'stand_bg.jpg'), 0, 0, w, h)
+
+    l, t, r, b, rad = _STAND['card']
+    c.setFillColor(colors.white)
+    c.roundRect(X(l) - 1, Y(b) - 1, (r - l) * k + 2, (b - t) * k + 2, rad * k, stroke=0, fill=1)
+
+    # Avatar: oq halqa + logo yoki bosh harflar (fondagi namunani ham yopadi).
+    acx, acy, logo_r, ring_r = _STAND['avatar']
+    c.setFillColor(colors.white)
+    c.circle(X(acx), Y(acy), ring_r * k, stroke=0, fill=1)
+    logo = _logo_reader(business)
+    if logo is not None:
+        c.drawImage(logo, X(acx) - logo_r * k, Y(acy) - logo_r * k,
+                    2 * logo_r * k, 2 * logo_r * k, mask='auto')
+    else:
+        c.setFillColor(colors.HexColor('#3b82f6'))
+        c.circle(X(acx), Y(acy), logo_r * k, stroke=0, fill=1)
+        initials = ''.join(wd[0] for wd in (business.name or 'M').split()[:2]).upper()
+        c.setFillColor(colors.white)
+        c.setFont('Helvetica-Bold', logo_r * k * 0.8)
+        c.drawCentredString(X(acx), Y(acy) - logo_r * k * 0.28, initials)
+
+    cx = (l + r) / 2.0
+    max_w = (r - l) * k - 2 * 70 * k
+
+    name = (business.name or 'MyLink').strip()
+    name_size = _fit_size(name, 'Helvetica-Bold', 24, 13, max_w)
+    name = _truncated(name, 'Helvetica-Bold', name_size, max_w)
+    c.setFillColor(colors.HexColor('#111111'))
+    c.setFont('Helvetica-Bold', name_size)
+    c.drawCentredString(X(cx), Y(_STAND['name_base']), name)
+
+    qs = _STAND['qr_size']
+    c.drawImage(_image_reader(_qr_image(url, box_size=24, border=0)),
+                X(cx) - qs * k / 2, Y(_STAND['qr_top'] + qs), qs * k, qs * k)
+
+    if business.description:
+        bio_size = 11.5
+        lines = _wrap_pdf(business.description.strip(), 'Helvetica', bio_size, max_w)
+        c.setFillColor(colors.HexColor('#2d2d2d'))
+        c.setFont('Helvetica', bio_size)
+        for i, line in enumerate(lines[:2]):
+            c.drawCentredString(X(cx), Y(_STAND['bio_base'][i]), line)
 
     c.showPage()
     c.save()
@@ -275,38 +346,87 @@ def _truncated(text, font, size, max_width):
     return (text + '...') if text else ''
 
 
-# Vizitka colour designs, one per page-template family — the picker in the
-# editor's Promomaterial tab shows the same palette swatches. 'light' means a
-# light front, so front text flips to dark ink.
-CARD_DESIGNS = {
-    'classic':  {'front1': '#4f46e5', 'front2': '#7c3aad', 'accent': '#4f46e5', 'light': False},
-    'restoran': {'front1': '#2e2017', 'front2': '#160f0b', 'accent': '#f0a23c', 'light': False},
-    'moda':     {'front1': '#faf8f3', 'front2': '#efe9dd', 'accent': '#9c8466', 'light': True},
-    'klinika':  {'front1': '#2aa79f', 'front2': '#17615c', 'accent': '#2aa79f', 'light': False},
-    'avto':     {'front1': '#1c2028', 'front2': '#0a0b0e', 'accent': '#e11d2a', 'light': False},
-    'fitnes':   {'front1': '#1c1f18', 'front2': '#0b0c0a', 'accent': '#b6f23a', 'light': False},
+# Vizitka foni biznes sahifasining amaldagi temasidan olinadi (frontend
+# lib/palettes.js va templates/templateMeta.js bilan sinxron qiymatlar).
+_CLASSIC_PALETTES = {
+    'default': ('#312e81', '#0f0f1a', '#6366f1'),
+    'ocean':   ('#0b2545', '#0f3d5e', '#0ea5e9'),
+    'forest':  ('#0c1f17', '#14352a', '#16a34a'),
+    'noir':    ('#1c1c20', '#070708', '#a1a1aa'),
+    'rose':    ('#2a0f1f', '#3d1330', '#e11d6b'),
+    'sunset':  ('#2a160b', '#3d2413', '#f97316'),
+}
+_TEMPLATE_COLORS = {
+    'restoran': ('#2e2017', '#160f0b', '#f0a23c', False),
+    'moda':     ('#faf8f3', '#efe9dd', '#9c8466', True),
+    'klinika':  ('#f7fbfb', '#e2efee', '#2aa79f', True),
+    'avto':     ('#1c2028', '#0a0b0e', '#e11d2a', False),
+    'fitnes':   ('#1c1f18', '#0b0c0a', '#b6f23a', False),
 }
 
 
-def _with_alpha(hex_color, alpha):
-    r, g, b = colors.HexColor(hex_color).rgb()
-    return colors.Color(r, g, b, alpha=alpha)
+def _fmt_phone(phone):
+    """+998901234567 -> '+998 90 123 45 67' (boshqa formatlar o'z holicha)."""
+    p = phone.replace(' ', '')
+    if p.startswith('+998') and len(p) == 13 and p[1:].isdigit():
+        return f"{p[:4]} {p[4:6]} {p[6:9]} {p[9:11]} {p[11:]}"
+    return phone
 
 
-def card_pdf_bytes(business, url, design='classic'):
-    """Double-sided 85x55 mm business card in one of the ``CARD_DESIGNS``
-    palettes (unknown slugs fall back to classic).
+def _card_theme(business):
+    """(c1, c2, accent, light) — sahifa shabloni/palitrasi/rejimidan."""
+    tpl = business.template or 'classic'
+    mode = business.theme_mode or ''
+    if tpl == 'classic':
+        c1, c2, accent = _CLASSIC_PALETTES.get(business.theme or 'default',
+                                               _CLASSIC_PALETTES['default'])
+        if mode == 'light':
+            return '#f8fafc', '#e9edf5', accent, True
+        return c1, c2, accent, False
+    c1, c2, accent, light = _TEMPLATE_COLORS.get(tpl, _TEMPLATE_COLORS['restoran'])
+    if mode == 'light' and not light:
+        return '#f6f5f2', '#eae8e3', accent, True
+    if mode == 'dark' and light:
+        return '#1c1a16', '#0e0d0b', accent, False
+    return c1, c2, accent, light
 
-    Every text is measured: the name shrinks to fit, description/contacts/path
-    truncate with '...' — nothing can overlap or run off the card.
 
-    Front: brand gradient, round logo, fitted name + description, thin accent
-    divider, contact rows (phone / telegram / instagram), path + MyLink mark.
-    Back: accent top strip, white QR panel, scan label + path."""
-    d = CARD_DESIGNS.get(design) or CARD_DESIGNS['classic']
-    ink = colors.HexColor('#1c1813') if d['light'] else colors.white
-    ink_soft = _with_alpha('#1c1813', 0.72) if d['light'] else colors.Color(1, 1, 1, alpha=0.82)
-    corner = _with_alpha(d['accent'], 0.12) if d['light'] else colors.Color(1, 1, 1, alpha=0.08)
+def _chip_icon(kind, size=128):
+    """Kontakt chipi uchun platforma ikonkasi (PIL, RGBA)."""
+    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    if kind == 'phone':
+        d.rounded_rectangle((0, 0, size - 1, size - 1), radius=int(size * 0.3),
+                            fill=(34, 197, 94, 255))
+        # Trubka: pastga ochilgan yarim halqa + ikki uchida dumaloq "quloqcha".
+        d.arc((28, 34, 100, 106), start=195, end=345, fill=(255, 255, 255, 255), width=17)
+        d.ellipse((22, 52, 46, 76), fill=(255, 255, 255, 255))
+        d.ellipse((82, 52, 106, 76), fill=(255, 255, 255, 255))
+    elif kind == 'telegram':
+        d.ellipse((0, 0, size - 1, size - 1), fill=(34, 158, 217, 255))
+        d.polygon([(26, 62), (100, 32), (80, 98), (60, 76), (52, 92), (50, 66)],
+                  fill=(255, 255, 255, 255))
+    else:  # instagram
+        d.rounded_rectangle((0, 0, size - 1, size - 1), radius=int(size * 0.3),
+                            fill=(214, 51, 108, 255))
+        d.rounded_rectangle((28, 28, 100, 100), radius=22, outline=(255, 255, 255, 255), width=9)
+        d.ellipse((47, 47, 81, 81), outline=(255, 255, 255, 255), width=9)
+        d.ellipse((84, 34, 96, 46), fill=(255, 255, 255, 255))
+    return _image_reader(img)
+
+
+def card_pdf_bytes(business, url):
+    """Ikki tomonlama 85x55 mm vizitka; fon rangi biznes sahifasi temasidan.
+
+    Old tomon: tema-gradient fonda chapda dumaloq logo, o'ngida nom va tavsif.
+    Orqa tomon: tepada kichik logo+nom+tavsif (chap) va sahifa linki (o'ng),
+    pastki chapda oq kontakt chiplari (telefon/Telegram/Instagram), o'ngda oq
+    QR paneli. Har bir matn o'lchanadi: nom kichrayadi, qolganlari '...' bilan
+    kesiladi."""
+    c1, c2, accent, light = _card_theme(business)
+    ink = colors.HexColor('#1c1813') if light else colors.white
+    ink_soft = (colors.Color(0.11, 0.09, 0.07, alpha=0.7) if light
+                else colors.Color(1, 1, 1, alpha=0.78))
 
     buf = BytesIO()
     card_w, card_h = 85 * mm, 55 * mm
@@ -314,108 +434,99 @@ def card_pdf_bytes(business, url, design='classic'):
     margin = 8 * mm
     plain_url = url.replace('https://', '').replace('http://', '')
 
-    # ---- FRONT ----
-    c.linearGradient(0, card_h, card_w, 0,
-                     (colors.HexColor(d['front1']), colors.HexColor(d['front2'])), extend=True)
-    # Faint corner accents, kept away from the text zones.
-    c.setFillColor(corner)
-    c.circle(card_w + 2 * mm, card_h + 2 * mm, 18 * mm, stroke=0, fill=1)
-    c.circle(-2 * mm, -2 * mm, 14 * mm, stroke=0, fill=1)
+    def bg():
+        c.linearGradient(0, card_h, card_w, 0,
+                         (colors.HexColor(c1), colors.HexColor(c2)), extend=True)
 
-    # Header band: round logo left, name (+ optional description) to the right.
-    logo_r = 8 * mm
-    logo_cx, logo_cy = margin + logo_r, card_h - 13 * mm
-    _draw_logo_circle(c, business, logo_cx, logo_cy, logo_r, accent=d['accent'])
+    def logo_disc(cx, cy, r):
+        c.setFillColor(colors.white)
+        c.circle(cx, cy, r + 0.6 * mm, stroke=0, fill=1)
+        _draw_logo_circle(c, business, cx, cy, r, accent=accent)
 
-    text_x = logo_cx + logo_r + 3.5 * mm
+    # ---- OLD TOMON ----
+    bg()
+    logo_r = 9 * mm
+    logo_cx, logo_cy = margin + logo_r + 2 * mm, card_h / 2
+    logo_disc(logo_cx, logo_cy, logo_r)
+
+    text_x = logo_cx + logo_r + 5 * mm
     text_w = card_w - margin - text_x
     name = (business.name or '').strip() or 'MyLink'
-    name_size = _fit_size(name, 'Helvetica-Bold', 15, 9, text_w)
+    name_size = _fit_size(name, 'Helvetica-Bold', 16, 10, text_w)
     name = _truncated(name, 'Helvetica-Bold', name_size, text_w)
-
     c.setFillColor(ink)
     c.setFont('Helvetica-Bold', name_size)
     if business.description:
-        c.drawString(text_x, card_h - 12.5 * mm, name)
+        c.drawString(text_x, card_h / 2 + 1.2 * mm, name)
         c.setFillColor(ink_soft)
-        c.setFont('Helvetica', 7.5)
-        c.drawString(text_x, card_h - 17.5 * mm,
-                     _truncated(business.description.strip(), 'Helvetica', 7.5, text_w))
+        c.setFont('Helvetica', 8)
+        c.drawString(text_x, card_h / 2 - 4.8 * mm,
+                     _truncated(business.description.strip(), 'Helvetica', 8, text_w))
     else:
-        c.drawString(text_x, card_h - 14.5 * mm, name)  # optically centred with the logo
+        c.drawString(text_x, card_h / 2 - name_size * 0.36, name)
+    c.showPage()
 
-    # Thin accent divider between the header and the contact rows.
-    c.setStrokeColor(_with_alpha(d['accent'], 0.55))
-    c.setLineWidth(0.8)
-    c.line(margin, card_h - 23 * mm, card_w - margin, card_h - 23 * mm)
+    # ---- ORQA TOMON ----
+    bg()
 
-    # Contact rows pulled from the page's links: phone, Telegram, Instagram.
+    # Tepada: kichik logo + nom + tavsif (chapda), sahifa linki (o'ngda).
+    m_r = 4 * mm
+    logo_disc(margin + m_r, card_h - 8.5 * mm, m_r)
+    url_w = stringWidth(plain_url, 'Helvetica', 7)
+    head_x = margin + 2 * m_r + 3 * mm
+    head_w = card_w - margin - head_x - url_w - 3 * mm
+    c.setFillColor(ink)
+    c.setFont('Helvetica-Bold', 8.5)
+    c.drawString(head_x, card_h - 8 * mm,
+                 _truncated(name, 'Helvetica-Bold', 8.5, head_w))
+    if business.description:
+        c.setFillColor(ink_soft)
+        c.setFont('Helvetica', 5.5)
+        c.drawString(head_x, card_h - 11.2 * mm,
+                     _truncated(business.description.strip(), 'Helvetica', 5.5, head_w))
+    c.setFillColor(ink_soft)
+    c.setFont('Helvetica', 7)
+    c.drawRightString(card_w - margin, card_h - 8.5 * mm, plain_url)
+
+    # O'ngda oq QR paneli.
+    panel = 30 * mm
+    px_, py_ = card_w - 7 * mm - panel, 5.5 * mm
+    c.setFillColor(colors.white)
+    c.setStrokeColor(colors.HexColor('#e5e7eb') if light else colors.Color(1, 1, 1, alpha=0.25))
+    c.setLineWidth(0.6)
+    c.roundRect(px_, py_, panel, panel, 3 * mm, stroke=1, fill=1)
+    qr_size = 26 * mm
+    c.drawImage(_image_reader(_qr_image(url, box_size=6, border=0)),
+                px_ + (panel - qr_size) / 2, py_ + (panel - qr_size) / 2, qr_size, qr_size)
+
+    # Pastki chapda kontakt chiplari (rasmdagidek oq pill + platforma ikonkasi).
     contacts = business_contacts(business)
     rows = []
     if contacts['phone']:
-        rows.append((colors.HexColor('#16a34a'), contacts['phone']))
+        rows.append(('phone', _fmt_phone(contacts['phone'])))
     if contacts['telegram']:
-        rows.append((colors.HexColor('#229ed9'), '@' + contacts['telegram']))
+        rows.append(('telegram', '@' + contacts['telegram']))
     if contacts['instagram']:
-        rows.append((colors.HexColor('#e1306c'), '@' + contacts['instagram']))
+        rows.append(('instagram', '@' + contacts['instagram']))
 
-    row_y = card_h - 29 * mm
-    label_x = margin + 5 * mm
-    label_w = card_w - margin - label_x
-    for dot, label in rows[:3]:
-        c.setFillColor(dot)
-        c.circle(margin + 1.6 * mm, row_y + 1.1 * mm, 1.3 * mm, stroke=0, fill=1)
-        c.setFillColor(ink)
-        c.setFont('Helvetica-Bold', 8.5)
-        c.drawString(label_x, row_y, _truncated(label, 'Helvetica-Bold', 8.5, label_w))
-        row_y -= 5.6 * mm
-
-    # Bottom line: page path left, MyLink mark right — measured so they never meet.
-    brand = 'MyLink.asia'
-    brand_w = stringWidth(brand, 'Helvetica', 7)
-    c.setFillColor(ink)
-    c.setFont('Helvetica-Bold', 9)
-    c.drawString(margin, 6.5 * mm,
-                 _truncated(plain_url, 'Helvetica-Bold', 9, card_w - 2 * margin - brand_w - 4 * mm))
-    c.setFillColor(ink_soft)
-    c.setFont('Helvetica', 7)
-    c.drawRightString(card_w - margin, 6.5 * mm, brand)
-    c.showPage()
-
-    # ---- BACK ----
-    c.setFillColor(colors.white)
-    c.rect(0, 0, card_w, card_h, stroke=0, fill=1)
-
-    # Accent strip across the top with a small brand mark.
-    strip_h = 4.5 * mm
-    c.setFillColor(colors.HexColor(d['accent']))
-    c.rect(0, card_h - strip_h, card_w, strip_h, stroke=0, fill=1)
-    c.setFillColor(colors.white)
-    c.setFont('Helvetica-Bold', 6.5)
-    c.drawCentredString(card_w / 2, card_h - strip_h + 1.4 * mm, 'MyLink.asia')
-
-    # White QR panel, centred.
-    panel = 31 * mm
-    pjx = (card_w - panel) / 2
-    pjy = card_h - strip_h - 3 * mm - panel
-    c.setFillColor(colors.white)
-    c.setStrokeColor(colors.HexColor('#e5e7eb'))
-    c.setLineWidth(0.7)
-    c.roundRect(pjx, pjy, panel, panel, 3 * mm, stroke=1, fill=1)
-
-    qr_size = 25 * mm
-    c.drawImage(
-        _image_reader(_qr_image(url, box_size=4, border=0)),
-        (card_w - qr_size) / 2, pjy + (panel - qr_size) / 2, qr_size, qr_size,
-    )
-
-    c.setFillColor(colors.HexColor('#1f2937'))
-    c.setFont('Helvetica-Bold', 8.5)
-    c.drawCentredString(card_w / 2, 10.5 * mm, 'Skanerlang va kuzating')
-    c.setFillColor(colors.HexColor(d['accent']))
-    c.setFont('Helvetica-Bold', 9)
-    c.drawCentredString(card_w / 2, 5.5 * mm,
-                        _truncated(plain_url, 'Helvetica-Bold', 9, card_w - 2 * margin))
+    chip_h, chip_gap = 7 * mm, 1.8 * mm
+    chip_zone_r = px_ - 3 * mm
+    chip_max_w = chip_zone_r - margin
+    chip_y = card_h - 8.5 * mm - m_r - 6 * mm - chip_h  # header ostidan boshlab
+    icon = 4.6 * mm
+    for kind, label in rows[:3]:
+        label = _truncated(label, 'Helvetica-Bold', 7.5, chip_max_w - icon - 6 * mm)
+        chip_w = min(chip_max_w, icon + 6 * mm + stringWidth(label, 'Helvetica-Bold', 7.5))
+        c.setFillColor(colors.white)
+        c.setStrokeColor(colors.HexColor('#e5e7eb') if light else colors.Color(1, 1, 1, alpha=0.18))
+        c.setLineWidth(0.5)
+        c.roundRect(margin, chip_y, chip_w, chip_h, chip_h / 2, stroke=1, fill=1)
+        c.drawImage(_chip_icon(kind), margin + 1.7 * mm, chip_y + (chip_h - icon) / 2,
+                    icon, icon, mask='auto')
+        c.setFillColor(colors.HexColor('#1f2937'))
+        c.setFont('Helvetica-Bold', 7.5)
+        c.drawString(margin + 1.7 * mm + icon + 2 * mm, chip_y + chip_h / 2 - 1.2 * mm, label)
+        chip_y -= chip_h + chip_gap
 
     c.showPage()
     c.save()

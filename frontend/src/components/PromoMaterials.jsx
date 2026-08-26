@@ -4,8 +4,7 @@ import api from '../api';
 import { useTranslation } from 'react-i18next';
 import { useEntitlements } from '../context/EntitlementContext';
 import { useToast } from './Toast';
-import { TEMPLATE_OPTIONS } from './templates/templateMeta';
-import { FaQrcode, FaFilePdf, FaIdCard, FaInstagram, FaLock, FaDownload, FaCheck } from 'react-icons/fa';
+import { FaQrcode, FaFilePdf, FaIdCard, FaInstagram, FaLock, FaDownload } from 'react-icons/fa';
 
 // "Promomaterial" tab: every downloadable marketing asset for a business in
 // one place — vizitka PDF (design picker, Pro), QR PNG (Oddiy+), A4 stand PDF
@@ -19,7 +18,6 @@ const PromoMaterials = ({ path, name }) => {
     const canPng = qrLevel === 'png' || qrLevel === 'full';
     const canFull = qrLevel === 'full';
 
-    const [design, setDesign] = useState('classic');
     const [qrPreview, setQrPreview] = useState(null);
     const [story, setStory] = useState({ src: null, file: null, busy: false });
 
@@ -104,23 +102,8 @@ const PromoMaterials = ({ path, name }) => {
                 <div className="promo-card">
                     <h4><FaIdCard /> {t('promomat.vizitka')}</h4>
                     <p>{t('promomat.vizitka_desc')}</p>
-                    <div className="promo-designs">
-                        {TEMPLATE_OPTIONS.map((o) => (
-                            <button
-                                key={o.id}
-                                type="button"
-                                className={`promo-swatch ${design === o.id ? 'sel' : ''}`}
-                                style={{ background: `linear-gradient(135deg, ${o.bg} 55%, ${o.accent})` }}
-                                title={t(`tpl.${o.id}`)}
-                                onClick={() => setDesign(o.id)}
-                            >
-                                {design === o.id && <FaCheck />}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="promo-design-name">{t(`tpl.${design}`)}</div>
                     {canFull ? (
-                        <button type="button" className="qr-dl" onClick={() => download('card.pdf', `?design=${design}`, `${path}-card-${design}.pdf`)}>
+                        <button type="button" className="qr-dl" onClick={() => download('card.pdf', '', `${path}-card.pdf`)}>
                             <FaDownload /> {t('promomat.download')}
                         </button>
                     ) : proLock}

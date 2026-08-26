@@ -1,0 +1,109 @@
+/* ============ APP ERROR BOUNDARY (eb-) ============
+   Self-contained: the crash may have taken out whatever page styles were
+   loading, so nothing here depends on app tokens. */
+.eb-wrap {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: #f6f6fc;
+    font-family: 'Outfit', system-ui, sans-serif;
+    color: #1b1a2e;
+}
+
+.eb-card {
+    width: 100%;
+    max-width: 460px;
+    text-align: center;
+    background: #fff;
+    border: 1px solid #e6e5f2;
+    border-radius: 20px;
+    padding: 40px 32px 32px;
+    box-shadow: 0 26px 60px -34px rgba(26, 24, 48, 0.4);
+}
+
+.eb-ico {
+    display: grid;
+    place-items: center;
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: #fef3c7;
+    color: #b45309;
+}
+.eb-ico svg { width: 26px; height: 26px; }
+
+.eb-card h1 {
+    margin: 0 0 8px;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+.eb-card p {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: #6e6c8a;
+}
+
+.eb-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 22px;
+    flex-wrap: wrap;
+}
+.eb-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 20px;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.eb-btn.primary {
+    background: linear-gradient(120deg, #6366f1, #8b5cf6, #a855f7);
+    color: #fff;
+    box-shadow: 0 10px 22px -10px #6366f1;
+}
+.eb-btn.primary:hover { transform: translateY(-1px); }
+.eb-btn.ghost {
+    background: #fff;
+    border-color: #e6e5f2;
+    color: #1b1a2e;
+}
+.eb-btn.ghost:hover { border-color: #6366f1; color: #6366f1; }
+
+.eb-details {
+    margin-top: 22px;
+    text-align: left;
+    border-top: 1px solid #e6e5f2;
+    padding-top: 14px;
+}
+.eb-details summary {
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #6e6c8a;
+}
+.eb-details pre {
+    margin: 10px 0 0;
+    max-height: 240px;
+    overflow: auto;
+    background: #f6f6fc;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 11.5px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #43415e;
+}

@@ -20,6 +20,7 @@ class Plan(models.Model):
     FEATURE_FIELDS = [
         'profile_limit', 'templates', 'color_edit', 'banners', 'banner_video',
         'analytics', 'qr', 'branding_removed', 'verified_badge', 'team',
+        'catalog',
     ]
 
     slug = models.SlugField(max_length=20, unique=True, help_text="Texnik nom: free, oddiy, pro, biznes ...")
@@ -41,6 +42,7 @@ class Plan(models.Model):
     branding_removed = models.BooleanField(default=False, verbose_name="Brending olib tashlanadi")
     verified_badge = models.BooleanField(default=False, verbose_name="Tasdiq belgisi")
     team = models.BooleanField(default=False, verbose_name="Jamoa / rollar")
+    catalog = models.BooleanField(default=False, verbose_name="Katalog / web-menyu")
 
     class Meta:
         ordering = ['order', 'rank']

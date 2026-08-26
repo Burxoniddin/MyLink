@@ -1,10 +1,12 @@
 // Per-template behaviour flags (visual specifics live in templates.css).
+// `menuBtn` picks the MyCatalog button archetype: flame (filled + sheen),
+// line (outlined, letterspaced) or soft (accent-tinted).
 export const TEMPLATE_META = {
-    restoran: { defaultTheme: 'dark', perLinkColor: true },
-    moda: { defaultTheme: 'light', rule: true },
-    klinika: { defaultTheme: 'light' },
-    avto: { defaultTheme: 'dark', chev: true },
-    fitnes: { defaultTheme: 'dark', chev: true },
+    restoran: { defaultTheme: 'dark', perLinkColor: true, menuBtn: 'flame' },
+    moda: { defaultTheme: 'light', rule: true, menuBtn: 'line' },
+    klinika: { defaultTheme: 'light', menuBtn: 'soft' },
+    avto: { defaultTheme: 'dark', chev: true, menuBtn: 'flame' },
+    fitnes: { defaultTheme: 'dark', chev: true, menuBtn: 'flame' },
 };
 
 // id + a small preview palette (matches templates.css). Order matters: the

@@ -4,6 +4,7 @@ import api from '../api';
 import { FaArrowLeft, FaEye, FaEdit, FaPalette, FaCopy, FaShareAlt, FaQrcode, FaLayerGroup, FaUsers, FaPlus, FaTimes, FaSave, FaCloudUploadAlt, FaExternalLinkAlt, FaCheck, FaTrash, FaGripLines, FaBars, FaSun, FaMoon } from 'react-icons/fa';
 import { getLinkIcon } from '../lib/linkIcons';
 import { detectPlatform, normalizeUrl } from '../lib/linkUtils';
+import { MAX_BIO_WORDS, countWords } from '../lib/format';
 import PreviewPane from '../components/PreviewPane';
 import MediaSections from '../components/MediaSections';
 import PromoMaterials from '../components/PromoMaterials';
@@ -217,6 +218,11 @@ const BusinessDetail = ({ isNew = false }) => {
     };
 
     const handleSave = async () => {
+        if (countWords(formData.description) > MAX_BIO_WORDS) {
+            toast.error(t('detail.err_bio_too_long', { max: MAX_BIO_WORDS }));
+            setActiveTab('edit');
+            return;
+        }
         setSaving(true);
         setMessage({ type: '', text: '' });
         try {
@@ -262,7 +268,11 @@ const BusinessDetail = ({ isNew = false }) => {
             }
             setActiveTab('preview');
         } catch (err) {
-            if (err.response?.data?.path) {
+            // DRF wraps a ValidationError value in a list — unwrap either shape.
+            const reason = err.response?.data?.reason;
+            if ((Array.isArray(reason) ? reason[0] : reason) === 'bio_too_long') {
+                toast.error(t('detail.err_bio_too_long', { max: MAX_BIO_WORDS }));
+            } else if (err.response?.data?.path) {
                 toast.error(t('detail.path_taken'));
             } else {
                 toast.error(t('common.error'));
@@ -350,6 +360,8 @@ const BusinessDetail = ({ isNew = false }) => {
         ...(canManageTeam ? [{ id: 'team', label: t('detail.tab_team'), icon: <FaUsers /> }] : []),
         ...(!isNew ? [{ id: 'promo', label: t('detail.tab_promo'), icon: <FaQrcode /> }] : []),
     ];
+
+    const bioWords = countWords(formData.description);
 
     // Preview data
     const previewName = formData.name || (isNew ? SAMPLE_DATA.name : t('detail.business_name'));
@@ -506,6 +518,9 @@ const BusinessDetail = ({ isNew = false }) => {
                                                 placeholder={t('detail.description_ph')}
                                                 rows={4}
                                             />
+                                            <div className={`bio-count${bioWords > MAX_BIO_WORDS ? ' over' : ''}`}>
+                                                {t('detail.bio_words', { n: bioWords, max: MAX_BIO_WORDS })}
+                                            </div>
                                         </div>
 
                                         <div className="form-group">

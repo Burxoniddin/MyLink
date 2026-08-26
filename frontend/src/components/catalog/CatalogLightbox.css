@@ -1,0 +1,61 @@
+/* ============ MYCATALOG — fullscreen photo viewer (cat-lb-) ============ */
+.cat-lb {
+    position: fixed; inset: 0; z-index: 1200;
+    background: rgba(6, 6, 10, .94);
+    display: flex; flex-direction: column; color: #fff;
+    animation: catLbIn .25s ease; touch-action: pan-y;
+    padding-top: env(safe-area-inset-top, 0px);
+}
+@keyframes catLbIn { from { opacity: 0; } }
+
+.cat-lb-top { display: flex; align-items: center; gap: 10px; padding: 16px 16px 8px; }
+.cat-lb-nom {
+    font: 700 16px var(--display, "Outfit", sans-serif); flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cat-lb-x {
+    width: 36px; height: 36px; border-radius: 50%; flex: none;
+    background: rgba(255, 255, 255, .13); border: 0; color: #fff;
+    display: grid; place-items: center; cursor: pointer;
+}
+.cat-lb-x:hover { background: rgba(255, 255, 255, .22); }
+
+.cat-lb-stage {
+    flex: 1; display: grid; place-items: center;
+    padding: 10px 20px; overflow: hidden; min-height: 0;
+}
+.cat-lb-img {
+    max-width: min(92%, 520px); max-height: 100%;
+    border-radius: 22px; object-fit: contain; user-select: none;
+    transition: transform .35s cubic-bezier(.2, .7, .2, 1);
+    cursor: zoom-in;
+}
+.cat-lb-img.zoom { transform: scale(1.9); cursor: zoom-out; }
+
+.cat-lb-ar {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 40px; height: 40px; border-radius: 50%; border: 0;
+    background: rgba(255, 255, 255, .13); color: #fff;
+    display: grid; place-items: center; cursor: pointer; z-index: 2;
+}
+.cat-lb-ar:hover:not(:disabled) { background: rgba(255, 255, 255, .22); }
+.cat-lb-ar.l { left: 12px; }
+.cat-lb-ar.r { right: 12px; }
+.cat-lb-ar:disabled { opacity: .28; cursor: default; }
+
+.cat-lb-foot {
+    display: flex; flex-direction: column; align-items: center; gap: 7px;
+    padding: 0 0 calc(42px + env(safe-area-inset-bottom, 0px));
+}
+.cat-lb-dots { display: flex; gap: 6px; }
+.cat-lb-dots span {
+    width: 6px; height: 6px; border-radius: 999px;
+    background: rgba(255, 255, 255, .32); transition: .25s;
+}
+.cat-lb-dots span.on { background: #fff; width: 18px; }
+.cat-lb-count { font: 700 12px var(--sans, "Outfit", sans-serif); }
+.cat-lb-hint { font-size: 10.5px; font-weight: 500; color: rgba(255, 255, 255, .5); text-align: center; }
+
+@media (max-width: 560px) {
+    .cat-lb-ar { display: none; } /* touch: swipe instead */
+}

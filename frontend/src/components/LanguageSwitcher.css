@@ -1,0 +1,68 @@
+/* ============ LANGUAGE DROPDOWN (lang-dd-) ============ */
+.lang-dd { position: relative; display: inline-block; }
+
+.lang-dd-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--text-secondary, #64748b);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s;
+}
+.lang-dd-btn:hover,
+.lang-dd-btn.on { border-color: var(--primary, #6366f1); color: var(--primary, #6366f1); }
+.lang-dd-globe { font-size: 13px; opacity: 0.85; }
+.lang-dd-chev { width: 12px; height: 12px; transition: transform 0.18s; }
+.lang-dd-btn.on .lang-dd-chev { transform: rotate(180deg); }
+
+.lang-dd-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 120;
+    min-width: 150px;
+    margin: 0;
+    padding: 5px;
+    list-style: none;
+    background: #fff;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 12px;
+    box-shadow: 0 16px 36px -18px rgba(26, 24, 48, 0.45);
+    animation: langDdIn 0.15s ease;
+}
+@keyframes langDdIn {
+    from { opacity: 0; transform: translateY(-4px); }
+}
+.lang-dd-menu button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 11px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-main, #1e293b);
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.lang-dd-menu button:hover { background: var(--bg-main, #f8fafc); }
+.lang-dd-menu button.on { color: var(--primary, #6366f1); }
+.lang-dd-check { font-size: 11px; }
+
+/* Inside the mobile menu the dropdown opens downward from a full-width row. */
+.mobile-menu .lang-dd { display: block; }
+.mobile-menu .lang-dd-btn { width: 100%; justify-content: center; }
+.mobile-menu .lang-dd-menu { left: 0; right: 0; }

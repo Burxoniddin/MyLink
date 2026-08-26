@@ -12,14 +12,16 @@ const FALLBACK_URL = 'https://t.me/mylink_asia';
 // public business card (/:path) — we hide the platform Help button there.
 const KNOWN = new Set([
     'login', 'register', 'forgot-password', 'reset-password',
-    'dashboard', 'profile', 'analytics', 'referral', 'pricing',
-    'about', 'privacy', 'terms', 'blog', 'business',
+    'dashboard', 'profile', 'analytics', 'referral', 'nfc', 'pricing',
+    'about', 'privacy', 'terms', 'blog', 'business', 'catalogs',
 ]);
 
 const shouldShow = (pathname) => {
     const seg = pathname.split('/').filter(Boolean);
     if (seg.length === 0) return true;            // home
     if (seg.length === 1) return KNOWN.has(seg[0]); // hide on /:businessPath
+    // Public web-menu (/:path/menu) is a customer-facing page too — no Help bubble.
+    if (seg.length === 2 && seg[1] === 'menu' && !KNOWN.has(seg[0])) return false;
     return true;                                   // /business/*, /blog/*, ...
 };
 

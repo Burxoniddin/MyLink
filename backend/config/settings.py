@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'users',
     'businesses',
     'billing',
+    'catalog',
 ]
 
 # Jazzmin Admin Theme Settings
@@ -95,6 +96,8 @@ JAZZMIN_SETTINGS = {
         "businesses.Link": "fas fa-link",
         "businesses.MenuItem": "fas fa-bars",
         "businesses.SiteSettings": "fas fa-cog",
+        "catalog.Catalog": "fas fa-book-open",
+        "catalog.CatalogItem": "fas fa-utensils",
     },
     
     # Related Modal
@@ -266,6 +269,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://www.mylink.asia",
     "https://dev.mylink.asia",   # staging frontend
     "http://localhost:5173",
+    "http://localhost:4173",  # vite preview (prod build smoke-test)
     "http://127.0.0.1:5173",
 ]
 CORS_ALLOW_CREDENTIALS = True

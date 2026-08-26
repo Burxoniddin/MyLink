@@ -14,9 +14,15 @@ META = {
 
 def seed(apps, schema_editor):
     Plan = apps.get_model('billing', 'Plan')
+    # ent.FEATURES is live code and grows over time; the historical Plan model
+    # here only has the columns that existed at this migration. Keep only those
+    # so fresh installs don't crash on later-added feature keys (they get their
+    # values from the later AddField defaults + backfill migrations).
+    columns = {f.name for f in Plan._meta.get_fields()}
     for slug, feats in ent.FEATURES.items():
         meta = META.get(slug, {'name': slug.title(), 'rank': 0, 'order': 0,
                                'is_default': False, 'is_public': True})
+        feats = {k: v for k, v in feats.items() if k in columns}
         Plan.objects.update_or_create(
             slug=slug,
             defaults={**meta, 'is_active': True, **feats},

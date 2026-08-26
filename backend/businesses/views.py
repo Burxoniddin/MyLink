@@ -262,15 +262,11 @@ class BusinessAssetView(APIView):
         if qr_level != 'full':
             raise PermissionDenied({'reason': 'qr'})
         if fmt == 'qr_pdf':
-            return self._file(qr.qr_pdf_bytes(business, url), 'application/pdf', f'{business.path}-qr.pdf')
-        # Vizitka: optional ?design=<slug>; unknown slugs silently fall back to
-        # classic so old links keep working.
-        design = request.query_params.get('design', 'classic')
-        if design not in qr.CARD_DESIGNS:
-            design = 'classic'
+            return self._file(qr.qr_pdf_bytes(business, url), 'application/pdf', f'{business.path}-stend.pdf')
+        # Vizitka: rangi biznes sahifasi temasidan olinadi.
         return self._file(
-            qr.card_pdf_bytes(business, url, design=design),
-            'application/pdf', f'{business.path}-card-{design}.pdf',
+            qr.card_pdf_bytes(business, url),
+            'application/pdf', f'{business.path}-card.pdf',
         )
 
     @staticmethod

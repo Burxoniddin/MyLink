@@ -303,24 +303,27 @@ class AssetTests(TestCase):
         res = self.client.get('/api/businesses/theirs/qr.png')
         self.assertEqual(res.status_code, 404)
 
-    def test_card_designs(self):
-        from businesses.qr import CARD_DESIGNS
+    def test_card_theme_variants(self):
+        """Vizitka rangi biznes sahifasi temasidan olinadi — har bir shablon/
+        palitra/rejim kombinatsiyasi yaroqli PDF qaytarishi kerak."""
         Subscription.objects.create(user=self.user, tier=ent.PRO, expires_at=None)
-        for design in CARD_DESIGNS:
-            res = self.client.get(f'/api/businesses/brand/card.pdf?design={design}')
-            self.assertEqual(res.status_code, 200, design)
-            self.assertTrue(res.content.startswith(b'%PDF'), design)
-            self.assertIn(f'card-{design}.pdf', res['Content-Disposition'], design)
+        biz = Business.objects.get(path='brand')
+        cases = [
+            ('classic', 'default', ''), ('classic', 'ocean', ''), ('classic', 'noir', 'light'),
+            ('restoran', 'default', ''), ('moda', 'default', ''), ('moda', 'default', 'dark'),
+            ('klinika', 'default', ''), ('avto', 'default', 'light'), ('fitnes', 'default', ''),
+        ]
+        for template, theme, mode in cases:
+            Business.objects.filter(pk=biz.pk).update(template=template, theme=theme, theme_mode=mode)
+            res = self.client.get('/api/businesses/brand/card.pdf')
+            label = f'{template}/{theme}/{mode}'
+            self.assertEqual(res.status_code, 200, label)
+            self.assertTrue(res.content.startswith(b'%PDF'), label)
+            self.assertIn('card.pdf', res['Content-Disposition'], label)
 
-    def test_card_unknown_design_falls_back_to_classic(self):
-        Subscription.objects.create(user=self.user, tier=ent.PRO, expires_at=None)
-        res = self.client.get('/api/businesses/brand/card.pdf?design=nope')
-        self.assertEqual(res.status_code, 200)
-        self.assertIn('card-classic.pdf', res['Content-Disposition'])
-
-    def test_card_design_still_pro_gated(self):
+    def test_card_still_pro_gated(self):
         Subscription.objects.create(user=self.user, tier=ent.ODDIY, expires_at=None)
-        res = self.client.get('/api/businesses/brand/card.pdf?design=moda')
+        res = self.client.get('/api/businesses/brand/card.pdf')
         self.assertEqual(res.status_code, 403)
 
 

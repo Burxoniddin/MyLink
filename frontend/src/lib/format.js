@@ -5,8 +5,8 @@ export const formatPrice = (n) => {
     return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 };
 
-// Bio cap for a business page — must match MAX_BIO_WORDS in businesses/models.py.
-export const MAX_BIO_WORDS = 100;
+// Bio cap for a business page — must match MAX_BIO_CHARS in businesses/models.py.
+export const MAX_BIO_CHARS = 150;
 
-// Same rule as Python's str.split(): any run of whitespace separates words.
-export const countWords = (s) => (s || '').trim().split(/\s+/).filter(Boolean).length;
+// Same rule as the server: surrounding whitespace is not counted.
+export const countBioChars = (s) => (s || '').trim().length;

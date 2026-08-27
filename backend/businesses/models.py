@@ -6,7 +6,7 @@ from django.utils import timezone
 # Bio (Business.description) cap. Counted in WORDS, not characters, so the
 # limit reads the same in uz/ru/en; enforced in BusinessSerializer.validate()
 # and mirrored by the live counter under the editor's textarea.
-MAX_BIO_WORDS = 100
+MAX_BIO_CHARS = 150
 
 
 class Business(models.Model):

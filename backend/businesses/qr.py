@@ -230,7 +230,7 @@ _STAND = {
     'avatar': (1225, 898, 111, 128),      # cx, cy, logo r, oq halqa r
     'name_base': 1150,                    # nom baseline (px, tepadan)
     'qr_top': 1269,
-    'qr_size': 650,
+    'qr_size': 820,
     'bio_base': (2259, 2352),             # bio 2 qator baseline
 }
 
@@ -284,7 +284,7 @@ def qr_pdf_bytes(business, url):
     c.drawCentredString(X(cx), Y(_STAND['name_base']), name)
 
     qs = _STAND['qr_size']
-    c.drawImage(_image_reader(_qr_image(url, box_size=24, border=0)),
+    c.drawImage(_image_reader(_qr_image(url, box_size=28, border=0)),
                 X(cx) - qs * k / 2, Y(_STAND['qr_top'] + qs), qs * k, qs * k)
 
     if business.description:

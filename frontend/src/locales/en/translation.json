@@ -14,6 +14,8 @@
   "pricing": {
     "your_plan": "Your plan",
     "activate_promo": "Activate with promo code",
+    "start_free": "Get started",
+    "continue_free": "Continue",
     "payment_soon": "Online payment (Click / Payme) is coming soon. For now you can activate a plan with a promo code.",
     "per_onetime": "One-time",
     "per_1m": "1 month",

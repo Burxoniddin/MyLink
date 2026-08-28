@@ -28,7 +28,10 @@ class Plan(models.Model):
     rank = models.PositiveIntegerField(default=0, help_text="Kattaroq = kuchliroq. Eng yuqori rankli faol obuna g'olib bo'ladi.")
     is_default = models.BooleanField(default=False, help_text="Obunasiz foydalanuvchilar shu tarifda bo'ladi (faqat bittasi).")
     is_active = models.BooleanField(default=True)
-    is_public = models.BooleanField(default=True, help_text="Narxlar sahifasida ko'rsatilsinmi.")
+    is_public = models.BooleanField(
+        default=True, verbose_name="Mijozlarga ko'rinadi",
+        help_text="O'chirilsa tarif landing/narxlar sahifasida chiqmaydi — "
+                  "faqat adminlar obuna berishda ishlata oladi.")
     order = models.PositiveIntegerField(default=0, help_text="Narxlar sahifasidagi tartib.")
 
     # --- feature matrix ---

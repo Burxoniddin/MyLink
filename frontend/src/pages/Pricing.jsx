@@ -149,9 +149,11 @@ const Pricing = () => {
                                                 );
                                             }
                                             if (periods.length === 0) {
+                                                // Narxi 0 — promokod emas, shunchaki boshlash/davom etish.
+                                                const authed = !!localStorage.getItem('token');
                                                 return (
-                                                    <Link to="/profile" className={`btn ${p.pop ? 'btn-primary' : 'btn-soft'}`}>
-                                                        {t('pricing.activate_promo')}
+                                                    <Link to={authed ? '/dashboard' : '/register'} className={`btn ${p.pop ? 'btn-primary' : 'btn-soft'}`}>
+                                                        {authed ? t('pricing.continue_free') : t('pricing.start_free')}
                                                     </Link>
                                                 );
                                             }

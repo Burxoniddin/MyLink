@@ -14,6 +14,8 @@
   "pricing": {
     "your_plan": "Joriy tarifingiz",
     "activate_promo": "Promokod bilan faollashtirish",
+    "start_free": "Boshlash",
+    "continue_free": "Davom etish",
     "payment_soon": "Onlayn to'lov (Click / Payme) tez orada. Hozircha tarifni promokod orqali faollashtirishingiz mumkin.",
     "per_onetime": "Bir martalik",
     "per_1m": "1 oy",

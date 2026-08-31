@@ -138,7 +138,7 @@ class ClickCallbackView(APIView):
             duration = ent.PERIOD_DAYS.get(locked.period)  # onetime → None (lifetime)
             sub = grant_subscription(
                 locked.user, locked.tier, duration_days=duration,
-                source='payment', note=f'Click order #{locked.pk}',
+                source='payment', note=f'Click order #{locked.pk}', extend=True,
             )
             locked.status = 'paid'
             locked.paid_at = timezone.now()

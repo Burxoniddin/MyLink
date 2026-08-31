@@ -230,8 +230,9 @@ _STAND = {
     'avatar': (1225, 898, 111, 128),      # cx, cy, logo r, oq halqa r
     'name_base': 1150,                    # nom baseline (px, tepadan)
     'qr_top': 1269,
-    'qr_size': 650,
+    'qr_size': 820,
     'bio_base': (2259, 2352),             # bio 2 qator baseline
+    'link_base': 2448,                    # sahifa linki baseline (karta pastida)
 }
 
 
@@ -284,16 +285,24 @@ def qr_pdf_bytes(business, url):
     c.drawCentredString(X(cx), Y(_STAND['name_base']), name)
 
     qs = _STAND['qr_size']
-    c.drawImage(_image_reader(_qr_image(url, box_size=24, border=0)),
+    c.drawImage(_image_reader(_qr_image(url, box_size=28, border=0)),
                 X(cx) - qs * k / 2, Y(_STAND['qr_top'] + qs), qs * k, qs * k)
 
     if business.description:
-        bio_size = 11.5
-        lines = _wrap_pdf(business.description.strip(), 'Helvetica', bio_size, max_w)
-        c.setFillColor(colors.HexColor('#2d2d2d'))
-        c.setFont('Helvetica', bio_size)
+        # Dizayndagi o'lcham: ~75px (15pt), qalin.
+        bio_size = 15
+        lines = _wrap_pdf(business.description.strip(), 'Helvetica-Bold', bio_size, max_w)
+        c.setFillColor(colors.HexColor('#1f2937'))
+        c.setFont('Helvetica-Bold', bio_size)
         for i, line in enumerate(lines[:2]):
             c.drawCentredString(X(cx), Y(_STAND['bio_base'][i]), line)
+
+    # Sahifa linki — karta pastida, ko'zga tashlanadigan qalin yozuv.
+    plain = url.replace('https://', '').replace('http://', '')
+    link_size = _fit_size(plain, 'Helvetica-Bold', 14, 10, max_w)
+    c.setFillColor(colors.HexColor('#4f46e5'))
+    c.setFont('Helvetica-Bold', link_size)
+    c.drawCentredString(X(cx), Y(_STAND['link_base']), plain)
 
     c.showPage()
     c.save()
@@ -427,6 +436,10 @@ def card_pdf_bytes(business, url):
     ink = colors.HexColor('#1c1813') if light else colors.white
     ink_soft = (colors.Color(0.11, 0.09, 0.07, alpha=0.7) if light
                 else colors.Color(1, 1, 1, alpha=0.78))
+    # Chip/halqa: oq fon o'rniga 5-7% shaffof to'ldirish + ko'rinadigan chegara.
+    chip_fill = colors.Color(0, 0, 0, alpha=0.05) if light else colors.Color(1, 1, 1, alpha=0.07)
+    chip_line = colors.Color(0, 0, 0, alpha=0.22) if light else colors.Color(1, 1, 1, alpha=0.32)
+    ring_line = colors.Color(0, 0, 0, alpha=0.30) if light else colors.Color(1, 1, 1, alpha=0.85)
 
     buf = BytesIO()
     card_w, card_h = 85 * mm, 55 * mm
@@ -439,9 +452,18 @@ def card_pdf_bytes(business, url):
                          (colors.HexColor(c1), colors.HexColor(c2)), extend=True)
 
     def logo_disc(cx, cy, r):
-        c.setFillColor(colors.white)
-        c.circle(cx, cy, r + 0.6 * mm, stroke=0, fill=1)
-        _draw_logo_circle(c, business, cx, cy, r, accent=accent)
+        logo = _logo_reader(business)
+        if logo is not None:
+            c.drawImage(logo, cx - r, cy - r, r * 2, r * 2, mask='auto')
+        else:
+            c.setFillColor(colors.HexColor(accent))
+            c.circle(cx, cy, r, stroke=0, fill=1)
+            c.setFillColor(colors.white)
+            c.setFont('Helvetica-Bold', r * 1.1)
+            c.drawCentredString(cx, cy - r * 0.38, (business.name or 'M').strip()[:1].upper())
+        c.setStrokeColor(ring_line)
+        c.setLineWidth(0.9)
+        c.circle(cx, cy, r + 0.4 * mm, stroke=1, fill=0)
 
     # ---- OLD TOMON ----
     bg()
@@ -517,13 +539,14 @@ def card_pdf_bytes(business, url):
     for kind, label in rows[:3]:
         label = _truncated(label, 'Helvetica-Bold', 7.5, chip_max_w - icon - 6 * mm)
         chip_w = min(chip_max_w, icon + 6 * mm + stringWidth(label, 'Helvetica-Bold', 7.5))
-        c.setFillColor(colors.white)
-        c.setStrokeColor(colors.HexColor('#e5e7eb') if light else colors.Color(1, 1, 1, alpha=0.18))
-        c.setLineWidth(0.5)
+        c.setFillColor(chip_fill)
+        c.setStrokeColor(chip_line)
+        c.setLineWidth(0.6)
         c.roundRect(margin, chip_y, chip_w, chip_h, chip_h / 2, stroke=1, fill=1)
+        c.setFillAlpha(1)  # alpha'li fill holati rasmlarga ham ta'sir qiladi
         c.drawImage(_chip_icon(kind), margin + 1.7 * mm, chip_y + (chip_h - icon) / 2,
                     icon, icon, mask='auto')
-        c.setFillColor(colors.HexColor('#1f2937'))
+        c.setFillColor(ink)
         c.setFont('Helvetica-Bold', 7.5)
         c.drawString(margin + 1.7 * mm + icon + 2 * mm, chip_y + chip_h / 2 - 1.2 * mm, label)
         chip_y -= chip_h + chip_gap

@@ -120,14 +120,15 @@ const Profile = () => {
         oddiy: { bg: '#dbeafe', fg: '#1e40af' },
         pro: { bg: '#fef3c7', fg: '#92400e' },
     };
-    const tierBadge = TIER_BADGES[tier] || TIER_BADGES.free;
+    const tierBadge = TIER_BADGES[tier] || { bg: '#ede9fe', fg: '#5b21b6' };
+    // Dinamik (admin qo'shgan) tariflar uchun tarjima bo'lmasa slug'ning o'zi.
+    const tierKey = `promo.tier_${tier}`;
+    const tierLabel = t(tierKey) === tierKey
+        ? tier.charAt(0).toUpperCase() + tier.slice(1)
+        : t(tierKey);
     const expiresAt = me.entitlements?.expires_at;
-    let planExpiryLabel = '';
-    if (tier !== 'free') {
-        planExpiryLabel = expiresAt
-            ? t('promo.until', { date: new Date(expiresAt).toLocaleDateString() })
-            : t('promo.lifetime');
-    }
+    const expDate = expiresAt ? new Date(expiresAt) : null;
+    const daysLeft = expDate ? Math.max(0, Math.ceil((expDate - Date.now()) / 86400000)) : null;
 
     return (
         <div className="dashboard">
@@ -164,13 +165,29 @@ const Profile = () => {
 
                     {/* Current plan + promo */}
                     <div style={cardStyle}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tier === 'free' ? 16 : 10 }}>
                             <span style={{ color: '#6b7280' }}>{t('promo.current_plan')}</span>
                             <span style={{
                                 fontWeight: 700, padding: '4px 12px', borderRadius: 999,
                                 background: tierBadge.bg, color: tierBadge.fg, fontSize: 14,
-                            }}>{t(`promo.tier_${tier}`)}{planExpiryLabel ? ` · ${planExpiryLabel}` : ''}</span>
+                            }}>{tierLabel}</span>
                         </div>
+                        {tier !== 'free' && (
+                            <div style={{
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                padding: '10px 14px', borderRadius: 10, marginBottom: 16,
+                                background: '#f9fafb', border: '1px solid #e5e7eb',
+                            }}>
+                                <span style={{ color: '#6b7280', fontSize: 14 }}>{t('promo.expiry_label')}</span>
+                                {expDate ? (
+                                    <strong style={{ fontSize: 15, color: daysLeft <= 7 ? '#dc2626' : '#111827' }}>
+                                        {expDate.toLocaleDateString()} · {t('promo.days_left', { n: daysLeft })}
+                                    </strong>
+                                ) : (
+                                    <strong style={{ fontSize: 15, color: '#16a34a' }}>{t('promo.lifetime')}</strong>
+                                )}
+                            </div>
+                        )}
                         <h3 style={{ margin: '0 0 4px' }}>{t('promo.title')}</h3>
                         <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: 14 }}>{t('promo.desc')}</p>
                         <form onSubmit={redeemPromo} style={{ display: 'flex', gap: 8 }}>

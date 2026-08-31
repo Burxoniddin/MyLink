@@ -232,7 +232,6 @@ _STAND = {
     'qr_top': 1269,
     'qr_size': 820,
     'bio_base': (2259, 2352),             # bio 2 qator baseline
-    'link_base': 2448,                    # sahifa linki baseline (karta pastida)
 }
 
 
@@ -296,13 +295,6 @@ def qr_pdf_bytes(business, url):
         c.setFont('Helvetica-Bold', bio_size)
         for i, line in enumerate(lines[:2]):
             c.drawCentredString(X(cx), Y(_STAND['bio_base'][i]), line)
-
-    # Sahifa linki — karta pastida, ko'zga tashlanadigan qalin yozuv.
-    plain = url.replace('https://', '').replace('http://', '')
-    link_size = _fit_size(plain, 'Helvetica-Bold', 14, 10, max_w)
-    c.setFillColor(colors.HexColor('#4f46e5'))
-    c.setFont('Helvetica-Bold', link_size)
-    c.drawCentredString(X(cx), Y(_STAND['link_base']), plain)
 
     c.showPage()
     c.save()
@@ -400,28 +392,10 @@ def _card_theme(business):
     return c1, c2, accent, light
 
 
-def _chip_icon(kind, size=128):
-    """Kontakt chipi uchun platforma ikonkasi (PIL, RGBA)."""
-    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    if kind == 'phone':
-        d.rounded_rectangle((0, 0, size - 1, size - 1), radius=int(size * 0.3),
-                            fill=(34, 197, 94, 255))
-        # Trubka: pastga ochilgan yarim halqa + ikki uchida dumaloq "quloqcha".
-        d.arc((28, 34, 100, 106), start=195, end=345, fill=(255, 255, 255, 255), width=17)
-        d.ellipse((22, 52, 46, 76), fill=(255, 255, 255, 255))
-        d.ellipse((82, 52, 106, 76), fill=(255, 255, 255, 255))
-    elif kind == 'telegram':
-        d.ellipse((0, 0, size - 1, size - 1), fill=(34, 158, 217, 255))
-        d.polygon([(26, 62), (100, 32), (80, 98), (60, 76), (52, 92), (50, 66)],
-                  fill=(255, 255, 255, 255))
-    else:  # instagram
-        d.rounded_rectangle((0, 0, size - 1, size - 1), radius=int(size * 0.3),
-                            fill=(214, 51, 108, 255))
-        d.rounded_rectangle((28, 28, 100, 100), radius=22, outline=(255, 255, 255, 255), width=9)
-        d.ellipse((47, 47, 81, 81), outline=(255, 255, 255, 255), width=9)
-        d.ellipse((84, 34, 96, 46), fill=(255, 255, 255, 255))
-    return _image_reader(img)
+def _chip_icon(kind):
+    """Kontakt chipi uchun haqiqiy brend ikonkasi (assets/chips/*.png —
+    react-icons'dagi rasmiy SVG'lardan oldindan render qilingan)."""
+    return os.path.join(_ASSETS_DIR, 'chips', f'{kind}.png')
 
 
 def card_pdf_bytes(business, url):

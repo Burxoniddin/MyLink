@@ -146,11 +146,24 @@ def maybe_reward_referrer(referred_user):
     return sub
 
 
-def grant_subscription(user, tier, duration_days=None, source='manual', note=''):
+def grant_subscription(user, tier, duration_days=None, source='manual', note='', extend=False):
     """Create an active subscription for ``user``. ``duration_days=None`` grants a
-    permanent (lifetime) subscription. A first-time Pro grant (not itself a referral
-    reward) rewards the user's referrer."""
-    expires_at = None if duration_days is None else timezone.now() + timedelta(days=duration_days)
+    permanent (lifetime) subscription. ``extend=True`` (to'lovlar uchun): xuddi shu
+    tarifning tugamagan muddatli obunasi bo'lsa, yangi muddat uning tugash sanasi
+    ustiga qo'shiladi — qolgan kunlar yonmaydi. A first-time Pro grant (not itself
+    a referral reward) rewards the user's referrer."""
+    if duration_days is None:
+        expires_at = None
+    else:
+        base = timezone.now()
+        if extend:
+            cur = (Subscription.objects
+                   .filter(user=user, tier=tier, status='active',
+                           expires_at__isnull=False, expires_at__gt=base)
+                   .order_by('-expires_at').first())
+            if cur:
+                base = cur.expires_at
+        expires_at = base + timedelta(days=duration_days)
     sub = Subscription.objects.create(
         user=user, tier=tier, expires_at=expires_at,
         status='active', source=source, note=note,

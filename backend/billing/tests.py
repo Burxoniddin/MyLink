@@ -346,6 +346,21 @@ class ClickPaymentTests(TestCase):
         _, expires = effective_plan(self.user)
         self.assertIsNotNone(expires)  # 1m → expiring, not lifetime
 
+    def test_second_purchase_extends_expiry(self):
+        """Amaldagi obuna tugamay yana sotib olinsa, muddat USTIGA qo'shiladi —
+        qolgan kunlar yonmaydi (ikki marta 1 oy ≈ 60 kun)."""
+        from datetime import timedelta
+        from django.utils import timezone
+        for _ in range(2):
+            d = self._order(ent.PRO, ent.P1M)
+            self._cb(d['order_id'], '0', '39000')
+            r = self._cb(d['order_id'], '1', '39000', prepare_id=str(d['order_id']))
+            self.assertEqual(r.data['error'], 0, r.data)
+        _, expires = effective_plan(self.user)
+        days = (expires - timezone.now()).days
+        self.assertGreaterEqual(days, 58)
+        self.assertLessEqual(days, 60)
+
     def test_onetime_grants_lifetime(self):
         d = self._order(ent.ODDIY, ent.ONETIME)  # 19000
         self._cb(d['order_id'], '0', '19000')

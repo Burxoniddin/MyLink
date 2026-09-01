@@ -393,6 +393,42 @@ _TEMPLATE_COLORS = {
 }
 
 
+def _glass_pill(c, x, y, w, h, light):
+    """Kontakt chipi uchun 'shisha' shakl: yumshoq (feathered) qirra, shaffof
+    to'ldirish va tepadan pastga so'nuvchi yaltirash.
+
+    PDF shading alfani qo'llab-quvvatlamagani uchun gradient bir necha yupqa
+    yarim-shaffof qatlam bilan taqlid qilinadi (chip shakliga qirqib)."""
+    r = h / 2
+    tint = (0, 0, 0) if light else (1, 1, 1)
+
+    # Qirra: tashqariga chiqib so'nuvchi konturlar — chekkasi yumshoq ko'rinadi.
+    for i, alpha in enumerate((0.13, 0.07, 0.035, 0.015)):
+        d = i * 0.28 * mm
+        c.setStrokeColor(colors.Color(*tint, alpha=alpha))
+        c.setLineWidth(0.55)
+        c.roundRect(x - d, y - d, w + 2 * d, h + 2 * d, r + d, stroke=1, fill=0)
+
+    c.saveState()
+    p = c.beginPath()
+    p.roundRect(x, y, w, h, r)
+    c.clipPath(p, stroke=0, fill=0)
+
+    # Asos + tepadagi yaltirash (qatlamlar ustma-ust tushib yumshoq o'tish beradi).
+    c.setFillColor(colors.Color(*tint, alpha=0.055 if light else 0.075))
+    c.rect(x, y, w, h, stroke=0, fill=1)
+    c.setFillColor(colors.Color(*tint, alpha=0.022 if light else 0.03))
+    for i in range(6):
+        band = h * (0.6 - i * 0.09)
+        if band <= 0:
+            break
+        c.rect(x, y + h - band, w, band, stroke=0, fill=1)
+    c.restoreState()
+
+    c.setFillAlpha(1)
+    c.setStrokeAlpha(1)
+
+
 def _fmt_phone(phone):
     """+998901234567 -> '+998 90 123 45 67' (boshqa formatlar o'z holicha)."""
     p = phone.replace(' ', '')
@@ -437,9 +473,7 @@ def card_pdf_bytes(business, url):
     ink = colors.HexColor('#1c1813') if light else colors.white
     ink_soft = (colors.Color(0.11, 0.09, 0.07, alpha=0.7) if light
                 else colors.Color(1, 1, 1, alpha=0.78))
-    # Chip/halqa: oq fon o'rniga 5-7% shaffof to'ldirish + ko'rinadigan chegara.
-    chip_fill = colors.Color(0, 0, 0, alpha=0.05) if light else colors.Color(1, 1, 1, alpha=0.07)
-    chip_line = colors.Color(0, 0, 0, alpha=0.22) if light else colors.Color(1, 1, 1, alpha=0.32)
+    # Halqa: logo atrofidagi nozik chiziq (chiplar _glass_pill bilan chiziladi).
     ring_line = colors.Color(0, 0, 0, alpha=0.30) if light else colors.Color(1, 1, 1, alpha=0.85)
 
     buf = BytesIO()
@@ -540,11 +574,7 @@ def card_pdf_bytes(business, url):
     for kind, label in rows[:3]:
         label = _truncated(label, 'Helvetica-Bold', 7.5, chip_max_w - icon - 6 * mm)
         chip_w = min(chip_max_w, icon + 6 * mm + stringWidth(label, 'Helvetica-Bold', 7.5))
-        c.setFillColor(chip_fill)
-        c.setStrokeColor(chip_line)
-        c.setLineWidth(0.6)
-        c.roundRect(margin, chip_y, chip_w, chip_h, chip_h / 2, stroke=1, fill=1)
-        c.setFillAlpha(1)  # alpha'li fill holati rasmlarga ham ta'sir qiladi
+        _glass_pill(c, margin, chip_y, chip_w, chip_h, light)
         c.drawImage(_chip_icon(kind), margin + 1.7 * mm, chip_y + (chip_h - icon) / 2,
                     icon, icon, mask='auto')
         c.setFillColor(ink)

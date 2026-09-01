@@ -395,13 +395,13 @@ _TEMPLATE_COLORS = {
 
 def _chip_frame(c, x, y, w, h, light):
     """Kontakt chipi ramkasi — QR paneli bilan bir xil qirra: tekis shaffof
-    to'ldirish va bitta nozik chegara (ichki soya/gradient yo'q), burchak
-    radiusi 2 mm — QR panelidan ko'ra qirraliroq, lekin yumshoq."""
+    to'ldirish va bitta nozik chegara (ichki soya/gradient yo'q). To'ldirish
+    juda kuchsiz — orqa fon bilinib turadi; chegara esa aniq ko'rinadi."""
     tint = (0, 0, 0) if light else (1, 1, 1)
-    c.setFillColor(colors.Color(*tint, alpha=0.06 if light else 0.10))
+    c.setFillColor(colors.Color(*tint, alpha=0.028 if light else 0.045))
     c.setStrokeColor(colors.Color(*tint, alpha=0.30 if light else 0.38))
     c.setLineWidth(0.6)
-    c.roundRect(x, y, w, h, 2 * mm, stroke=1, fill=1)
+    c.roundRect(x, y, w, h, 1.4 * mm, stroke=1, fill=1)
     # Alfa holati keyingi rasm/matnga o'tib ketmasin.
     c.setFillAlpha(1)
     c.setStrokeAlpha(1)

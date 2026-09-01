@@ -223,15 +223,40 @@ def _wrap_pdf(text, font, size, max_w, max_lines=2):
     return lines
 
 
+def _bio_layout(text, max_w, zone_t, zone_b, k):
+    """Stend bio bloki: zonaga sig'adigan eng katta o'lchamni tanlab, qatorlarni
+    zona bo'yicha markazlaydi. Qaytaradi: (o'lcham, qatorlar, oraliq, 1-baseline).
+
+    ``k`` — px -> pt koeffitsienti; zona chegaralari rasm pikselida."""
+    zone_h = zone_b - zone_t
+
+    def metrics(size, n):
+        leading, cap = size * 1.2 / k, size * 0.72 / k
+        return leading, cap, (n - 1) * leading + cap
+
+    size_used, lines = 10.5, None
+    for size in (16.5, 15.5, 14.5, 13.5, 12.5, 11.5, 10.5):
+        wrapped = _wrap_pdf(text, 'Helvetica-Bold', size, max_w, max_lines=99)
+        if len(wrapped) <= 3 and metrics(size, len(wrapped))[2] <= zone_h:
+            size_used, lines = size, wrapped
+            break
+    if lines is None:  # juda uzun — eng kichik o'lchamda 3 qatorga kesiladi
+        lines = _wrap_pdf(text, 'Helvetica-Bold', size_used, max_w, max_lines=3)
+
+    leading, cap, block = metrics(size_used, len(lines))
+    first = zone_t + cap + max(0, (zone_h - block) / 2)
+    return size_used, lines, leading, first
+
+
 # Stend geometriyasi — assets/stand_bg.jpg (2481x3508 px, 300dpi A4) ichidagi
 # dizayn elementlarining piksel koordinatalari (dizayn SVG'idan o'lchangan).
 _STAND = {
-    'card': (607, 897, 1873, 2478, 64),   # l, t, r, b, burchak radiusi
+    'card': (607, 897, 1873, 2478, 92),   # l, t, r, b, burchak radiusi
     'avatar': (1225, 898, 111, 128),      # cx, cy, logo r, oq halqa r
     'name_base': 1150,                    # nom baseline (px, tepadan)
-    'qr_top': 1269,
-    'qr_size': 820,
-    'bio_base': (2259, 2352),             # bio 2 qator baseline
+    'qr_top': 1215,
+    'qr_size': 920,
+    'bio_zone': (2210, 2405),             # bio bloki markazlanadigan oraliq
 }
 
 
@@ -288,13 +313,15 @@ def qr_pdf_bytes(business, url):
                 X(cx) - qs * k / 2, Y(_STAND['qr_top'] + qs), qs * k, qs * k)
 
     if business.description:
-        # Dizayndagi o'lcham: ~75px (15pt), qalin.
-        bio_size = 15
-        lines = _wrap_pdf(business.description.strip(), 'Helvetica-Bold', bio_size, max_w)
+        # Bio kartani to'ldiradi: 3 qatorga sig'adigan eng katta o'lcham
+        # tanlanadi (dizayn namunasida ~16.5pt), blok zonada markazlanadi.
+        zone_t, zone_b = _STAND['bio_zone']
+        bio_size, lines, leading, first = _bio_layout(
+            business.description.strip(), max_w, zone_t, zone_b, k)
         c.setFillColor(colors.HexColor('#1f2937'))
         c.setFont('Helvetica-Bold', bio_size)
-        for i, line in enumerate(lines[:2]):
-            c.drawCentredString(X(cx), Y(_STAND['bio_base'][i]), line)
+        for i, line in enumerate(lines):
+            c.drawCentredString(X(cx), Y(first + i * leading), line)
 
     c.showPage()
     c.save()

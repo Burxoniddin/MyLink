@@ -394,10 +394,13 @@ _TEMPLATE_COLORS = {
 
 
 def _fmt_phone(phone):
-    """+998901234567 -> '+998 90 123 45 67' (boshqa formatlar o'z holicha)."""
+    """+998901234567 -> '90 123 45 67' — dizayndagidek, mamlakat kodisiz
+    (O'zbekiston raqami bo'lmasa, o'z holicha qoladi)."""
     p = phone.replace(' ', '')
-    if p.startswith('+998') and len(p) == 13 and p[1:].isdigit():
-        return f"{p[:4]} {p[4:6]} {p[6:9]} {p[9:11]} {p[11:]}"
+    for prefix in ('+998', '998'):
+        if p.startswith(prefix) and len(p) == len(prefix) + 9 and p.lstrip('+').isdigit():
+            d = p[len(prefix):]
+            return f"{d[:2]} {d[2:5]} {d[5:7]} {d[7:]}"
     return phone
 
 

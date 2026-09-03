@@ -324,6 +324,33 @@ class AssetTests(TestCase):
             self.assertTrue(res.content.startswith(b'%PDF'), label)
             self.assertIn('card.pdf', res['Content-Disposition'], label)
 
+    def test_fonts_cover_uzbek_and_cyrillic(self):
+        """PDF shriftlari o'zbekcha 'ʻ' va kirill harflarini bilishi shart —
+        standart Helvetica ularni kvadratga aylantirib qo'yardi."""
+        from reportlab.pdfbase import pdfmetrics
+
+        from businesses.qr import FONT, FONT_BOLD
+        need = "ʻ’—«»№" + "ЎҚҒҲўқғҳЁё" + "Abc123"
+        for font_name in (FONT, FONT_BOLD):
+            face = pdfmetrics.getFont(font_name).face
+            missing = [ch for ch in need if ord(ch) not in face.charToGlyph]
+            self.assertEqual(missing, [], f'{font_name}: {missing}')
+
+    def test_assets_render_with_non_latin_text(self):
+        """Kirill/o'zbek matnli biznes uchun ham barcha materiallar chiqadi."""
+        Subscription.objects.create(user=self.user, tier=ent.PRO, expires_at=None)
+        Business.objects.filter(path='brand').update(
+            name='Мебель из ротанга',
+            description="Уют и качество — «Ротанг» №1, oʻzbekcha ham gʻalati",
+        )
+        for ext in ('card.pdf', 'qr.pdf'):
+            res = self.client.get(f'/api/businesses/brand/{ext}')
+            self.assertEqual(res.status_code, 200, ext)
+            self.assertTrue(res.content.startswith(b'%PDF'), ext)
+        story = self.client.get('/api/businesses/brand/story.png')
+        self.assertEqual(story.status_code, 200)
+        self.assertGreater(len(story.content), 0)
+
     def test_card_still_pro_gated(self):
         Subscription.objects.create(user=self.user, tier=ent.ODDIY, expires_at=None)
         res = self.client.get('/api/businesses/brand/card.pdf')

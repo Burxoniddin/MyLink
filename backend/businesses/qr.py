@@ -2,9 +2,10 @@
 business's public page.
 
 Used by the businesses asset endpoints. Gating by tier (qr: none/png/full)
-happens in the view; this module is pure rendering. PDF text uses Helvetica
-(Latin, covers Uzbek-Latin); the story image uses reportlab's bundled Vera
-TTFs so PIL has a real font on the Linux server too.
+happens in the view; this module is pure rendering. Barcha matnlar
+assets/fonts/ dagi Noto Sans bilan chiziladi — standart Helvetica lotin-1
+bilan cheklangan va o'zbekcha 'ʻ' hamda kirill harflarini kvadratga
+aylantirib qo'yadi.
 """
 
 import os
@@ -17,7 +18,9 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.pdfmetrics import stringWidth
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 # Brand palette.
@@ -25,11 +28,20 @@ INDIGO = (79, 70, 229)
 VIOLET = (124, 58, 173)
 DEEP = (49, 46, 129)
 
-_FONT_DIR = os.path.join(os.path.dirname(reportlab.__file__), 'fonts')
+_FONT_DIR = os.path.join(os.path.dirname(__file__), 'assets', 'fonts')
+_FONT_FILES = {False: 'NotoSans-Regular.ttf', True: 'NotoSans-Bold.ttf'}
+
+# PDF matnlari uchun nomlar (Helvetica o'rniga — u kirill/'ʻ' ni bilmaydi).
+FONT = 'MyLinkSans'
+FONT_BOLD = 'MyLinkSans-Bold'
+pdfmetrics.registerFont(TTFont(FONT, os.path.join(_FONT_DIR, _FONT_FILES[False])))
+pdfmetrics.registerFont(TTFont(FONT_BOLD, os.path.join(_FONT_DIR, _FONT_FILES[True])))
+pdfmetrics.registerFontFamily(FONT, normal=FONT, bold=FONT_BOLD)
 
 
 def _font(size, bold=False):
-    return ImageFont.truetype(os.path.join(_FONT_DIR, 'VeraBd.ttf' if bold else 'Vera.ttf'), size)
+    """PIL shrifti (Instagram story rasmi uchun) — PDF bilan bir xil Noto Sans."""
+    return ImageFont.truetype(os.path.join(_FONT_DIR, _FONT_FILES[bold]), size)
 
 
 def _qr_image(url, box_size=10, border=2, fill='black'):
@@ -236,12 +248,12 @@ def _bio_layout(text, max_w, zone_t, zone_b, k):
 
     size_used, lines = 10.5, None
     for size in (16.5, 15.5, 14.5, 13.5, 12.5, 11.5, 10.5):
-        wrapped = _wrap_pdf(text, 'Helvetica-Bold', size, max_w, max_lines=99)
+        wrapped = _wrap_pdf(text, FONT_BOLD, size, max_w, max_lines=99)
         if len(wrapped) <= 3 and metrics(size, len(wrapped))[2] <= zone_h:
             size_used, lines = size, wrapped
             break
     if lines is None:  # juda uzun — eng kichik o'lchamda 3 qatorga kesiladi
-        lines = _wrap_pdf(text, 'Helvetica-Bold', size_used, max_w, max_lines=3)
+        lines = _wrap_pdf(text, FONT_BOLD, size_used, max_w, max_lines=3)
 
     leading, cap, block = metrics(size_used, len(lines))
     first = zone_t + cap + max(0, (zone_h - block) / 2)
@@ -295,17 +307,17 @@ def qr_pdf_bytes(business, url):
         c.circle(X(acx), Y(acy), logo_r * k, stroke=0, fill=1)
         initials = ''.join(wd[0] for wd in (business.name or 'M').split()[:2]).upper()
         c.setFillColor(colors.white)
-        c.setFont('Helvetica-Bold', logo_r * k * 0.8)
+        c.setFont(FONT_BOLD, logo_r * k * 0.8)
         c.drawCentredString(X(acx), Y(acy) - logo_r * k * 0.28, initials)
 
     cx = (l + r) / 2.0
     max_w = (r - l) * k - 2 * 70 * k
 
     name = (business.name or 'MyLink').strip()
-    name_size = _fit_size(name, 'Helvetica-Bold', 24, 13, max_w)
-    name = _truncated(name, 'Helvetica-Bold', name_size, max_w)
+    name_size = _fit_size(name, FONT_BOLD, 24, 13, max_w)
+    name = _truncated(name, FONT_BOLD, name_size, max_w)
     c.setFillColor(colors.HexColor('#111111'))
-    c.setFont('Helvetica-Bold', name_size)
+    c.setFont(FONT_BOLD, name_size)
     c.drawCentredString(X(cx), Y(_STAND['name_base']), name)
 
     qs = _STAND['qr_size']
@@ -319,7 +331,7 @@ def qr_pdf_bytes(business, url):
         bio_size, lines, leading, first = _bio_layout(
             business.description.strip(), max_w, zone_t, zone_b, k)
         c.setFillColor(colors.HexColor('#1f2937'))
-        c.setFont('Helvetica-Bold', bio_size)
+        c.setFont(FONT_BOLD, bio_size)
         for i, line in enumerate(lines):
             c.drawCentredString(X(cx), Y(first + i * leading), line)
 
@@ -353,7 +365,7 @@ def _draw_logo_circle(c, business, cx, cy, r, accent='#4f46e5'):
         c.drawImage(logo, cx - r, cy - r, r * 2, r * 2, mask='auto')
         return
     c.setFillColor(colors.HexColor(accent))
-    c.setFont('Helvetica-Bold', r * 1.1)
+    c.setFont(FONT_BOLD, r * 1.1)
     c.drawCentredString(cx, cy - r * 0.38, (business.name or 'M').strip()[:1].upper())
 
 
@@ -465,7 +477,7 @@ def _avatar(c, business, cx, cy, r, ring_w, accent, light):
         c.setFillColor(colors.HexColor(accent))
         c.circle(cx, cy, r, stroke=0, fill=1)
         c.setFillColor(colors.white)
-        c.setFont('Helvetica-Bold', r * 1.05)
+        c.setFont(FONT_BOLD, r * 1.05)
         c.drawCentredString(cx, cy - r * 0.36, (business.name or 'M').strip()[:1].upper())
     c.setStrokeColor(colors.HexColor('#3f3f46') if light else colors.HexColor('#f6f6f6'))
     c.setLineWidth(ring_w)
@@ -523,16 +535,16 @@ def card_pdf_bytes(business, url):
     pad = _CARD_FRONT['pad']
     max_w = X(1062 - 2 * pad)
     base, max_size = _CARD_FRONT['name']
-    size = _fit_size(name, 'Helvetica-Bold', max_size, 8, max_w)
+    size = _fit_size(name, FONT_BOLD, max_size, 8, max_w)
     c.setFillColor(ink)
-    c.setFont('Helvetica-Bold', size)
-    c.drawCentredString(X(531), Y(base), _truncated(name, 'Helvetica-Bold', size, max_w))
+    c.setFont(FONT_BOLD, size)
+    c.drawCentredString(X(531), Y(base), _truncated(name, FONT_BOLD, size, max_w))
 
     if desc:
         base, size = _CARD_FRONT['desc']
-        lines = _wrap_pdf(desc, 'Helvetica', size, max_w, max_lines=2)
+        lines = _wrap_pdf(desc, FONT, size, max_w, max_lines=2)
         c.setFillColor(ink_soft)
-        c.setFont('Helvetica', size)
+        c.setFont(FONT, size)
         for i, line in enumerate(lines):
             c.drawCentredString(X(531), Y(base + i * size * 1.35 / k), line)
     c.showPage()
@@ -546,17 +558,17 @@ def card_pdf_bytes(business, url):
     head_w = X(qx - 30) - X(_CARD_BACK['name'][0])      # QR ustunigacha
     nx, nbase, nsize = _CARD_BACK['name']
     c.setFillColor(ink)
-    c.setFont('Helvetica-Bold', nsize)
-    c.drawString(X(nx), Y(nbase), _truncated(name, 'Helvetica-Bold', nsize, head_w))
+    c.setFont(FONT_BOLD, nsize)
+    c.drawString(X(nx), Y(nbase), _truncated(name, FONT_BOLD, nsize, head_w))
     if desc:
         dx, dbase, dsize = _CARD_BACK['desc']
         c.setFillColor(ink_soft)
-        c.setFont('Helvetica', dsize)
-        c.drawString(X(dx), Y(dbase), _truncated(desc, 'Helvetica', dsize, head_w))
+        c.setFont(FONT, dsize)
+        c.drawString(X(dx), Y(dbase), _truncated(desc, FONT, dsize, head_w))
 
     ux, ubase, usize = _CARD_BACK['url']
     c.setFillColor(ink_soft)
-    c.setFont('Helvetica', usize)
+    c.setFont(FONT, usize)
     c.drawCentredString(X(ux), Y(ubase), plain_url)
 
     # QR — oq kvadrat, ichida modullar (dizayndagi oq hoshiya saqlanadi).
@@ -581,7 +593,7 @@ def card_pdf_bytes(business, url):
     lab_w = X(cx_ + cw - 20 - lab_x)
     # Uchala yozuv bir xil o'lchamda bo'lishi uchun eng uzuniga qarab tanlanadi.
     if rows:
-        lab_size = min(_fit_size(lbl, 'Helvetica', lab_size, 5.8, lab_w) for _, lbl in rows[:3])
+        lab_size = min(_fit_size(lbl, FONT, lab_size, 5.8, lab_w) for _, lbl in rows[:3])
     for (kind, label), top in zip(rows[:3], _CARD_BACK['chip_tops']):
         x, y, w, h = X(cx_), Y(top + ch), X(cw), X(ch)
         _chip_glow(c, x, y, w, h, X(crad), _CHIP_COLORS[kind], X(14))
@@ -596,9 +608,9 @@ def card_pdf_bytes(business, url):
         c.drawImage(_chip_icon(kind), X(icon_x), Y(top + (ch + icon_sz) / 2),
                     X(icon_sz), X(icon_sz), mask='auto')
         c.setFillColor(ink)
-        c.setFont('Helvetica', lab_size)
+        c.setFont(FONT, lab_size)
         c.drawString(X(lab_x), Y(top + lab_dy),
-                     _truncated(label, 'Helvetica', lab_size, lab_w))
+                     _truncated(label, FONT, lab_size, lab_w))
 
     c.showPage()
     c.save()

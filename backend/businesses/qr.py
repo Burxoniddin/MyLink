@@ -393,25 +393,14 @@ _TEMPLATE_COLORS = {
 }
 
 
-def _chip_frame(c, x, y, w, h, light):
-    """Kontakt chipi ramkasi — QR paneli bilan bir xil qirra: tekis shaffof
-    to'ldirish va bitta nozik chegara (ichki soya/gradient yo'q). To'ldirish
-    juda kuchsiz — orqa fon bilinib turadi; chegara esa aniq ko'rinadi."""
-    tint = (0, 0, 0) if light else (1, 1, 1)
-    c.setFillColor(colors.Color(*tint, alpha=0.028 if light else 0.045))
-    c.setStrokeColor(colors.Color(*tint, alpha=0.30 if light else 0.38))
-    c.setLineWidth(0.6)
-    c.roundRect(x, y, w, h, 1.4 * mm, stroke=1, fill=1)
-    # Alfa holati keyingi rasm/matnga o'tib ketmasin.
-    c.setFillAlpha(1)
-    c.setStrokeAlpha(1)
-
-
 def _fmt_phone(phone):
-    """+998901234567 -> '+998 90 123 45 67' (boshqa formatlar o'z holicha)."""
+    """+998901234567 -> '90 123 45 67' — dizayndagidek, mamlakat kodisiz
+    (O'zbekiston raqami bo'lmasa, o'z holicha qoladi)."""
     p = phone.replace(' ', '')
-    if p.startswith('+998') and len(p) == 13 and p[1:].isdigit():
-        return f"{p[:4]} {p[4:6]} {p[6:9]} {p[9:11]} {p[11:]}"
+    for prefix in ('+998', '998'):
+        if p.startswith(prefix) and len(p) == len(prefix) + 9 and p.lstrip('+').isdigit():
+            d = p[len(prefix):]
+            return f"{d[:2]} {d[2:5]} {d[5:7]} {d[7:]}"
     return phone
 
 
@@ -439,102 +428,144 @@ def _chip_icon(kind):
     return os.path.join(_ASSETS_DIR, 'chips', f'{kind}.png')
 
 
-def card_pdf_bytes(business, url):
-    """Ikki tomonlama 85x55 mm vizitka; fon rangi biznes sahifasi temasidan.
+# Vizitka geometriyasi — Figma dizaynidan ("Business card Mylink", ikki yuz
+# 1062x590 px = 90x50 mm @300dpi). Barcha qiymatlar dizayn pikselida, _CARD_K
+# orqali pt ga o'giriladi; shu bois joylashuv dizayn bilan bir xil bo'ladi.
+_CARD_W, _CARD_H = 90 * mm, 50 * mm
+_CARD_K = _CARD_W / 1062.0
 
-    Old tomon: tema-gradient fonda chapda dumaloq logo, o'ngida nom va tavsif.
-    Orqa tomon: tepada kichik logo+nom+tavsif (chap) va sahifa linki (o'ng),
-    pastki chapda oq kontakt chiplari (telefon/Telegram/Instagram), o'ngda oq
-    QR paneli. Har bir matn o'lchanadi: nom kichrayadi, qolganlari '...' bilan
-    kesiladi."""
+_CARD_FRONT = {
+    'avatar': (531, 228, 88, 90),     # cx, cy, foto radiusi, halqa radiusi
+    'name': (402, 12.7),              # baseline, maksimal o'lcham
+    'desc': (453, 7.3),               # 1-qator baseline, o'lcham
+    'pad': 100,                       # chap/o'ng hoshiya
+}
+_CARD_BACK = {
+    'avatar': (137, 137, 35, 36.5),
+    'name': (204, 136, 7.7),          # x, baseline, o'lcham
+    'desc': (203, 160, 5.2),
+    'url': (831, 160, 5.2),           # markaz x, baseline, o'lcham
+    'chip': (100, 354, 74, 23),       # x, eni, balandligi, radius
+    'chip_tops': (228, 322, 415),
+    'chip_icon': (115, 45),           # x, o'lcham (kvadrat)
+    'chip_label': (180, 46, 7.35),    # x, chip tepasidan baseline, o'lcham
+    'qr': (700, 228, 262, 222),       # x, y, oq kvadrat, ichidagi modul zonasi
+}
+
+# Chip glow ranglari — dizayndagidek platforma ranglari.
+_CHIP_COLORS = {'phone': '#34c759', 'telegram': '#229ed9', 'instagram': '#d6249f'}
+
+
+def _avatar(c, business, cx, cy, r, ring_w, accent, light):
+    """Dumaloq logo (yo'q bo'lsa — bosh harf) va atrofida nozik halqa."""
+    logo = _logo_reader(business)
+    if logo is not None:
+        c.drawImage(logo, cx - r, cy - r, r * 2, r * 2, mask='auto')
+    else:
+        c.setFillColor(colors.HexColor(accent))
+        c.circle(cx, cy, r, stroke=0, fill=1)
+        c.setFillColor(colors.white)
+        c.setFont('Helvetica-Bold', r * 1.05)
+        c.drawCentredString(cx, cy - r * 0.36, (business.name or 'M').strip()[:1].upper())
+    c.setStrokeColor(colors.HexColor('#3f3f46') if light else colors.HexColor('#f6f6f6'))
+    c.setLineWidth(ring_w)
+    c.circle(cx, cy, r + ring_w / 2, stroke=1, fill=0)
+
+
+def _chip_glow(c, x, y, w, h, r, hex_color, spread, steps=9, peak=0.15):
+    """Chip atrofidagi rangli yorug'lik — tashqariga qarab so'nuvchi konturlar."""
+    red, green, blue = colors.HexColor(hex_color).rgb()
+    for i in range(steps, 0, -1):
+        t = i / steps                       # 1 — eng tashqi halqa
+        d = spread * t
+        c.setStrokeColor(colors.Color(red, green, blue, alpha=peak * (1 - t) ** 1.5))
+        c.setLineWidth(spread / steps * 1.8)
+        c.roundRect(x - d, y - d, w + 2 * d, h + 2 * d, r + d, stroke=1, fill=0)
+    c.setStrokeAlpha(1)
+
+
+def card_pdf_bytes(business, url):
+    """Ikki tomonlama 90x55 mm vizitka — Figma dizayni bo'yicha; fon rangi
+    biznes sahifasining amaldagi temasidan olinadi (faqat fon almashadi).
+
+    Old tomon: markazda dumaloq logo, ostida nom va tavsif.
+    Orqa tomon: tepada kichik logo + nom/tavsif (chapda) va sahifa linki
+    (QR ustida markazda); pastda chapda kontakt chiplari (platforma rangli
+    yorug'lik bilan), o'ngda oq QR kvadrat."""
     c1, c2, accent, light = _card_theme(business)
     ink = colors.HexColor('#1c1813') if light else colors.white
-    ink_soft = (colors.Color(0.11, 0.09, 0.07, alpha=0.7) if light
-                else colors.Color(1, 1, 1, alpha=0.78))
-    # Halqa: logo atrofidagi nozik chiziq (chiplar _chip_frame bilan chiziladi).
-    ring_line = colors.Color(0, 0, 0, alpha=0.30) if light else colors.Color(1, 1, 1, alpha=0.85)
+    ink_soft = (colors.Color(0.11, 0.09, 0.07, alpha=0.72) if light
+                else colors.Color(1, 1, 1, alpha=0.82))
 
     buf = BytesIO()
-    card_w, card_h = 85 * mm, 55 * mm
-    c = canvas.Canvas(buf, pagesize=(card_w, card_h))
-    margin = 8 * mm
-    plain_url = url.replace('https://', '').replace('http://', '')
+    c = canvas.Canvas(buf, pagesize=(_CARD_W, _CARD_H))
+    k = _CARD_K
+
+    def X(px):
+        return px * k
+
+    def Y(px):                     # dizayn (tepadan) -> PDF (pastdan)
+        return _CARD_H - px * k
 
     def bg():
-        c.linearGradient(0, card_h, card_w, 0,
+        c.linearGradient(0, _CARD_H, _CARD_W, 0,
                          (colors.HexColor(c1), colors.HexColor(c2)), extend=True)
 
-    def logo_disc(cx, cy, r):
-        logo = _logo_reader(business)
-        if logo is not None:
-            c.drawImage(logo, cx - r, cy - r, r * 2, r * 2, mask='auto')
-        else:
-            c.setFillColor(colors.HexColor(accent))
-            c.circle(cx, cy, r, stroke=0, fill=1)
-            c.setFillColor(colors.white)
-            c.setFont('Helvetica-Bold', r * 1.1)
-            c.drawCentredString(cx, cy - r * 0.38, (business.name or 'M').strip()[:1].upper())
-        c.setStrokeColor(ring_line)
-        c.setLineWidth(0.9)
-        c.circle(cx, cy, r + 0.4 * mm, stroke=1, fill=0)
-
-    # ---- OLD TOMON ----
-    bg()
-    logo_r = 9 * mm
-    logo_cx, logo_cy = margin + logo_r + 2 * mm, card_h / 2
-    logo_disc(logo_cx, logo_cy, logo_r)
-
-    text_x = logo_cx + logo_r + 5 * mm
-    text_w = card_w - margin - text_x
     name = (business.name or '').strip() or 'MyLink'
-    name_size = _fit_size(name, 'Helvetica-Bold', 16, 10, text_w)
-    name = _truncated(name, 'Helvetica-Bold', name_size, text_w)
+    desc = (business.description or '').strip()
+    plain_url = url.replace('https://', '').replace('http://', '')
+
+    # ------------------------------ OLD TOMON ------------------------------
+    bg()
+    acx, acy, ar, ring = _CARD_FRONT['avatar']
+    _avatar(c, business, X(acx), Y(acy), X(ar), X(ring - ar), accent, light)
+
+    pad = _CARD_FRONT['pad']
+    max_w = X(1062 - 2 * pad)
+    base, max_size = _CARD_FRONT['name']
+    size = _fit_size(name, 'Helvetica-Bold', max_size, 8, max_w)
     c.setFillColor(ink)
-    c.setFont('Helvetica-Bold', name_size)
-    if business.description:
-        c.drawString(text_x, card_h / 2 + 1.2 * mm, name)
+    c.setFont('Helvetica-Bold', size)
+    c.drawCentredString(X(531), Y(base), _truncated(name, 'Helvetica-Bold', size, max_w))
+
+    if desc:
+        base, size = _CARD_FRONT['desc']
+        lines = _wrap_pdf(desc, 'Helvetica', size, max_w, max_lines=2)
         c.setFillColor(ink_soft)
-        c.setFont('Helvetica', 8)
-        c.drawString(text_x, card_h / 2 - 4.8 * mm,
-                     _truncated(business.description.strip(), 'Helvetica', 8, text_w))
-    else:
-        c.drawString(text_x, card_h / 2 - name_size * 0.36, name)
+        c.setFont('Helvetica', size)
+        for i, line in enumerate(lines):
+            c.drawCentredString(X(531), Y(base + i * size * 1.35 / k), line)
     c.showPage()
 
-    # ---- ORQA TOMON ----
+    # ------------------------------ ORQA TOMON -----------------------------
     bg()
+    acx, acy, ar, ring = _CARD_BACK['avatar']
+    _avatar(c, business, X(acx), Y(acy), X(ar), X(ring - ar), accent, light)
 
-    # Tepada: kichik logo + nom + tavsif (chapda), sahifa linki (o'ngda).
-    m_r = 4 * mm
-    logo_disc(margin + m_r, card_h - 8.5 * mm, m_r)
-    url_w = stringWidth(plain_url, 'Helvetica', 7)
-    head_x = margin + 2 * m_r + 3 * mm
-    head_w = card_w - margin - head_x - url_w - 3 * mm
+    qx, qy, qbox, qmod = _CARD_BACK['qr']
+    head_w = X(qx - 30) - X(_CARD_BACK['name'][0])      # QR ustunigacha
+    nx, nbase, nsize = _CARD_BACK['name']
     c.setFillColor(ink)
-    c.setFont('Helvetica-Bold', 8.5)
-    c.drawString(head_x, card_h - 8 * mm,
-                 _truncated(name, 'Helvetica-Bold', 8.5, head_w))
-    if business.description:
+    c.setFont('Helvetica-Bold', nsize)
+    c.drawString(X(nx), Y(nbase), _truncated(name, 'Helvetica-Bold', nsize, head_w))
+    if desc:
+        dx, dbase, dsize = _CARD_BACK['desc']
         c.setFillColor(ink_soft)
-        c.setFont('Helvetica', 5.5)
-        c.drawString(head_x, card_h - 11.2 * mm,
-                     _truncated(business.description.strip(), 'Helvetica', 5.5, head_w))
+        c.setFont('Helvetica', dsize)
+        c.drawString(X(dx), Y(dbase), _truncated(desc, 'Helvetica', dsize, head_w))
+
+    ux, ubase, usize = _CARD_BACK['url']
     c.setFillColor(ink_soft)
-    c.setFont('Helvetica', 7)
-    c.drawRightString(card_w - margin, card_h - 8.5 * mm, plain_url)
+    c.setFont('Helvetica', usize)
+    c.drawCentredString(X(ux), Y(ubase), plain_url)
 
-    # O'ngda oq QR paneli.
-    panel = 30 * mm
-    px_, py_ = card_w - 7 * mm - panel, 5.5 * mm
+    # QR — oq kvadrat, ichida modullar (dizayndagi oq hoshiya saqlanadi).
     c.setFillColor(colors.white)
-    c.setStrokeColor(colors.HexColor('#e5e7eb') if light else colors.Color(1, 1, 1, alpha=0.25))
-    c.setLineWidth(0.6)
-    c.roundRect(px_, py_, panel, panel, 3 * mm, stroke=1, fill=1)
-    qr_size = 26 * mm
-    c.drawImage(_image_reader(_qr_image(url, box_size=6, border=0)),
-                px_ + (panel - qr_size) / 2, py_ + (panel - qr_size) / 2, qr_size, qr_size)
+    c.rect(X(qx), Y(qy + qbox), X(qbox), X(qbox), stroke=0, fill=1)
+    c.drawImage(_image_reader(_qr_image(url, box_size=8, border=0)),
+                X(qx + (qbox - qmod) / 2), Y(qy + (qbox + qmod) / 2), X(qmod), X(qmod))
 
-    # Pastki chapda kontakt chiplari (rasmdagidek oq pill + platforma ikonkasi).
+    # Kontakt chiplari: telefon / Telegram / Instagram.
     contacts = business_contacts(business)
     rows = []
     if contacts['phone']:
@@ -544,21 +575,30 @@ def card_pdf_bytes(business, url):
     if contacts['instagram']:
         rows.append(('instagram', '@' + contacts['instagram']))
 
-    chip_h, chip_gap = 7 * mm, 1.8 * mm
-    chip_zone_r = px_ - 3 * mm
-    chip_max_w = chip_zone_r - margin
-    chip_y = card_h - 8.5 * mm - m_r - 6 * mm - chip_h  # header ostidan boshlab
-    icon = 4.6 * mm
-    for kind, label in rows[:3]:
-        label = _truncated(label, 'Helvetica-Bold', 7.5, chip_max_w - icon - 6 * mm)
-        chip_w = min(chip_max_w, icon + 6 * mm + stringWidth(label, 'Helvetica-Bold', 7.5))
-        _chip_frame(c, margin, chip_y, chip_w, chip_h, light)
-        c.drawImage(_chip_icon(kind), margin + 1.7 * mm, chip_y + (chip_h - icon) / 2,
-                    icon, icon, mask='auto')
+    cx_, cw, ch, crad = _CARD_BACK['chip']
+    icon_x, icon_sz = _CARD_BACK['chip_icon']
+    lab_x, lab_dy, lab_size = _CARD_BACK['chip_label']
+    lab_w = X(cx_ + cw - 20 - lab_x)
+    # Uchala yozuv bir xil o'lchamda bo'lishi uchun eng uzuniga qarab tanlanadi.
+    if rows:
+        lab_size = min(_fit_size(lbl, 'Helvetica', lab_size, 5.8, lab_w) for _, lbl in rows[:3])
+    for (kind, label), top in zip(rows[:3], _CARD_BACK['chip_tops']):
+        x, y, w, h = X(cx_), Y(top + ch), X(cw), X(ch)
+        _chip_glow(c, x, y, w, h, X(crad), _CHIP_COLORS[kind], X(14))
+        c.setFillColor(colors.Color(0, 0, 0, alpha=0.05) if light
+                       else colors.Color(1, 1, 1, alpha=0.045))
+        c.setStrokeColor(colors.Color(0, 0, 0, alpha=0.35) if light
+                         else colors.Color(1, 1, 1, alpha=0.5))
+        c.setLineWidth(0.5)
+        c.roundRect(x, y, w, h, X(crad), stroke=1, fill=1)
+        c.setFillAlpha(1)
+        c.setStrokeAlpha(1)
+        c.drawImage(_chip_icon(kind), X(icon_x), Y(top + (ch + icon_sz) / 2),
+                    X(icon_sz), X(icon_sz), mask='auto')
         c.setFillColor(ink)
-        c.setFont('Helvetica-Bold', 7.5)
-        c.drawString(margin + 1.7 * mm + icon + 2 * mm, chip_y + chip_h / 2 - 1.2 * mm, label)
-        chip_y -= chip_h + chip_gap
+        c.setFont('Helvetica', lab_size)
+        c.drawString(X(lab_x), Y(top + lab_dy),
+                     _truncated(label, 'Helvetica', lab_size, lab_w))
 
     c.showPage()
     c.save()

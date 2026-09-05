@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -323,34 +324,66 @@ class ClickPaymentTests(TestCase):
         )
         return self.client_api.post('/api/payments/click/callback/', data)
 
-    def test_nfc_order_payment_marks_order_paid(self):
-        """NFC to'lovi obuna bermaydi - buyurtmani 'to'langan' qiladi."""
-        from businesses.models import NfcOrder, SiteSettings
-        from billing.models import PaymentOrder
-
+    def _nfc_order(self, quantity=2, price=149000):
+        from businesses.models import SiteSettings
         s = SiteSettings.get_settings()
-        s.nfc_price = 149000
+        s.nfc_price = price
         s.save()
-        res = self.client_api.post(
+        return self.client_api.post(
             '/api/nfc/orders/',
-            {'full_name': 'A', 'phone': '901234567', 'quantity': 2, 'offer_accepted': True},
+            {'full_name': 'A', 'phone': '901234567', 'quantity': quantity,
+             'offer_accepted': True},
             format='json')
+
+    def test_nfc_order_waits_for_payment(self):
+        """To'lovli ariza darhol qabul qilinmaydi: 'pending' va guruhga xabar yo'q."""
+        from businesses.models import NfcOrder
+
+        with patch('businesses.views.send_telegram_message') as tg:
+            res = self._nfc_order()
         self.assertEqual(res.status_code, 201, res.data)
         self.assertTrue(res.data['pay_url'])
+        tg.assert_not_called()                            # to'lovgacha xabar yo'q
 
+        nfc = NfcOrder.objects.get()
+        self.assertEqual(nfc.status, 'pending')
+        self.assertFalse(nfc.is_paid)
+
+    def test_nfc_order_payment_accepts_order(self):
+        """To'lov tasdiqlangach ariza qabul qilinadi va guruhga xabar ketadi."""
+        from businesses.models import NfcOrder
+        from billing.models import PaymentOrder
+
+        with patch('businesses.views.send_telegram_message'):
+            self._nfc_order()
         payment = PaymentOrder.objects.get(kind='nfc')
         self.assertEqual(payment.amount, 149000 * 2)
-        self._cb(payment.pk, '0', str(payment.amount))
-        done = self._cb(payment.pk, '1', str(payment.amount), prepare_id=str(payment.pk))
+
+        with patch('businesses.utils.send_telegram_message') as tg:
+            self._cb(payment.pk, '0', str(payment.amount))
+            done = self._cb(payment.pk, '1', str(payment.amount), prepare_id=str(payment.pk))
         self.assertEqual(done.data['error'], 0, done.data)
+        tg.assert_called_once()                           # xabar aynan to'lovdan keyin
 
         nfc = NfcOrder.objects.get()
         self.assertTrue(nfc.is_paid)
         self.assertIsNotNone(nfc.paid_at)
+        self.assertEqual(nfc.status, 'new')               # ariza qabul qilindi
         payment.refresh_from_db()
         self.assertEqual(payment.status, 'paid')
-        self.assertIsNone(payment.subscription)          # obuna berilmaydi
+        self.assertIsNone(payment.subscription)           # obuna berilmaydi
         self.assertEqual(effective_tier(self.user), ent.FREE)
+
+    def test_nfc_unpaid_order_can_be_paid_later(self):
+        """To'lanmagan buyurtma uchun yangi havola olinadi (forma qayta to'ldirilmaydi)."""
+        from businesses.models import NfcOrder
+
+        with patch('businesses.views.send_telegram_message'):
+            self._nfc_order()
+        order = NfcOrder.objects.get()
+        res = self.client_api.post(f'/api/nfc/orders/{order.pk}/pay/')
+        self.assertEqual(res.status_code, 200, res.data)
+        self.assertIn('my.click.uz', res.data['pay_url'])
 
     def test_create_returns_pay_url(self):
         d = self._order()

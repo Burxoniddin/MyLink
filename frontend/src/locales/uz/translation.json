@@ -352,11 +352,12 @@
     "orders_note": "Yangi buyurtmalar shu yerda ko'rinadi. Holati o'zgarganda sizga xabar beramiz.",
     "price_unit": "1 dona: {{price}} so'm",
     "pay": "Click orqali to'lash",
-    "pay_note": "To'lovdan so'ng menejerimiz dizaynni kelishish uchun siz bilan bog'lanadi.",
+    "pay_note": "Ariza to'lov tasdiqlangach qabul qilinadi. To'lovdan so'ng menejerimiz dizaynni kelishish uchun bog'lanadi.",
     "paid": "To'langan",
     "unpaid": "To'lov kutilmoqda",
     "paid_ok": "To'lov qabul qilindi! Buyurtmangiz ishga tushdi.",
-    "paid_wait": "To'lov holati tekshirilmoqda — tasdiqlangach buyurtma faollashadi."
+    "paid_wait": "To'lov holati tekshirilmoqda — tasdiqlangach buyurtma faollashadi.",
+    "pay_again": "To'lash"
   },
   "referral": {
     "title": "Do'stlarni taklif qiling",

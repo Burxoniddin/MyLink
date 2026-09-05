@@ -507,6 +507,22 @@ class OfferPdfView(APIView):
         return response
 
 
+def nfc_order_message(order, paid=False):
+    """NFC buyurtmasi haqida Telegram guruhga ketadigan xabar."""
+    summa = f"{order.amount:,}".replace(',', ' ') + " so'm" if order.amount else '-'
+    head = ("✅ <b>NFC buyurtma to'landi</b>" if paid
+            else "\U0001F4B3 <b>Yangi NFC buyurtma</b>")
+    return (
+        f"{head}\n"
+        f"<b>Ism:</b> {order.full_name}\n"
+        f"<b>Tel:</b> {order.phone}\n"
+        f"<b>Soni:</b> {order.quantity}\n"
+        f"<b>Summa:</b> {summa}\n"
+        f"<b>Biznes:</b> {order.business.name if order.business else '-'}\n"
+        f"<b>Izoh:</b> {order.note or '-'}"
+    )
+
+
 def nfc_pay_url(request, order):
     """NFC buyurtmasi uchun Click to'lov havolasi ('' - narx yo'q/Click o'chiq)."""
     if order.amount <= 0:
@@ -573,8 +589,13 @@ class NfcOrderListCreateView(generics.ListCreateAPIView):
     Narx SiteSettings.nfc_price dan olinib buyurtmaga yozib qo'yiladi (keyin
     narx o'zgarsa ham bu buyurtma o'z summasida qoladi). Narx > 0 va Click
     sozlangan bo'lsa javobda ``pay_url`` qaytadi: foydalanuvchi o'sha yerda
-    to'laydi, tasdiq billing'dagi Click callback orqali keladi. Har bir yangi
-    buyurtma Telegram guruhga yuboriladi."""
+    to'laydi, tasdiq billing'dagi Click callback orqali keladi.
+
+    Muhim: to'lovli buyurtma darhol QABUL QILINMAYDI — u 'pending' holatida
+    turadi va jamoaga xabar yuborilmaydi. To'lov tasdiqlangandan keyingina
+    status 'new' ga o'tadi va Telegram guruhga xabar ketadi (billing.views).
+    Narx 0 bo'lsa (yoki Click sozlanmagan bo'lsa) eski tartib: ariza darhol
+    qabul qilinadi."""
     serializer_class = NfcOrderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -593,22 +614,36 @@ class NfcOrderListCreateView(generics.ListCreateAPIView):
         return Response(data, status=status.HTTP_201_CREATED)
 
     def perform_create(self, serializer):
+        from billing import click
         unit = SiteSettings.get_settings().nfc_price or 0
         qty = serializer.validated_data.get('quantity') or 1
-        order = serializer.save(user=self.request.user, unit_price=unit, amount=unit * qty)
-        summa = f"{order.amount:,}".replace(',', ' ') + " so'm" if order.amount else "-"
-        text = (
-            "\U0001F4B3 <b>Yangi NFC buyurtma</b>\n"
-            f"<b>Ism:</b> {order.full_name}\n"
-            f"<b>Tel:</b> {order.phone}\n"
-            f"<b>Soni:</b> {order.quantity}\n"
-            f"<b>Summa:</b> {summa}\n"
-            f"<b>Biznes:</b> {order.business.name if order.business else '-'}\n"
-            f"<b>Izoh:</b> {order.note or '-'}\n"
-            "<b>Holat:</b> to'lov kutilmoqda"
+        # To'lov talab qilinsa — ariza to'lovgacha 'pending' bo'lib turadi.
+        needs_payment = unit > 0 and click.configured()
+        order = serializer.save(
+            user=self.request.user, unit_price=unit, amount=unit * qty,
+            status='pending' if needs_payment else 'new',
         )
-        send_telegram_message(text)
+        if not needs_payment:
+            send_telegram_message(nfc_order_message(order))
         return order
+
+
+class NfcOrderPayView(APIView):
+    """To'lanmagan buyurtma uchun yangi Click havolasi.
+
+    Foydalanuvchi to'lovni yarim yo'lda tashlab ketgan bo'lsa, formani qaytadan
+    to'ldirmasdan shu buyurtmani to'lay oladi."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        order = get_object_or_404(NfcOrder, pk=pk, user=request.user)
+        if order.is_paid:
+            return Response({'reason': 'already_paid'}, status=status.HTTP_400_BAD_REQUEST)
+        pay_url = nfc_pay_url(request, order)
+        if not pay_url:
+            return Response({'reason': 'payment_unavailable'},
+                            status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return Response({'pay_url': pay_url})
 
 
 class StaticPageView(APIView):

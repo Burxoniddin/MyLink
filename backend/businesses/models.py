@@ -305,7 +305,10 @@ class NfcOrder(models.Model):
     buyurtma yaratilganda ``unit_price``/``amount`` ga yozib qo'yiladi (keyin
     narx o'zgarsa ham bu buyurtma o'z summasida qoladi). To'lov Click orqali —
     billing.PaymentOrder(kind='nfc'). Yangi buyurtma Telegram guruhga ketadi."""
-    STATUS = [('new', 'Yangi'), ('processing', 'Jarayonda'), ('done', 'Bajarildi'), ('canceled', 'Bekor')]
+    # 'pending' — to'lov qilinmagan, ya'ni ariza hali qabul qilinmagan holat.
+    # To'lov tasdiqlangach status 'new' ga o'tadi va jamoaga xabar boradi.
+    STATUS = [('pending', "To'lov kutilmoqda"), ('new', 'Yangi'),
+              ('processing', 'Jarayonda'), ('done', 'Bajarildi'), ('canceled', 'Bekor')]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='nfc_orders')
     # Optional: which of the user's own pages the card should point to.

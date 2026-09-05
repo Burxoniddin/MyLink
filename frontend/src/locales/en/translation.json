@@ -349,7 +349,14 @@
     "sent": "Order received! We'll contact you soon.",
     "no_payment": "No online payment — our team will contact you.",
     "history": "My orders",
-    "orders_note": "New orders will appear here. We'll let you know when the status changes."
+    "orders_note": "New orders will appear here. We'll let you know when the status changes.",
+    "price_unit": "1 pc: {{price}} UZS",
+    "pay": "Pay with Click",
+    "pay_note": "After payment our manager will contact you to agree on the design.",
+    "paid": "Paid",
+    "unpaid": "Awaiting payment",
+    "paid_ok": "Payment received! Your order is in progress.",
+    "paid_wait": "Checking the payment — the order activates once it is confirmed."
   },
   "referral": {
     "title": "Invite friends",
@@ -657,5 +664,10 @@
     "reload": "Reload the page",
     "home": "Go to dashboard",
     "details": "Technical details"
+  },
+  "offer": {
+    "read": "Read the offer",
+    "accept": "I have read and accept the terms of the public offer.",
+    "note": "By continuing you agree to the terms of the public offer."
   }
 }

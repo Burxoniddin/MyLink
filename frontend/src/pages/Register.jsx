@@ -5,6 +5,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AuthLayout from '../components/AuthLayout';
 import GoogleButton from '../components/GoogleButton';
+import OfferConsent from '../components/OfferConsent';
 import PasswordInput from '../components/PasswordInput';
 
 const formatPhoneNumber = (value) => {
@@ -165,6 +166,8 @@ const Register = () => {
                     </button>
                 </form>
             )}
+
+            <OfferConsent note />
 
             <div style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#6b7280' }}>
                 {t('auth.have_account')} <Link to="/login">{t('auth.login')}</Link>

@@ -1,0 +1,114 @@
+# MYLINK.ASIA OMMAVIY OFERTASI
+
+Ushbu hujjat MyLink.asia platformasi xizmatlaridan foydalanish bo'yicha ommaviy oferta (jamoat shartnomasi) hisoblanadi. Saytda ro'yxatdan o'tish, tarifni sotib olish yoki NFC vizitka buyurtma qilish orqali Foydalanuvchi quyidagi shartlarni to'liq va so'zsiz qabul qilgan hisoblanadi (aksept).
+
+Tahrir sanasi: {DATE}
+
+# 1. ATAMALAR
+
+Ijrochi — MyLink.asia platformasi egasi: {COMPANY}, STIR: {TIN}, manzil: {ADDRESS}.
+
+Foydalanuvchi — platformada ro'yxatdan o'tgan va xizmatlardan foydalanayotgan jismoniy yoki yuridik shaxs.
+
+Platforma — mylink.asia domenidagi veb-sayt va unga tegishli xizmatlar majmui: biznes uchun "link in bio" sahifalari, QR kodlar, promomateriallar, web-menyu (katalog), analitika va NFC vizitkalar.
+
+Sahifa — Foydalanuvchi platformada yaratgan va mylink.asia/<manzil> ko'rinishidagi havolada ochiladigan omma uchun ochiq sahifa.
+
+Tarif — xizmatlarning ma'lum to'plami va ularning amal qilish muddati belgilangan xizmat rejasi. Amaldagi tariflar va narxlar mylink.asia/pricing sahifasida e'lon qilinadi.
+
+NFC vizitka — Foydalanuvchi buyurtmasi asosida tayyorlanadigan, unga tegishli Sahifa havolasi yozilgan NFC chipli plastik karta.
+
+# 2. SHARTNOMA PREDMETI
+
+2.1. Ijrochi Foydalanuvchiga platforma xizmatlaridan tanlangan tarif doirasida foydalanish huquqini taqdim etadi, Foydalanuvchi esa xizmat haqini shartnomada belgilangan tartibda to'laydi.
+
+2.2. Bepul tarif to'lovsiz taqdim etiladi va uning imkoniyatlari cheklangan bo'ladi.
+
+2.3. NFC vizitkalar alohida buyurtma asosida, oldindan to'lov sharti bilan tayyorlanadi.
+
+# 3. RO'YXATDAN O'TISH VA AKKAUNT
+
+3.1. Xizmatdan foydalanish uchun telefon raqami yoki elektron pochta orqali ro'yxatdan o'tish talab etiladi.
+
+3.2. Foydalanuvchi kiritgan ma'lumotlarning to'g'riligi va akkaunti xavfsizligi (parol, tasdiqlash kodlari) uchun shaxsan javobgardir.
+
+3.3. Bitta shaxs bir nechta Sahifa yaratishi mumkin — ularning soni tanlangan tarif bilan cheklanadi.
+
+# 4. TARIFLAR VA TO'LOV
+
+4.1. Xizmat narxlari platformada so'mda ko'rsatiladi. Ijrochi narxlarni bir tomonlama o'zgartirishga haqli; o'zgarish allaqachon to'langan va amal qilayotgan muddatga taalluqli emas.
+
+4.2. To'lov Click to'lov tizimi orqali onlayn amalga oshiriladi. To'lov Foydalanuvchi tomonidan tasdiqlangach, tarif avtomatik faollashtiriladi.
+
+4.3. Obuna tanlangan muddatga (1 oy, 6 oy, 1 yil) yoki bir martalik shaklda beriladi. Muddat tugagach xizmat avtomatik ravishda bepul tarifga o'tadi; avtomatik yechib olish (avtoto'lov) qo'llanilmaydi.
+
+4.4. Amal qilayotgan obuna ustiga yangi to'lov qilinsa, yangi muddat mavjud muddat ustiga qo'shiladi.
+
+4.5. Raqamli xizmat ko'rsatila boshlagach (tarif faollashtirilgach) to'lov qaytarilmaydi, agar xizmat Ijrochi aybi bilan ko'rsatilmagan bo'lmasa.
+
+# 5. NFC VIZITKA BUYURTMASI
+
+5.1. NFC vizitka narxi buyurtma sahifasida ko'rsatiladi va bir dona uchun belgilanadi; buyurtma summasi narx va soniga ko'paytmasi orqali hisoblanadi.
+
+5.2. Buyurtma to'lov amalga oshirilgandan so'ng qabul qilingan hisoblanadi. To'lovdan keyin Ijrochi vakili buyurtmani tasdiqlash va dizaynni kelishish uchun ko'rsatilgan telefon raqamiga bog'lanadi.
+
+5.3. Tayyorlash muddati odatda 3–7 ish kunini tashkil etadi va buyurtma hajmiga qarab o'zgarishi mumkin. Yetkazib berish shartlari buyurtmani tasdiqlashda alohida kelishiladi.
+
+5.4. Individual tayyorlanadigan mahsulot bo'lgani sababli, ishlab chiqarish boshlangandan keyin buyurtmani bekor qilish va to'lovni qaytarish imkoni yo'q.
+
+5.5. Nuqsonli (ishlamaydigan NFC chipi, bosma nuqsoni) mahsulot aniqlansa, Foydalanuvchi mahsulotni qabul qilgandan keyin 7 kun ichida murojaat qilishi mumkin — bunday mahsulot bepul almashtiriladi.
+
+5.6. Foydalanuvchi taqdim etgan logotip, matn va boshqa materiallarning qonuniyligi hamda ularni ishlatish huquqi uchun Foydalanuvchining o'zi javob beradi.
+
+# 6. FOYDALANUVCHI KONTENTI
+
+6.1. Foydalanuvchi o'z Sahifasiga joylashtirgan barcha ma'lumot, rasm, video va havolalar uchun to'liq javobgardir.
+
+6.2. Quyidagilar taqiqlanadi: qonunga zid, aldov yoki firibgarlik xarakteridagi materiallar; uchinchi shaxslarning huquqlarini buzuvchi kontent; zo'ravonlik, kamsitish yoki nafratni targ'ib qiluvchi materiallar; zararli dasturlar va spam havolalar.
+
+6.3. Ushbu shartlar buzilganda Ijrochi Sahifani ogohlantirishsiz to'xtatib qo'yish yoki akkauntni bloklash huquqiga ega. Bunday holatda to'langan mablag' qaytarilmaydi.
+
+# 7. TOMONLARNING HUQUQ VA MAJBURIYATLARI
+
+7.1. Ijrochi platformaning uzluksiz ishlashini ta'minlashga harakat qiladi, biroq texnik ishlar yoki uchinchi tomon xizmatlaridagi uzilishlar sababli vaqtinchalik to'xtashlar bo'lishi mumkin.
+
+7.2. Ijrochi platformaga yangi imkoniyatlar qo'shish, mavjudlarini o'zgartirish yoki olib tashlash huquqini saqlab qoladi.
+
+7.3. Foydalanuvchi xizmatdan faqat qonuniy maqsadlarda foydalanishi va platformaning ishiga zarar yetkazmasligi shart.
+
+# 8. SHAXSIY MA'LUMOTLAR
+
+8.1. Ijrochi Foydalanuvchi ma'lumotlarini (telefon raqami, elektron pochta, biznes ma'lumotlari) faqat xizmat ko'rsatish maqsadida qayta ishlaydi va O'zbekiston Respublikasining "Shaxsga doir ma'lumotlar to'g'risida"gi qonuni talablariga rioya qiladi.
+
+8.2. Ma'lumotlar uchinchi shaxslarga faqat xizmat ko'rsatish uchun zarur bo'lganda (to'lov tizimi, SMS operatori) yoki qonun talabiga ko'ra beriladi.
+
+8.3. Sahifaga tashrif statistikasi anonim tarzda yig'iladi va Foydalanuvchining analitika bo'limida ko'rsatiladi.
+
+# 9. JAVOBGARLIKNI CHEKLASH
+
+9.1. Xizmat "borligicha" (as is) taqdim etiladi. Ijrochi Foydalanuvchi biznesining daromadi yoki mijozlar oqimi bo'yicha kafolat bermaydi.
+
+9.2. Ijrochining javobgarligi har qanday holatda nizo yuzaga kelgan davr uchun Foydalanuvchi to'lagan summa bilan cheklanadi.
+
+9.3. Foydalanuvchi kontenti sababli uchinchi shaxslar oldida yuzaga keladigan da'volar uchun Ijrochi javob bermaydi.
+
+# 10. NIZOLARNI HAL QILISH
+
+10.1. Nizolar avvalo muzokara yo'li bilan hal qilinadi. Murojaatlar {EMAIL} manziliga yoki platformadagi aloqa bo'limi orqali yuboriladi va 10 ish kuni ichida ko'rib chiqiladi.
+
+10.2. Kelishuvga erishilmagan taqdirda nizo O'zbekiston Respublikasi qonunchiligiga muvofiq sud tartibida hal etiladi.
+
+# 11. YAKUNIY QOIDALAR
+
+11.1. Ijrochi ushbu ofertaga o'zgartirish kiritishga haqli. Yangi tahrir platformada e'lon qilingan kundan kuchga kiradi; xizmatdan foydalanishni davom ettirish yangi shartlarni qabul qilish deb hisoblanadi.
+
+11.2. Oferta Foydalanuvchi aksept qilgan paytdan boshlab kuchga kiradi va tomonlar majburiyatlari to'liq bajarilgunga qadar amal qiladi.
+
+# 12. IJROCHI REKVIZITLARI
+
+Tashkilot: {COMPANY}
+STIR: {TIN}
+Manzil: {ADDRESS}
+Telefon: {PHONE}
+Elektron pochta: {EMAIL}
+Sayt: https://mylink.asia

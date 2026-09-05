@@ -268,12 +268,18 @@ class ContactMessageSerializer(serializers.ModelSerializer):
 class NfcOrderSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     business_name = serializers.CharField(source='business.name', read_only=True, default=None)
+    # Ommaviy oferta roziligi — buyurtma uchun majburiy (modeldagi default=False
+    # tufayli DRF uni ixtiyoriy deb hisoblardi, shuning uchun aniq belgilanadi).
+    offer_accepted = serializers.BooleanField(required=True)
 
     class Meta:
         model = NfcOrder
         fields = ['id', 'full_name', 'phone', 'quantity', 'note',
-                  'business', 'business_name', 'status', 'status_display', 'created_at']
-        read_only_fields = ['status', 'status_display', 'created_at']
+                  'business', 'business_name', 'status', 'status_display',
+                  'unit_price', 'amount', 'is_paid', 'paid_at', 'offer_accepted',
+                  'created_at']
+        read_only_fields = ['status', 'status_display', 'unit_price', 'amount',
+                            'is_paid', 'paid_at', 'created_at']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -295,6 +301,14 @@ class NfcOrderSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError(
             "Telefon raqamini to'g'ri kiriting, masalan: +998 90 123 45 67"
         )
+
+    def validate_offer_accepted(self, value):
+        # To'lovli buyurtma ommaviy oferta shartlarisiz qabul qilinmaydi.
+        if not value:
+            raise serializers.ValidationError(
+                "Buyurtma berish uchun ommaviy oferta shartlarini qabul qiling"
+            )
+        return value
 
     def validate_quantity(self, value):
         if value < 1 or value > 1000:

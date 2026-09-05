@@ -35,6 +35,19 @@ class PlansView(APIView):
         return Response(data)
 
 
+def notify_nfc_paid(nfc):
+    """NFC buyurtmasi to'langanda jamoa guruhiga xabar."""
+    from businesses.utils import send_telegram_message
+    summa = f"{nfc.amount:,}".replace(',', ' ')
+    send_telegram_message(
+        "\u2705 <b>NFC buyurtma to'landi</b>\n"
+        f"<b>Ism:</b> {nfc.full_name}\n"
+        f"<b>Tel:</b> {nfc.phone}\n"
+        f"<b>Soni:</b> {nfc.quantity}\n"
+        f"<b>Summa:</b> {summa} so'm"
+    )
+
+
 class ClickCreateView(APIView):
     """POST { tier, period, return_url? } → creates a pending PaymentOrder and
     returns the my.click.uz checkout URL to redirect the user to."""
@@ -136,12 +149,24 @@ class ClickCallbackView(APIView):
             if locked.status == 'paid':
                 return reply(click.ERR_ALREADY_PAID, 'Already paid', merchant_confirm_id=order.pk)
             duration = ent.PERIOD_DAYS.get(locked.period)  # onetime → None (lifetime)
-            sub = grant_subscription(
-                locked.user, locked.tier, duration_days=duration,
-                source='payment', note=f'Click order #{locked.pk}', extend=True,
-            )
+            # NFC buyurtmasi bo'lsa obuna berilmaydi: buyurtma to'landi deb
+            # belgilanadi va jamoa guruhiga xabar ketadi.
+            now = timezone.now()
+            sub = None
+            if locked.kind == 'nfc':
+                nfc = locked.nfc_order
+                if nfc is not None and not nfc.is_paid:
+                    nfc.is_paid = True
+                    nfc.paid_at = now
+                    nfc.save(update_fields=['is_paid', 'paid_at'])
+                    notify_nfc_paid(nfc)
+            else:
+                sub = grant_subscription(
+                    locked.user, locked.tier, duration_days=duration,
+                    source='payment', note=f'Click order #{locked.pk}', extend=True,
+                )
             locked.status = 'paid'
-            locked.paid_at = timezone.now()
+            locked.paid_at = now
             locked.subscription = sub
             locked.save(update_fields=['status', 'paid_at', 'subscription'])
 

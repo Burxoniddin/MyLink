@@ -478,6 +478,49 @@ class PublicFeaturedView(APIView):
         ])
 
 
+# --------------------------------------------------------------------------- #
+# Ommaviy oferta + NFC to'lovi
+# --------------------------------------------------------------------------- #
+
+def offer_url(request):
+    """Amaldagi ommaviy oferta havolasi (to'liq URL).
+
+    Admin PDF yuklagan bo'lsa - o'sha fayl; aks holda matndan joyida
+    yig'iladigan dinamik PDF (rekvizitlar adminkadan olinadi)."""
+    s = SiteSettings.get_settings()
+    if s.offer_pdf:
+        return request.build_absolute_uri(s.offer_pdf.url)
+    return request.build_absolute_uri('/api/public/offer.pdf')
+
+
+class OfferPdfView(APIView):
+    """Ommaviy oferta PDF - matn assets/oferta_uz.txt da, rekvizitlar
+    SiteSettings da. Admin o'z faylini yuklasa, foydalanuvchi o'shanga
+    yo'naltiriladi (offer_url) va bu endpoint ishlatilmaydi."""
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        from .offer import offer_pdf_bytes
+        response = HttpResponse(offer_pdf_bytes(), content_type='application/pdf')
+        response['Content-Disposition'] = 'inline; filename="mylink-oferta.pdf"'
+        return response
+
+
+def nfc_pay_url(request, order):
+    """NFC buyurtmasi uchun Click to'lov havolasi ('' - narx yo'q/Click o'chiq)."""
+    if order.amount <= 0:
+        return ''
+    from billing import click
+    from billing.models import PaymentOrder
+    if not click.configured():
+        return ''
+    payment = PaymentOrder.objects.create(
+        user=order.user, kind='nfc', nfc_order=order, amount=order.amount,
+    )
+    return click.pay_url(payment, request.data.get('return_url') or '')
+
+
 class PublicSettingsView(APIView):
     """Public, admin-editable contact/support info for the landing + Help button."""
     permission_classes = [permissions.AllowAny]
@@ -491,6 +534,9 @@ class PublicSettingsView(APIView):
             'contact_phone': s.contact_phone,
             'contact_telegram': s.contact_telegram,
             'support_telegram_url': s.support_telegram_url,
+            # NFC vizitka narxi (1 dona) - foydalanuvchi buyurtmadan oldin ko'radi.
+            'nfc_price': s.nfc_price,
+            'offer_url': offer_url(request),
         })
 
 
@@ -522,25 +568,47 @@ class ContactCreateView(APIView):
 
 
 class NfcOrderListCreateView(generics.ListCreateAPIView):
-    """List the user's NFC card orders / place a new one (lead — no payment).
-    New orders are forwarded to the Telegram group."""
+    """Foydalanuvchining NFC buyurtmalari / yangi buyurtma berish.
+
+    Narx SiteSettings.nfc_price dan olinib buyurtmaga yozib qo'yiladi (keyin
+    narx o'zgarsa ham bu buyurtma o'z summasida qoladi). Narx > 0 va Click
+    sozlangan bo'lsa javobda ``pay_url`` qaytadi: foydalanuvchi o'sha yerda
+    to'laydi, tasdiq billing'dagi Click callback orqali keladi. Har bir yangi
+    buyurtma Telegram guruhga yuboriladi."""
     serializer_class = NfcOrderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return NfcOrder.objects.filter(user=self.request.user)
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = self.perform_create(serializer)
+        data = dict(serializer.data)
+        data['id'] = order.pk
+        data['amount'] = order.amount
+        data['unit_price'] = order.unit_price
+        data['pay_url'] = nfc_pay_url(request, order)
+        return Response(data, status=status.HTTP_201_CREATED)
+
     def perform_create(self, serializer):
-        order = serializer.save(user=self.request.user)
+        unit = SiteSettings.get_settings().nfc_price or 0
+        qty = serializer.validated_data.get('quantity') or 1
+        order = serializer.save(user=self.request.user, unit_price=unit, amount=unit * qty)
+        summa = f"{order.amount:,}".replace(',', ' ') + " so'm" if order.amount else "-"
         text = (
             "\U0001F4B3 <b>Yangi NFC buyurtma</b>\n"
             f"<b>Ism:</b> {order.full_name}\n"
             f"<b>Tel:</b> {order.phone}\n"
             f"<b>Soni:</b> {order.quantity}\n"
-            f"<b>Biznes:</b> {order.business.name if order.business else '—'}\n"
-            f"<b>Izoh:</b> {order.note or '—'}"
+            f"<b>Summa:</b> {summa}\n"
+            f"<b>Biznes:</b> {order.business.name if order.business else '-'}\n"
+            f"<b>Izoh:</b> {order.note or '-'}\n"
+            "<b>Holat:</b> to'lov kutilmoqda"
         )
         send_telegram_message(text)
+        return order
 
 
 class StaticPageView(APIView):

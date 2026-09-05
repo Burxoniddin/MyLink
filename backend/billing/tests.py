@@ -323,6 +323,35 @@ class ClickPaymentTests(TestCase):
         )
         return self.client_api.post('/api/payments/click/callback/', data)
 
+    def test_nfc_order_payment_marks_order_paid(self):
+        """NFC to'lovi obuna bermaydi - buyurtmani 'to'langan' qiladi."""
+        from businesses.models import NfcOrder, SiteSettings
+        from billing.models import PaymentOrder
+
+        s = SiteSettings.get_settings()
+        s.nfc_price = 149000
+        s.save()
+        res = self.client_api.post(
+            '/api/nfc/orders/',
+            {'full_name': 'A', 'phone': '901234567', 'quantity': 2, 'offer_accepted': True},
+            format='json')
+        self.assertEqual(res.status_code, 201, res.data)
+        self.assertTrue(res.data['pay_url'])
+
+        payment = PaymentOrder.objects.get(kind='nfc')
+        self.assertEqual(payment.amount, 149000 * 2)
+        self._cb(payment.pk, '0', str(payment.amount))
+        done = self._cb(payment.pk, '1', str(payment.amount), prepare_id=str(payment.pk))
+        self.assertEqual(done.data['error'], 0, done.data)
+
+        nfc = NfcOrder.objects.get()
+        self.assertTrue(nfc.is_paid)
+        self.assertIsNotNone(nfc.paid_at)
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, 'paid')
+        self.assertIsNone(payment.subscription)          # obuna berilmaydi
+        self.assertEqual(effective_tier(self.user), ent.FREE)
+
     def test_create_returns_pay_url(self):
         d = self._order()
         self.assertIn('my.click.uz/services/pay', d['pay_url'])

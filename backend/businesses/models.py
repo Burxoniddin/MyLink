@@ -266,6 +266,18 @@ class SiteSettings(models.Model):
     telegram_chat_id = models.CharField(max_length=50, blank=True, help_text="Xabarlar yuboriladigan guruh/chat ID")
     analytics_code = models.TextField(blank=True, help_text="Google Analytics yoki boshqa analytics kod")
     maintenance_mode = models.BooleanField(default=False)
+    nfc_price = models.PositiveIntegerField(
+        default=0, verbose_name="NFC vizitka narxi (1 dona, so'm)",
+        help_text="Foydalanuvchi buyurtma berishdan oldin shu narxni ko'radi; "
+                  "to'lov summasi = narx x soni. 0 bo'lsa to'lov so'ralmaydi.")
+    company_name = models.CharField(
+        max_length=200, blank=True, verbose_name="Tashkilot nomi",
+        help_text="Ofertada ko'rsatiladi, masalan: \"MyLink Group\" MChJ")
+    company_tin = models.CharField(max_length=20, blank=True, verbose_name="STIR (INN)")
+    company_address = models.CharField(max_length=250, blank=True, verbose_name="Yuridik manzil")
+    offer_pdf = models.FileField(
+        upload_to='docs/', blank=True, null=True, verbose_name="Ommaviy oferta (PDF)",
+        help_text="Yuklansa — sayt shu faylni ko'rsatadi; bo'sh bo'lsa standart oferta ishlatiladi.")
     
     class Meta:
         verbose_name = "Sayt sozlamalari"
@@ -289,8 +301,10 @@ LANG_CHOICES = [('uz', "O'zbek"), ('ru', 'Русский'), ('en', 'English')]
 
 
 class NfcOrder(models.Model):
-    """A request for NFC business cards (lead). No online payment — the team
-    contacts the user. Forwarded to the Telegram group on creation."""
+    """NFC vizitka buyurtmasi. Narx SiteSettings.nfc_price dan olinadi va
+    buyurtma yaratilganda ``unit_price``/``amount`` ga yozib qo'yiladi (keyin
+    narx o'zgarsa ham bu buyurtma o'z summasida qoladi). To'lov Click orqali —
+    billing.PaymentOrder(kind='nfc'). Yangi buyurtma Telegram guruhga ketadi."""
     STATUS = [('new', 'Yangi'), ('processing', 'Jarayonda'), ('done', 'Bajarildi'), ('canceled', 'Bekor')]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='nfc_orders')
@@ -304,6 +318,13 @@ class NfcOrder(models.Model):
     quantity = models.PositiveIntegerField(default=1)
     note = models.TextField(blank=True)
     status = models.CharField(max_length=12, choices=STATUS, default='new')
+    unit_price = models.PositiveIntegerField(default=0, verbose_name="1 dona narxi (so'm)")
+    amount = models.PositiveIntegerField(default=0, verbose_name="Jami summa (so'm)")
+    is_paid = models.BooleanField(default=False, verbose_name="To'langan")
+    paid_at = models.DateTimeField(null=True, blank=True)
+    offer_accepted = models.BooleanField(
+        default=False, verbose_name="Oferta qabul qilingan",
+        help_text="Foydalanuvchi buyurtma berishda ommaviy oferta shartlarini tasdiqlagan.")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

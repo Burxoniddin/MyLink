@@ -89,9 +89,12 @@ class LinkAdmin(admin.ModelAdmin):
 
 @admin.register(NfcOrder)
 class NfcOrderAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'phone', 'quantity', 'user', 'status', 'created_at')
+    list_display = ('full_name', 'phone', 'quantity', 'amount', 'is_paid',
+                    'user', 'status', 'created_at')
     list_editable = ('status',)
-    list_filter = ('status', 'created_at')
+    list_filter = ('is_paid', 'status', 'created_at')
+    readonly_fields = ('unit_price', 'amount', 'is_paid', 'paid_at',
+                       'offer_accepted', 'created_at')
     search_fields = ('full_name', 'phone', 'user__phone_number', 'user__email')
     date_hierarchy = 'created_at'
 
@@ -135,6 +138,14 @@ class SiteSettingsAdmin(admin.ModelAdmin):
         }),
         ('Aloqa', {
             'fields': ('contact_email', 'contact_phone', 'contact_telegram', 'support_telegram_url')
+        }),
+        ('NFC vizitka va oferta', {
+            'fields': ('nfc_price', 'company_name', 'company_tin',
+                       'company_address', 'offer_pdf'),
+            'description': "NFC narxi buyurtma sahifasida ko'rsatiladi va to'lov "
+                           "summasi shundan hisoblanadi (narx x soni). Oferta PDF "
+                           "yuklanmasa, oferta matn shabloni va shu "
+                           "yerdagi rekvizitlardan avtomatik yig'iladi.",
         }),
         ('Telegram bot (aloqa xabarlari guruhga yuboriladi)', {
             'fields': ('telegram_bot_token', 'telegram_chat_id'),

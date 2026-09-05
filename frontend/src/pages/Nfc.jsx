@@ -11,6 +11,7 @@ import { formatPrice } from '../lib/format';
 const CARDS = ['/nfc/card-1.webp', '/nfc/card-2.webp', '/nfc/card-3.webp', '/nfc/card-4.webp'];
 
 const STATUS_BADGE = {
+    pending: { bg: '#fee2e2', fg: '#b45309' },   // to'lov kutilmoqda
     new: { bg: '#eceafd', fg: '#5c56e8' },
     processing: { bg: '#fef3c7', fg: '#92400e' },
     done: { bg: '#dcfce7', fg: '#166534' },
@@ -99,6 +100,16 @@ const Nfc = () => {
             setMsg({ type: 'error', text: fieldErr || t('common.error') });
         } finally {
             setBusy(false);
+        }
+    };
+
+    // To'lanmay qolgan buyurtma uchun yangi Click havolasi olib, to'lovga o'tish.
+    const payAgain = async (id) => {
+        try {
+            const res = await api.post(`nfc/orders/${id}/pay/`);
+            if (res.data?.pay_url) window.location.href = res.data.pay_url;
+        } catch {
+            setMsg({ type: 'error', text: t('common.error') });
         }
     };
 
@@ -212,6 +223,7 @@ const Nfc = () => {
                             <h2>{t('nfc.history')}</h2>
                             {orders.map((o) => {
                                 const c = STATUS_BADGE[o.status] || STATUS_BADGE.new;
+                                const unpaid = o.amount > 0 && !o.is_paid;
                                 return (
                                     <div key={o.id} className="nfc2-orow">
                                         <span className="nfc2-chip" aria-hidden="true"></span>
@@ -219,11 +231,17 @@ const Nfc = () => {
                                             <b>×{o.quantity} — {o.full_name}</b>
                                             <span>
                                                 {o.amount > 0 ? `${formatPrice(o.amount)} ${t('pricing.feat.som')} · ` : ''}
-                                                {o.amount > 0 ? `${o.is_paid ? t('nfc.paid') : t('nfc.unpaid')} · ` : ''}
                                                 {o.business_name ? `${o.business_name} · ` : ''}
                                                 {new Date(o.created_at).toLocaleDateString()}
                                             </span>
                                         </span>
+                                        {/* To'lanmagan buyurtmani formani qayta to'ldirmasdan to'lash. */}
+                                        {unpaid && (
+                                            <button type="button" className="nfc2-payagain"
+                                                onClick={() => payAgain(o.id)}>
+                                                {t('nfc.pay_again')}
+                                            </button>
+                                        )}
                                         <span className="nfc2-badge" style={{ background: c.bg, color: c.fg }}>
                                             {o.status_display}
                                         </span>

@@ -36,16 +36,11 @@ class PlansView(APIView):
 
 
 def notify_nfc_paid(nfc):
-    """NFC buyurtmasi to'langanda jamoa guruhiga xabar."""
+    """NFC buyurtmasi to'langanda jamoa guruhiga xabar \u2014 ariza aynan shu
+    paytda qabul qilingan hisoblanadi (to'lovgacha xabar yuborilmaydi)."""
     from businesses.utils import send_telegram_message
-    summa = f"{nfc.amount:,}".replace(',', ' ')
-    send_telegram_message(
-        "\u2705 <b>NFC buyurtma to'landi</b>\n"
-        f"<b>Ism:</b> {nfc.full_name}\n"
-        f"<b>Tel:</b> {nfc.phone}\n"
-        f"<b>Soni:</b> {nfc.quantity}\n"
-        f"<b>Summa:</b> {summa} so'm"
-    )
+    from businesses.views import nfc_order_message
+    send_telegram_message(nfc_order_message(nfc, paid=True))
 
 
 class ClickCreateView(APIView):
@@ -158,7 +153,11 @@ class ClickCallbackView(APIView):
                 if nfc is not None and not nfc.is_paid:
                     nfc.is_paid = True
                     nfc.paid_at = now
-                    nfc.save(update_fields=['is_paid', 'paid_at'])
+                    # Ariza aynan hozir qabul qilinadi: 'to'lov kutilmoqda' ->
+                    # 'yangi' (adminka boshqa holatga o'tkazgan bo'lsa tegilmaydi).
+                    if nfc.status == 'pending':
+                        nfc.status = 'new'
+                    nfc.save(update_fields=['is_paid', 'paid_at', 'status'])
                     notify_nfc_paid(nfc)
             else:
                 sub = grant_subscription(

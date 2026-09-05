@@ -352,11 +352,12 @@
     "orders_note": "New orders will appear here. We'll let you know when the status changes.",
     "price_unit": "1 pc: {{price}} UZS",
     "pay": "Pay with Click",
-    "pay_note": "After payment our manager will contact you to agree on the design.",
+    "pay_note": "The order is accepted once the payment is confirmed. After payment our manager will contact you to agree on the design.",
     "paid": "Paid",
     "unpaid": "Awaiting payment",
     "paid_ok": "Payment received! Your order is in progress.",
-    "paid_wait": "Checking the payment — the order activates once it is confirmed."
+    "paid_wait": "Checking the payment — the order activates once it is confirmed.",
+    "pay_again": "Pay"
   },
   "referral": {
     "title": "Invite friends",

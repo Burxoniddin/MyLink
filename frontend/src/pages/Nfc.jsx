@@ -8,7 +8,7 @@ import { formatPrice } from '../lib/format';
 
 // Variant A of the NFC redesign (claude.ai/design "NFC sahifa redesign"):
 // dark hero panel with a rotating card mock carousel, light form + orders grid.
-const CARDS = ['/nfc/card-1.webp', '/nfc/card-2.webp', '/nfc/card-3.webp', '/nfc/card-4.webp'];
+const CARDS = ['/nfc-cards/card-1.webp', '/nfc-cards/card-2.webp', '/nfc-cards/card-3.webp', '/nfc-cards/card-4.webp'];
 
 const STATUS_BADGE = {
     pending: { bg: '#fee2e2', fg: '#b45309' },   // to'lov kutilmoqda

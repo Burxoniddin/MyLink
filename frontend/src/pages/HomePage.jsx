@@ -414,7 +414,7 @@ const HomePage = () => {
                                     <Link to="/nfc" className="fr-more">{t('home.ft6_more')} →</Link>
                                 </div>
                                 <div className="fr-vis fv-dark">
-                                    <img src="/nfc/card-1.webp" alt="MyLink NFC card" className="fv-nfc" loading="lazy" />
+                                    <img src="/nfc-cards/card-1.webp" alt="MyLink NFC card" className="fv-nfc" loading="lazy" />
                                 </div>
                             </div>
                         </div>

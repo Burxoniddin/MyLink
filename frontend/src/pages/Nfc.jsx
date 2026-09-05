@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useTranslation } from 'react-i18next';
+import OfferConsent from '../components/OfferConsent';
+import { fetchSiteSettings } from '../lib/siteSettings';
+import { formatPrice } from '../lib/format';
 
 // Variant A of the NFC redesign (claude.ai/design "NFC sahifa redesign"):
 // dark hero panel with a rotating card mock carousel, light form + orders grid.
@@ -32,10 +35,22 @@ const Nfc = () => {
     const [busy, setBusy] = useState(false);
     const [msg, setMsg] = useState({ type: '', text: '' });
     const [slide, setSlide] = useState(0);
+    // Narx adminkadan keladi; oferta belgilanmasa to'lash tugmasi ochilmaydi.
+    const [unitPrice, setUnitPrice] = useState(0);
+    const [agree, setAgree] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) { navigate('/login'); return; }
+        // Click'dan qaytish: ?paid=1 (muvaffaqiyatda payment_status=2 qo'shiladi).
+        const q = new URLSearchParams(window.location.search);
+        if (q.get('paid')) {
+            setMsg(q.get('payment_status') === '2'
+                ? { type: 'success', text: t('nfc.paid_ok') }
+                : { type: 'info', text: t('nfc.paid_wait') });
+            window.history.replaceState({}, '', '/nfc');
+        }
+        fetchSiteSettings().then((s) => setUnitPrice(Number(s?.nfc_price) || 0));
         Promise.all([
             api.get('nfc/orders/').then((res) => setOrders(res.data)),
             // Only the user's own pages are offered (and accepted by the backend).
@@ -59,11 +74,22 @@ const Nfc = () => {
         setBusy(true);
         setMsg({ type: '', text: '' });
         try {
-            const payload = { ...form, quantity: Number(form.quantity) || 1 };
+            const payload = {
+                ...form,
+                quantity: Number(form.quantity) || 1,
+                offer_accepted: agree,
+                return_url: `${window.location.origin}/nfc?paid=1`,
+            };
             if (!payload.business) delete payload.business;  // optional
             const res = await api.post('nfc/orders/', payload);
+            // Narx belgilangan va Click ulangan bo'lsa — to'lovga o'tamiz.
+            if (res.data?.pay_url) {
+                window.location.href = res.data.pay_url;
+                return;
+            }
             setOrders([res.data, ...orders]);
             setForm({ full_name: '', phone: '', quantity: 1, note: '', business: '' });
+            setAgree(false);
             setMsg({ type: 'success', text: t('nfc.sent') });
         } catch (err) {
             // Surface the first field error (e.g. phone format) if present.
@@ -162,10 +188,23 @@ const Nfc = () => {
                                     <textarea className="nfc2-in" rows="3" value={form.note}
                                         onChange={(e) => setForm({ ...form, note: e.target.value })} />
                                 </div>
-                                <button type="submit" className="nfc2-btn" disabled={busy}>
-                                    {busy ? t('nfc.sending') : t('nfc.submit')}
+                                {unitPrice > 0 && (
+                                    <div className="nfc2-price">
+                                        <span className="nfc2-price-unit">
+                                            {t('nfc.price_unit', { price: formatPrice(unitPrice) })}
+                                        </span>
+                                        <span className="nfc2-price-total">
+                                            <b>{formatPrice(unitPrice * (Number(form.quantity) || 1))}</b> {t('pricing.feat.som')}
+                                        </span>
+                                    </div>
+                                )}
+                                <OfferConsent checked={agree} onChange={setAgree} />
+                                <button type="submit" className="nfc2-btn" disabled={busy || !agree}>
+                                    {busy ? t('nfc.sending') : (unitPrice > 0 ? t('nfc.pay') : t('nfc.submit'))}
                                 </button>
-                                <p className="nfc2-paynote">{t('nfc.no_payment')}</p>
+                                <p className="nfc2-paynote">
+                                    {unitPrice > 0 ? t('nfc.pay_note') : t('nfc.no_payment')}
+                                </p>
                             </form>
                         </div>
 
@@ -179,6 +218,8 @@ const Nfc = () => {
                                         <span className="nfc2-ot">
                                             <b>×{o.quantity} — {o.full_name}</b>
                                             <span>
+                                                {o.amount > 0 ? `${formatPrice(o.amount)} ${t('pricing.feat.som')} · ` : ''}
+                                                {o.amount > 0 ? `${o.is_paid ? t('nfc.paid') : t('nfc.unpaid')} · ` : ''}
                                                 {o.business_name ? `${o.business_name} · ` : ''}
                                                 {new Date(o.created_at).toLocaleDateString()}
                                             </span>

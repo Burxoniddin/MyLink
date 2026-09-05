@@ -13,7 +13,7 @@ from billing.models import Subscription
 from billing.services import sync_locks
 from businesses.models import (
     MAX_BIO_CHARS, MAX_BLOCKS_PER_SECTION, Business, BusinessMembership, ContentBlock,
-    Event, MediaSection, NfcOrder,
+    Event, MediaSection, NfcOrder, SiteSettings,
 )
 from businesses.access import claim_pending_invites
 
@@ -594,6 +594,71 @@ class ThemeGateTests(TestCase):
 
 
 @override_settings(CACHES=LOCMEM)
+class NfcPriceAndOfferTests(TestCase):
+    """NFC narxi adminkadan olinadi, oferta esa buyurtma sharti."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(phone_number='+998901119911')
+        self.client = APIClient()
+        token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+        s = SiteSettings.get_settings()
+        s.nfc_price = 149000
+        s.save()
+
+    def order(self, **extra):
+        payload = {'full_name': 'A', 'phone': '901234567', 'quantity': 3,
+                   'offer_accepted': True}
+        payload.update(extra)
+        return self.client.post('/api/nfc/orders/', payload, format='json')
+
+    def test_offer_required(self):
+        res = self.order(offer_accepted=False)
+        self.assertEqual(res.status_code, 400)
+        self.assertFalse(NfcOrder.objects.exists())
+
+    def test_offer_missing_is_rejected(self):
+        res = self.client.post('/api/nfc/orders/',
+                               {'full_name': 'A', 'phone': '901234567', 'quantity': 1},
+                               format='json')
+        self.assertEqual(res.status_code, 400)
+
+    def test_amount_from_admin_price(self):
+        res = self.order()
+        self.assertEqual(res.status_code, 201, res.data)
+        order = NfcOrder.objects.get()
+        self.assertEqual(order.unit_price, 149000)
+        self.assertEqual(order.amount, 149000 * 3)      # narx x soni
+        self.assertTrue(order.offer_accepted)
+        self.assertFalse(order.is_paid)
+
+    def test_price_change_does_not_touch_old_orders(self):
+        self.order()
+        s = SiteSettings.get_settings()
+        s.nfc_price = 200000
+        s.save()
+        self.assertEqual(NfcOrder.objects.get().amount, 149000 * 3)
+
+    def test_public_settings_exposes_price_and_offer(self):
+        res = APIClient().get('/api/public/settings/')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data['nfc_price'], 149000)
+        self.assertIn('offer.pdf', res.data['offer_url'])
+
+    def test_offer_pdf_is_public(self):
+        res = APIClient().get('/api/public/offer.pdf')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res['Content-Type'], 'application/pdf')
+        self.assertTrue(res.content.startswith(b'%PDF'))
+
+    def test_offer_pdf_uses_admin_requisites(self):
+        s = SiteSettings.get_settings()
+        s.company_name = '"Test" MChJ'
+        s.save()
+        from businesses.offer import offer_pdf_bytes
+        self.assertTrue(offer_pdf_bytes().startswith(b'%PDF'))
+
+
 class NfcOrderTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(phone_number='+998901117700')
@@ -604,7 +669,8 @@ class NfcOrderTests(TestCase):
     @patch('businesses.views.send_telegram_message')
     def test_create_order_forwards_to_telegram(self, mock_tg):
         res = self.client.post('/api/nfc/orders/',
-                               {'full_name': 'Ali', 'phone': '+998901112233', 'quantity': 5, 'note': 'logo bilan'},
+                               {'full_name': 'Ali', 'phone': '+998901112233', 'quantity': 5,
+                                'note': 'logo bilan', 'offer_accepted': True},
                                format='json')
         self.assertEqual(res.status_code, 201)
         self.assertEqual(NfcOrder.objects.filter(user=self.user).count(), 1)
@@ -628,8 +694,10 @@ class NfcOrderTests(TestCase):
     @patch('businesses.views.send_telegram_message')
     def test_invalid_quantity_rejected(self, mock_tg):
         res = self.client.post('/api/nfc/orders/',
-                               {'full_name': 'Ali', 'phone': '+998901112233', 'quantity': 0}, format='json')
+                               {'full_name': 'Ali', 'phone': '+998901112233', 'quantity': 0,
+                                'offer_accepted': True}, format='json')
         self.assertEqual(res.status_code, 400)
+        self.assertIn('quantity', res.data)
 
     @patch('businesses.views.send_telegram_message')
     def test_phone_required_and_format(self, mock_tg):
@@ -647,7 +715,8 @@ class NfcOrderTests(TestCase):
     def test_phone_normalized(self, mock_tg):
         # Local 9-digit form is normalised to +998…
         res = self.client.post('/api/nfc/orders/',
-                              {'full_name': 'A', 'phone': '90 123 45 67', 'quantity': 1}, format='json')
+                              {'full_name': 'A', 'phone': '90 123 45 67', 'quantity': 1,
+                               'offer_accepted': True}, format='json')
         self.assertEqual(res.status_code, 201)
         self.assertEqual(NfcOrder.objects.get().phone, '+998901234567')
 
@@ -655,7 +724,8 @@ class NfcOrderTests(TestCase):
     def test_own_business_attaches(self, mock_tg):
         biz = make_business(self.user, 'mine', 'Mine')
         res = self.client.post('/api/nfc/orders/',
-                              {'full_name': 'A', 'phone': '+998901112233', 'quantity': 1, 'business': biz.id},
+                              {'full_name': 'A', 'phone': '+998901112233', 'quantity': 1,
+                               'business': biz.id, 'offer_accepted': True},
                               format='json')
         self.assertEqual(res.status_code, 201)
         self.assertEqual(NfcOrder.objects.get().business_id, biz.id)
@@ -666,7 +736,8 @@ class NfcOrderTests(TestCase):
         other = User.objects.create_user(phone_number='+998909990033')
         biz = make_business(other, 'theirs', 'Theirs')
         res = self.client.post('/api/nfc/orders/',
-                              {'full_name': 'A', 'phone': '+998901112233', 'quantity': 1, 'business': biz.id},
+                              {'full_name': 'A', 'phone': '+998901112233', 'quantity': 1,
+                               'business': biz.id, 'offer_accepted': True},
                               format='json')
         self.assertEqual(res.status_code, 400)  # not in the user's queryset
 

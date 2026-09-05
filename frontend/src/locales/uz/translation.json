@@ -349,7 +349,14 @@
     "sent": "Buyurtmangiz qabul qilindi! Tez orada bog'lanamiz.",
     "no_payment": "Onlayn to'lov yo'q — jamoamiz siz bilan bog'lanadi.",
     "history": "Buyurtmalarim",
-    "orders_note": "Yangi buyurtmalar shu yerda ko'rinadi. Holati o'zgarganda sizga xabar beramiz."
+    "orders_note": "Yangi buyurtmalar shu yerda ko'rinadi. Holati o'zgarganda sizga xabar beramiz.",
+    "price_unit": "1 dona: {{price}} so'm",
+    "pay": "Click orqali to'lash",
+    "pay_note": "To'lovdan so'ng menejerimiz dizaynni kelishish uchun siz bilan bog'lanadi.",
+    "paid": "To'langan",
+    "unpaid": "To'lov kutilmoqda",
+    "paid_ok": "To'lov qabul qilindi! Buyurtmangiz ishga tushdi.",
+    "paid_wait": "To'lov holati tekshirilmoqda — tasdiqlangach buyurtma faollashadi."
   },
   "referral": {
     "title": "Do'stlarni taklif qiling",
@@ -657,5 +664,10 @@
     "reload": "Sahifani yangilash",
     "home": "Bosh sahifaga",
     "details": "Texnik tafsilot"
+  },
+  "offer": {
+    "read": "Ofertani o'qish",
+    "accept": "Ommaviy oferta shartlarini o'qib chiqdim va qabul qilaman.",
+    "note": "Davom etish orqali siz ommaviy oferta shartlariga rozilik bildirasiz."
   }
 }

@@ -137,10 +137,17 @@ class PaymentOrder(models.Model):
     marks it prepared (stores ``click_trans_id``); Complete marks it paid and
     grants the subscription (see billing.views Click callback)."""
     STATUS = [('pending', 'Pending'), ('paid', 'Paid'), ('canceled', 'Canceled')]
+    # Nima uchun to'lov: tarif obunasi yoki NFC vizitka buyurtmasi.
+    KIND = [('plan', 'Tarif'), ('nfc', 'NFC vizitka')]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='payment_orders')
-    tier = models.CharField(max_length=20)   # Plan slug
-    period = models.CharField(max_length=10, choices=ent.PERIOD_CHOICES)
+    kind = models.CharField(max_length=10, choices=KIND, default='plan')
+    nfc_order = models.ForeignKey(
+        'businesses.NfcOrder', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='payments', verbose_name="NFC buyurtma",
+    )
+    tier = models.CharField(max_length=20, blank=True)   # Plan slug (kind='plan')
+    period = models.CharField(max_length=10, choices=ent.PERIOD_CHOICES, blank=True)
     amount = models.PositiveIntegerField(help_text="Narx (UZS so'm)")
     status = models.CharField(max_length=10, choices=STATUS, default='pending')
     click_trans_id = models.CharField(max_length=40, blank=True)
